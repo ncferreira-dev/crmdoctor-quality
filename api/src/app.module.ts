@@ -11,6 +11,8 @@ import { EmpresasModule } from './empresas/empresas.module';
 import { ProjetosModule } from './projetos/projetos.module';
 import { InteracoesModule } from './interacoes/interacoes.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { ConsultoresModule } from './consultores/consultores.module';
+import { VisitasModule } from './visitas/visitas.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { TicketsModule } from './tickets/tickets.module';
     ProjetosModule,
     InteracoesModule,
     TicketsModule,
+    ConsultoresModule,
+    VisitasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
