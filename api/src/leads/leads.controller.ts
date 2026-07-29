@@ -45,4 +45,10 @@ export class LeadsController {
   remove(@Param('id') id: string) {
     return this.leadsService.remove(id);
   }
+
+  @RequirePermissao('EMPRESAS_WRITE')
+  @Post(':id/converter')
+  converter(@Param('id') id: string) {
+    return this.leadsService.converter(id);
+  }
 }
