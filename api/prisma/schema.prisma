@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")   // Neon COM -pooler
-  directUrl = env("DIRECT_URL")     // Neon SEM -pooler (migrations)
+  url       = env("DATABASE_URL") // Neon COM -pooler
+  directUrl = env("DIRECT_URL") // Neon SEM -pooler (migrations)
 }
 
 enum Segmento {
@@ -56,6 +56,12 @@ enum StatusVisita {
   CANCELADA
 }
 
+enum AcaoAudit {
+  CREATE
+  UPDATE
+  DELETE
+}
+
 // Chaves fixas de permissão, validadas via class-validator (@IsIn) contra
 // esta lista mantida em código (src/common/constants/permissoes.ts), não é
 // enum de banco de propósito: adicionar uma permissão nova não pede migration.
@@ -67,7 +73,7 @@ enum StatusVisita {
 model Cargo {
   id           String   @id @default(uuid())
   nome         String   @unique
-  nivel        Int      // maior número = mais graduado, mais acesso
+  nivel        Int // maior número = mais graduado, mais acesso
   permissoes   String[]
   usuarios     User[]
   criadoEm     DateTime @default(now())
@@ -90,40 +96,46 @@ model User {
 }
 
 model Lead {
-  id             String          @id @default(uuid())
-  nome           String
-  empresaNome    String?
-  email          String?
-  telefone       String?
-  segmento       Segmento?
-  origem         String?
-  estagio        EstagioLead     @default(NOVO)
-  observacoes    String?
-  interacoes     Interacao[]
-  empresaCliente EmpresaCliente?
-  criadoEm       DateTime        @default(now())
-  atualizadoEm   DateTime        @updatedAt
+  id              String          @id @default(uuid())
+  nome            String
+  empresaNome     String?
+  email           String?
+  telefone        String?
+  segmento        Segmento?
+  origem          String?
+  estagio         EstagioLead     @default(NOVO)
+  observacoes     String?
+  interacoes      Interacao[]
+  empresaCliente  EmpresaCliente?
+  criadoEm        DateTime        @default(now())
+  atualizadoEm    DateTime        @updatedAt
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   @@index([estagio])
   @@map("leads")
 }
 
 model EmpresaCliente {
-  id           String      @id @default(uuid())
-  nome         String
-  cnpj         String?     @unique
-  segmento     Segmento
-  contatoNome  String?
-  email        String?
-  telefone     String?
-  leadOrigemId String?     @unique
-  leadOrigem   Lead?       @relation(fields: [leadOrigemId], references: [id])
-  projetos     Projeto[]
-  tickets      Ticket[]
-  interacoes   Interacao[]
-  visitas      Visita[]
-  criadoEm     DateTime    @default(now())
-  atualizadoEm DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  nome            String
+  cnpj            String?     @unique
+  segmento        Segmento
+  contatoNome     String?
+  email           String?
+  telefone        String?
+  leadOrigemId    String?     @unique
+  leadOrigem      Lead?       @relation(fields: [leadOrigemId], references: [id])
+  projetos        Projeto[]
+  tickets         Ticket[]
+  interacoes      Interacao[]
+  visitas         Visita[]
+  criadoEm        DateTime    @default(now())
+  atualizadoEm    DateTime    @updatedAt
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   @@map("empresas_clientes")
 }
@@ -141,6 +153,9 @@ model Projeto {
   notificacoes         Notificacao[]
   criadoEm             DateTime       @default(now())
   atualizadoEm         DateTime       @updatedAt
+  excluidoEm           DateTime?
+  criadoPorId          String?
+  atualizadoPorId      String?
 
   @@index([estagio])
   @@index([dataLimiteCompliance])
@@ -148,61 +163,73 @@ model Projeto {
 }
 
 model Interacao {
-  id        String          @id @default(uuid())
-  tipo      TipoInteracao
-  resumo    String
-  data      DateTime        @default(now())
-  leadId    String?
-  lead      Lead?           @relation(fields: [leadId], references: [id])
-  empresaId String?
-  empresa   EmpresaCliente? @relation(fields: [empresaId], references: [id])
-  projetoId String?
-  projeto   Projeto?        @relation(fields: [projetoId], references: [id])
-  criadoEm  DateTime        @default(now())
+  id              String          @id @default(uuid())
+  tipo            TipoInteracao
+  resumo          String
+  data            DateTime        @default(now())
+  leadId          String?
+  lead            Lead?           @relation(fields: [leadId], references: [id])
+  empresaId       String?
+  empresa         EmpresaCliente? @relation(fields: [empresaId], references: [id])
+  projetoId       String?
+  projeto         Projeto?        @relation(fields: [projetoId], references: [id])
+  criadoEm        DateTime        @default(now())
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   @@map("interacoes")
 }
 
 model Ticket {
-  id          String         @id @default(uuid())
-  titulo      String
-  descricao   String?
-  status      StatusTicket   @default(ABERTO)
-  prioridade  Int            @default(2) // 1 alta, 2 média, 3 baixa
-  empresaId   String
-  empresa     EmpresaCliente @relation(fields: [empresaId], references: [id])
-  criadoEm    DateTime       @default(now())
-  resolvidoEm DateTime?
+  id              String         @id @default(uuid())
+  titulo          String
+  descricao       String?
+  status          StatusTicket   @default(ABERTO)
+  prioridade      Int            @default(2) // 1 alta, 2 média, 3 baixa
+  empresaId       String
+  empresa         EmpresaCliente @relation(fields: [empresaId], references: [id])
+  criadoEm        DateTime       @default(now())
+  resolvidoEm     DateTime?
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   @@index([status])
   @@map("tickets")
 }
 
 model Consultor {
-  id            String   @id @default(uuid())
-  nome          String
-  especialidade String
-  ativo         Boolean  @default(true)
-  visitas       Visita[]
-  criadoEm      DateTime @default(now())
+  id              String    @id @default(uuid())
+  nome            String
+  especialidade   String
+  ativo           Boolean   @default(true)
+  visitas         Visita[]
+  criadoEm        DateTime  @default(now())
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   @@map("consultores")
 }
 
 model Visita {
-  id           String         @id @default(uuid())
-  consultorId  String
-  consultor    Consultor      @relation(fields: [consultorId], references: [id])
-  empresaId    String
-  empresa      EmpresaCliente @relation(fields: [empresaId], references: [id])
-  inicio       DateTime       @db.Timestamptz(3)
-  fim          DateTime       @db.Timestamptz(3)
-  tipoServico  String
-  status       StatusVisita   @default(AGENDADA)
-  documentoUrl String?
-  observacoes  String?
-  criadoEm     DateTime       @default(now())
-  atualizadoEm DateTime       @updatedAt
+  id              String         @id @default(uuid())
+  consultorId     String
+  consultor       Consultor      @relation(fields: [consultorId], references: [id])
+  empresaId       String
+  empresa         EmpresaCliente @relation(fields: [empresaId], references: [id])
+  inicio          DateTime       @db.Timestamptz(3)
+  fim             DateTime       @db.Timestamptz(3)
+  tipoServico     String
+  status          StatusVisita   @default(AGENDADA)
+  documentoUrl    String?
+  observacoes     String?
+  criadoEm        DateTime       @default(now())
+  atualizadoEm    DateTime       @updatedAt
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   // PREPARADO para a trava de conflito futura (não ativar agora).
   // Quando quiser, crie uma migration vazia (prisma migrate dev --create-only)
@@ -234,4 +261,18 @@ model Notificacao {
   // mesmo que o job rode duas vezes no dia.
   @@unique([projetoId, tipo, dataReferencia])
   @@map("notificacoes")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  entidade    String
+  entidadeId  String
+  acao        AcaoAudit
+  usuarioId   String?
+  dadosAntes  Json?
+  dadosDepois Json?
+  criadoEm    DateTime  @default(now())
+
+  @@index([entidade, entidadeId])
+  @@map("audit_logs")
 }

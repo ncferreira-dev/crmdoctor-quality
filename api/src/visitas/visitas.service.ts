@@ -3,23 +3,34 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateVisitaDto } from './dto/create-visita.dto';
 import { UpdateVisitaDto } from './dto/update-visita.dto';
 import { FindVisitasQueryDto } from './dto/find-visitas-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class VisitasService {
   constructor(private prisma: PrismaService) {}
 
   findAll(query: FindVisitasQueryDto) {
-    return this.prisma.visita.findMany({
-      where: {
-        consultorId: query.consultorId,
-        empresaId: query.empresaId,
-        inicio: {
-          gte: query.de ? new Date(query.de) : undefined,
-          lte: query.ate ? new Date(query.ate) : undefined,
-        },
+    const where = {
+      consultorId: query.consultorId,
+      empresaId: query.empresaId,
+      inicio: {
+        gte: query.de ? new Date(query.de) : undefined,
+        lte: query.ate ? new Date(query.ate) : undefined,
       },
-      include: { consultor: true, empresa: true },
-      orderBy: { inicio: 'asc' },
+    };
+
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) =>
+        this.prisma.visita.findMany({
+          where,
+          include: { consultor: true, empresa: true },
+          orderBy: { inicio: 'asc' },
+          skip,
+          take,
+        }),
+      contar: () => this.prisma.visita.count({ where }),
     });
   }
 

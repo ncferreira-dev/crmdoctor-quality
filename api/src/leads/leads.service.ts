@@ -5,6 +5,7 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { UpdateEstagioDto } from './dto/update-estagio.dto';
 import { FindLeadsQueryDto } from './dto/find-leads-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class LeadsService {
@@ -22,7 +23,12 @@ export class LeadsService {
       }),
     };
 
-    return this.prisma.lead.findMany({ where, orderBy: { criadoEm: 'desc' } });
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) => this.prisma.lead.findMany({ where, orderBy: { criadoEm: 'desc' }, skip, take }),
+      contar: () => this.prisma.lead.count({ where }),
+    });
   }
 
   async findOne(id: string) {

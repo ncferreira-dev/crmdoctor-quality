@@ -1,6 +1,7 @@
 import { IsOptional, IsUUID } from 'class-validator';
+import { PaginacaoDto } from '../../common/dto/paginacao.dto';
 
-export class FindInteracoesQueryDto {
+export class FindInteracoesQueryDto extends PaginacaoDto {
   @IsOptional()
   @IsUUID()
   leadId?: string;

@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 import { FindEmpresasQueryDto } from './dto/find-empresas-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class EmpresasService {
@@ -20,7 +21,13 @@ export class EmpresasService {
       }),
     };
 
-    return this.prisma.empresaCliente.findMany({ where, orderBy: { nome: 'asc' } });
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) =>
+        this.prisma.empresaCliente.findMany({ where, orderBy: { nome: 'asc' }, skip, take }),
+      contar: () => this.prisma.empresaCliente.count({ where }),
+    });
   }
 
   async findOne(id: string) {

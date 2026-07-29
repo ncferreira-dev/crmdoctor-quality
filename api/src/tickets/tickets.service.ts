@@ -4,15 +4,20 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { UpdateStatusTicketDto } from './dto/update-status-ticket.dto';
 import { FindTicketsQueryDto } from './dto/find-tickets-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class TicketsService {
   constructor(private prisma: PrismaService) {}
 
   findAll(query: FindTicketsQueryDto) {
-    return this.prisma.ticket.findMany({
-      where: { status: query.status, empresaId: query.empresaId },
-      orderBy: { criadoEm: 'desc' },
+    const where = { status: query.status, empresaId: query.empresaId };
+
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) => this.prisma.ticket.findMany({ where, orderBy: { criadoEm: 'desc' }, skip, take }),
+      contar: () => this.prisma.ticket.count({ where }),
     });
   }
 

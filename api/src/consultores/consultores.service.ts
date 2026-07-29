@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateConsultorDto } from './dto/create-consultor.dto';
 import { UpdateConsultorDto } from './dto/update-consultor.dto';
 import { FindConsultoresQueryDto } from './dto/find-consultores-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class ConsultoresService {
@@ -13,10 +14,13 @@ export class ConsultoresService {
     // chega como string; normalizamos aqui pra não depender da ordem dos prompts.
     const ativo =
       query.ativo === undefined ? undefined : (query.ativo as unknown as string) !== 'false' && !!query.ativo;
+    const where = { ativo };
 
-    return this.prisma.consultor.findMany({
-      where: { ativo },
-      orderBy: { nome: 'asc' },
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) => this.prisma.consultor.findMany({ where, orderBy: { nome: 'asc' }, skip, take }),
+      contar: () => this.prisma.consultor.count({ where }),
     });
   }
 

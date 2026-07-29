@@ -4,15 +4,21 @@ import { CreateProjetoDto } from './dto/create-projeto.dto';
 import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { UpdateEstagioProjetoDto } from './dto/update-estagio-projeto.dto';
 import { FindProjetosQueryDto } from './dto/find-projetos-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class ProjetosService {
   constructor(private prisma: PrismaService) {}
 
   findAll(query: FindProjetosQueryDto) {
-    return this.prisma.projeto.findMany({
-      where: { empresaId: query.empresaId, estagio: query.estagio },
-      orderBy: { criadoEm: 'desc' },
+    const where = { empresaId: query.empresaId, estagio: query.estagio };
+
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) =>
+        this.prisma.projeto.findMany({ where, orderBy: { criadoEm: 'desc' }, skip, take }),
+      contar: () => this.prisma.projeto.count({ where }),
     });
   }
 

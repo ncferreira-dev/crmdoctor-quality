@@ -2,19 +2,24 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInteracaoDto } from './dto/create-interacao.dto';
 import { FindInteracoesQueryDto } from './dto/find-interacoes-query.dto';
+import { paginar } from '../common/utils/paginar';
 
 @Injectable()
 export class InteracoesService {
   constructor(private prisma: PrismaService) {}
 
   findAll(query: FindInteracoesQueryDto) {
-    return this.prisma.interacao.findMany({
-      where: {
-        leadId: query.leadId,
-        empresaId: query.empresaId,
-        projetoId: query.projetoId,
-      },
-      orderBy: { data: 'desc' },
+    const where = {
+      leadId: query.leadId,
+      empresaId: query.empresaId,
+      projetoId: query.projetoId,
+    };
+
+    return paginar({
+      page: query.page,
+      limit: query.limit,
+      buscar: ({ skip, take }) => this.prisma.interacao.findMany({ where, orderBy: { data: 'desc' }, skip, take }),
+      contar: () => this.prisma.interacao.count({ where }),
     });
   }
 
