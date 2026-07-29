@@ -17,7 +17,12 @@ export class ProjetosService {
       page: query.page,
       limit: query.limit,
       buscar: ({ skip, take }) =>
-        this.prisma.projeto.findMany({ where, orderBy: { criadoEm: 'desc' }, skip, take }),
+        this.prisma.projeto.findMany({
+          where,
+          orderBy: { criadoEm: 'desc' },
+          skip,
+          take,
+        }),
       contar: () => this.prisma.projeto.count({ where }),
     });
   }
@@ -25,7 +30,11 @@ export class ProjetosService {
   async findOne(id: string) {
     const projeto = await this.prisma.projeto.findUnique({
       where: { id },
-      include: { empresa: true, interacoes: true },
+      include: {
+        empresa: true,
+        interacoes: true,
+        etapas: { orderBy: { ordem: 'asc' } },
+      },
     });
     if (!projeto) {
       throw new NotFoundException('Projeto não encontrado');
@@ -37,7 +46,9 @@ export class ProjetosService {
     return this.prisma.projeto.create({
       data: {
         ...dto,
-        dataLimiteCompliance: dto.dataLimiteCompliance ? new Date(dto.dataLimiteCompliance) : undefined,
+        dataLimiteCompliance: dto.dataLimiteCompliance
+          ? new Date(dto.dataLimiteCompliance)
+          : undefined,
       },
     });
   }
@@ -48,7 +59,9 @@ export class ProjetosService {
       where: { id },
       data: {
         ...dto,
-        dataLimiteCompliance: dto.dataLimiteCompliance ? new Date(dto.dataLimiteCompliance) : undefined,
+        dataLimiteCompliance: dto.dataLimiteCompliance
+          ? new Date(dto.dataLimiteCompliance)
+          : undefined,
       },
     });
   }
@@ -60,6 +73,9 @@ export class ProjetosService {
 
   async updateEstagio(id: string, dto: UpdateEstagioProjetoDto) {
     await this.findOne(id);
-    return this.prisma.projeto.update({ where: { id }, data: { estagio: dto.estagio } });
+    return this.prisma.projeto.update({
+      where: { id },
+      data: { estagio: dto.estagio },
+    });
   }
 }

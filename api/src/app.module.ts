@@ -17,6 +17,7 @@ import { ConsultoresModule } from './consultores/consultores.module';
 import { VisitasModule } from './visitas/visitas.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificacoesModule } from './notificacoes/notificacoes.module';
+import { CompetenciasModule } from './competencias/competencias.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NotificacoesModule } from './notificacoes/notificacoes.module';
     InteracoesModule,
     TicketsModule,
     ConsultoresModule,
+    CompetenciasModule,
     VisitasModule,
     DashboardModule,
     NotificacoesModule,

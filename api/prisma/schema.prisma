@@ -62,6 +62,12 @@ enum AcaoAudit {
   DELETE
 }
 
+enum StatusEtapa {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
 // Chaves fixas de permissão, validadas via class-validator (@IsIn) contra
 // esta lista mantida em código (src/common/constants/permissoes.ts), não é
 // enum de banco de propósito: adicionar uma permissão nova não pede migration.
@@ -69,7 +75,7 @@ enum AcaoAudit {
 //   PROJETOS_WRITE, INTERACOES_READ, INTERACOES_WRITE, TICKETS_READ,
 //   TICKETS_WRITE, CONSULTORES_READ, CONSULTORES_WRITE, VISITAS_READ,
 //   VISITAS_WRITE, NOTIFICACOES_READ, DASHBOARD_READ, CARGOS_MANAGE,
-//   USUARIOS_MANAGE
+//   USUARIOS_MANAGE, COMPETENCIAS_READ, COMPETENCIAS_WRITE
 model Cargo {
   id           String   @id @default(uuid())
   nome         String   @unique
@@ -83,14 +89,15 @@ model Cargo {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  nome      String
-  email     String   @unique
-  senhaHash String
-  ativo     Boolean  @default(true)
-  cargoId   String
-  cargo     Cargo    @relation(fields: [cargoId], references: [id])
-  criadoEm  DateTime @default(now())
+  id                String         @id @default(uuid())
+  nome              String
+  email             String         @unique
+  senhaHash         String
+  ativo             Boolean        @default(true)
+  cargoId           String
+  cargo             Cargo          @relation(fields: [cargoId], references: [id])
+  etapasResponsavel EtapaProjeto[]
+  criadoEm          DateTime       @default(now())
 
   @@map("users")
 }
@@ -151,6 +158,7 @@ model Projeto {
   empresa              EmpresaCliente @relation(fields: [empresaId], references: [id])
   interacoes           Interacao[]
   notificacoes         Notificacao[]
+  etapas               EtapaProjeto[]
   criadoEm             DateTime       @default(now())
   atualizadoEm         DateTime       @updatedAt
   excluidoEm           DateTime?
@@ -182,35 +190,74 @@ model Interacao {
 }
 
 model Ticket {
-  id              String         @id @default(uuid())
-  titulo          String
-  descricao       String?
-  status          StatusTicket   @default(ABERTO)
-  prioridade      Int            @default(2) // 1 alta, 2 média, 3 baixa
-  empresaId       String
-  empresa         EmpresaCliente @relation(fields: [empresaId], references: [id])
-  criadoEm        DateTime       @default(now())
-  resolvidoEm     DateTime?
-  excluidoEm      DateTime?
-  criadoPorId     String?
-  atualizadoPorId String?
+  id                 String         @id @default(uuid())
+  titulo             String
+  descricao          String?
+  status             StatusTicket   @default(ABERTO)
+  prioridade         Int            @default(2) // 1 alta, 2 média, 3 baixa
+  empresaId          String
+  empresa            EmpresaCliente @relation(fields: [empresaId], references: [id])
+  abertoEm           DateTime       @default(now()) // quando o cliente pediu; pode diferir de criadoEm
+  primeiraRespostaEm DateTime?
+  criadoEm           DateTime       @default(now())
+  resolvidoEm        DateTime?
+  excluidoEm         DateTime?
+  criadoPorId        String?
+  atualizadoPorId    String?
 
   @@index([status])
   @@map("tickets")
 }
 
 model Consultor {
-  id              String    @id @default(uuid())
+  id              String        @id @default(uuid())
   nome            String
   especialidade   String
-  ativo           Boolean   @default(true)
+  ativo           Boolean       @default(true)
   visitas         Visita[]
-  criadoEm        DateTime  @default(now())
+  competencias    Competencia[]
+  criadoEm        DateTime      @default(now())
   excluidoEm      DateTime?
   criadoPorId     String?
   atualizadoPorId String?
 
   @@map("consultores")
+}
+
+model Competencia {
+  id              String      @id @default(uuid())
+  nome            String      @unique
+  descricao       String?
+  consultores     Consultor[]
+  criadoEm        DateTime    @default(now())
+  atualizadoEm    DateTime    @updatedAt
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
+
+  @@map("competencias")
+}
+
+model EtapaProjeto {
+  id              String        @id @default(uuid())
+  projetoId       String
+  projeto         Projeto       @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  nome            String
+  ordem           Int
+  responsavelId   String?
+  responsavel     User?         @relation(fields: [responsavelId], references: [id])
+  prazo           DateTime?     @db.Date
+  status          StatusEtapa   @default(PENDENTE)
+  concluidaEm     DateTime?
+  notificacoes    Notificacao[]
+  criadoEm        DateTime      @default(now())
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
+
+  @@index([projetoId, ordem])
+  @@index([prazo])
+  @@map("etapas_projeto")
 }
 
 model Visita {
@@ -247,19 +294,25 @@ model Visita {
 }
 
 model Notificacao {
-  id             String    @id @default(uuid())
-  tipo           String    @default("COMPLIANCE_PRAZO")
+  id             String        @id @default(uuid())
+  tipo           String        @default("COMPLIANCE_PRAZO")
   mensagem       String
-  lida           Boolean   @default(false)
+  lida           Boolean       @default(false)
   projetoId      String?
-  projeto        Projeto?  @relation(fields: [projetoId], references: [id])
-  dataReferencia DateTime? @db.Date // = dataLimiteCompliance do projeto
+  projeto        Projeto?      @relation(fields: [projetoId], references: [id])
+  etapaId        String?
+  etapa          EtapaProjeto? @relation(fields: [etapaId], references: [id])
+  dataReferencia DateTime?     @db.Date // = dataLimiteCompliance do projeto OU prazo da etapa
 
   criadoEm DateTime @default(now())
 
   // Idempotência do cron: mesmo projeto + mesmo prazo = 1 alerta só,
   // mesmo que o job rode duas vezes no dia.
   @@unique([projetoId, tipo, dataReferencia])
+  // Idempotência do fluxo de etapas (COMPLIANCE_ETAPA): projetoId fica null
+  // nessas linhas de propósito (ver notificacoes.service.ts), então a
+  // deduplicação depende só deste índice, não do de cima.
+  @@unique([etapaId, tipo, dataReferencia])
   @@map("notificacoes")
 }
 

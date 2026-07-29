@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { whereEmAtraso } from '../tickets/tickets.utils';
 
 @Injectable()
 export class DashboardService {
@@ -18,30 +19,54 @@ export class DashboardService {
       ticketsAbertos,
       visitasProximos7Dias,
       alertasNaoLidos,
+      ticketsEmAtraso,
+      etapasVencendo7Dias,
     ] = await this.prisma.$transaction([
-      this.prisma.lead.count({ where: { estagio: { notIn: ['GANHO', 'PERDIDO'] } } }),
+      this.prisma.lead.count({
+        where: { estagio: { notIn: ['GANHO', 'PERDIDO'] } },
+      }),
       this.prisma.lead.count({ where: { estagio: 'GANHO' } }),
       this.prisma.lead.count({ where: { estagio: 'PERDIDO' } }),
-      this.prisma.projeto.groupBy({ by: ['estagio'], _count: true, orderBy: { estagio: 'asc' } }),
+      this.prisma.projeto.groupBy({
+        by: ['estagio'],
+        _count: true,
+        orderBy: { estagio: 'asc' },
+      }),
       this.prisma.projeto.count({ where: { estagio: 'EXECUCAO' } }),
       this.prisma.ticket.count({ where: { status: { not: 'RESOLVIDO' } } }),
       this.prisma.visita.count({
-        where: { inicio: { gte: agora, lte: em7Dias }, status: { not: 'CANCELADA' } },
+        where: {
+          inicio: { gte: agora, lte: em7Dias },
+          status: { not: 'CANCELADA' },
+        },
       }),
       this.prisma.notificacao.count({ where: { lida: false } }),
+      this.prisma.ticket.count({ where: whereEmAtraso(agora) }),
+      this.prisma.etapaProjeto.count({
+        where: {
+          status: { not: 'CONCLUIDA' },
+          prazo: { gte: agora, lte: em7Dias },
+        },
+      }),
     ]);
 
     const totalDecididos = leadsGanhos + leadsPerdidos;
-    const taxaConversao = totalDecididos === 0 ? 0 : leadsGanhos / totalDecididos;
+    const taxaConversao =
+      totalDecididos === 0 ? 0 : leadsGanhos / totalDecididos;
 
     return {
       leadsAtivos,
-      projetosPorEstagio: projetosPorEstagio.map((p) => ({ estagio: p.estagio, total: p._count })),
+      projetosPorEstagio: projetosPorEstagio.map((p) => ({
+        estagio: p.estagio,
+        total: p._count,
+      })),
       projetosEmExecucao,
       taxaConversao,
       ticketsAbertos,
       visitasProximos7Dias,
       alertasNaoLidos,
+      ticketsEmAtraso,
+      etapasVencendo7Dias,
     };
   }
 }

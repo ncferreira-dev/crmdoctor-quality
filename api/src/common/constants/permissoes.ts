@@ -17,6 +17,8 @@ export const PERMISSOES = [
   'DASHBOARD_READ',
   'CARGOS_MANAGE',
   'USUARIOS_MANAGE',
+  'COMPETENCIAS_READ',
+  'COMPETENCIAS_WRITE',
 ] as const;
 
 export type Permissao = (typeof PERMISSOES)[number];
