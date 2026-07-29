@@ -8,6 +8,9 @@ import { CargosModule } from './cargos/cargos.module';
 import { UsersModule } from './users/users.module';
 import { LeadsModule } from './leads/leads.module';
 import { EmpresasModule } from './empresas/empresas.module';
+import { ProjetosModule } from './projetos/projetos.module';
+import { InteracoesModule } from './interacoes/interacoes.module';
+import { TicketsModule } from './tickets/tickets.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { EmpresasModule } from './empresas/empresas.module';
     UsersModule,
     LeadsModule,
     EmpresasModule,
+    ProjetosModule,
+    InteracoesModule,
+    TicketsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
