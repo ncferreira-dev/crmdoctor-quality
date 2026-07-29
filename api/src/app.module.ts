@@ -13,6 +13,7 @@ import { InteracoesModule } from './interacoes/interacoes.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { ConsultoresModule } from './consultores/consultores.module';
 import { VisitasModule } from './visitas/visitas.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { VisitasModule } from './visitas/visitas.module';
     TicketsModule,
     ConsultoresModule,
     VisitasModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
