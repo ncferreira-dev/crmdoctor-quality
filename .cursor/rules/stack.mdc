@@ -1,0 +1,19 @@
+---
+description: Regras do projeto CRM Doctor Quality
+alwaysApply: true
+---
+
+# Stack
+- Monorepo: api/ (NestJS 10 + Prisma + PostgreSQL/Neon) e web/ (Next.js 14 App Router + Tailwind + TypeScript).
+- Auth: JWT + argon2. Todos os endpoints protegidos por guard global, exceto os marcados com @Public().
+- Autorização: cada Cargo tem nivel (Int) e permissoes (String[], chaves fixas — ver seção 4). O JWT carrega sub, cargoNivel e permissoes. PermissionsGuard é global e só age em rotas marcadas com @RequirePermissao('CHAVE'); sem o decorator, só o JwtAuthGuard vale. Regra de hierarquia (aplicada no service, não no guard): um usuário só cria/edita/exclui Cargo ou User cujo nivel seja MENOR que o seu próprio cargoNivel — igual ou maior é 403.
+
+# Convenções
+- Nomes de domínio em português (Lead, EmpresaCliente, Projeto, Interacao, Ticket, Consultor, Visita, Notificacao, Cargo). Código em camelCase.
+- Todo input da API usa DTO com class-validator. Nunca receber body sem validação.
+- Acesso ao banco só via PrismaService (módulo global). Nunca instanciar PrismaClient direto.
+- Datas: sempre DateTime/timestamptz no banco, ISO 8601 na API. Timezone de negócio: America/Sao_Paulo.
+- Proibido `any`. Erros da API seguem o HttpExceptionFilter padrão.
+- No front, toda chamada HTTP passa por src/lib/api.ts. Tipos em src/types espelham a API.
+- Não instalar libs novas sem me avisar antes.
+- Ao criar um módulo novo no NestJS, seguir exatamente o padrão do módulo leads/.
