@@ -1,3 +1,11 @@
+export interface ResultadoPaginado<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export type Segmento = 'FARMA' | 'COSMETICOS' | 'HOSPITALAR' | 'LOGISTICA' | 'LABORATORIO' | 'OUTRO';
 
 export type EstagioLead = 'NOVO' | 'CONTATO_FEITO' | 'QUALIFICADO' | 'PROPOSTA' | 'GANHO' | 'PERDIDO';
@@ -29,6 +37,8 @@ export const PERMISSOES = [
   'DASHBOARD_READ',
   'CARGOS_MANAGE',
   'USUARIOS_MANAGE',
+  'COMPETENCIAS_READ',
+  'COMPETENCIAS_WRITE',
 ] as const;
 
 export type Permissao = (typeof PERMISSOES)[number];
@@ -161,4 +171,6 @@ export interface DashboardResumo {
   ticketsAbertos: number;
   visitasProximos7Dias: number;
   alertasNaoLidos: number;
+  ticketsEmAtraso: number;
+  etapasVencendo7Dias: number;
 }
