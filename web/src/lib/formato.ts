@@ -1,4 +1,11 @@
-import { EstagioProjeto, Segmento, StatusEtapa, StatusTicket, StatusVisita } from '../types';
+import {
+  EstagioProjeto,
+  Segmento,
+  StatusEtapa,
+  StatusTarefa,
+  StatusTicket,
+  StatusVisita,
+} from '../types';
 
 export const ESTAGIO_PROJETO_LABEL: Record<EstagioProjeto, string> = {
   DIAGNOSTICO: 'Diagnóstico',
@@ -15,6 +22,12 @@ export const ESTAGIOS_PROJETO: EstagioProjeto[] = [
   'EXECUCAO',
   'CONCLUIDO',
 ];
+
+export const STATUS_TAREFA_LABEL: Record<StatusTarefa, string> = {
+  PENDENTE: 'Pendente',
+  EM_ANDAMENTO: 'Em andamento',
+  CONCLUIDA: 'Concluída',
+};
 
 export const STATUS_ETAPA_LABEL: Record<StatusEtapa, string> = {
   PENDENTE: 'Pendente',

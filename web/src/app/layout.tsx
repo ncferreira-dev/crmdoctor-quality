@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// IBM Plex: desenhada para contexto técnico/regulatório. A Mono não é enfeite —
-// carrega todo dado com peso de conformidade (CNPJ, prazos, datas, protocolos),
-// onde alinhamento de dígito e ausência de ambiguidade (0/O, 1/l) importam.
-const plexSans = IBM_Plex_Sans({
+// Inter: a fonte padrão do shadcn/ui, mesma do componente de agenda usado como
+// referência visual. JetBrains Mono acompanha nos dados de conformidade (CNPJ,
+// prazo, protocolo), onde dígito alinhado e 0/O sem ambiguidade importam.
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
 });
 
-const plexMono = IBM_Plex_Mono({
+const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

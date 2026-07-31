@@ -7,10 +7,13 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResgatarConviteDto } from './dto/resgatar-convite.dto';
 import { RequirePermissao } from '../common/decorators/require-permissao.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/types/auth-user';
 
@@ -21,6 +24,21 @@ export class UsersController {
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.usersService.findOne(user.sub);
+  }
+
+  // Primeiro acesso: público (quem resgata ainda não tem sessão) e com rate
+  // limit apertado — o código tem 8 dígitos e sem trava seria força-bruteável.
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Public()
+  @Post('resgatar-convite')
+  resgatarConvite(@Body() dto: ResgatarConviteDto) {
+    return this.usersService.resgatarConvite(dto);
+  }
+
+  @RequirePermissao('USUARIOS_MANAGE')
+  @Post(':id/reenviar-convite')
+  reenviarConvite(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.usersService.reenviarConvite(id, user);
   }
 
   @RequirePermissao('USUARIOS_MANAGE')

@@ -8,7 +8,9 @@ export default function AppGroupLayout({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        {/* Padding menor no mobile: 24px de cada lado numa tela de 375px
+            desperdiça espaço que a grade de KPIs precisa. */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

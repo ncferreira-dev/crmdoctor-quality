@@ -23,6 +23,15 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    // Convite pendente: a conta existe mas ainda não tem senha escolhida pelo
+    // dono. Mensagem específica aqui é intencional — não é tentativa de invasão,
+    // é alguém que precisa ser direcionado ao primeiro acesso.
+    if (user.codigoConvite) {
+      throw new UnauthorizedException(
+        'Primeiro acesso pendente: use o código de convite para definir sua senha',
+      );
+    }
+
     const senhaValida = await argon2.verify(user.senhaHash, dto.senha);
     if (!senhaValida) {
       throw new UnauthorizedException('Credenciais inválidas');

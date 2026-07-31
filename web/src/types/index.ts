@@ -39,6 +39,8 @@ export const PERMISSOES = [
   'USUARIOS_MANAGE',
   'COMPETENCIAS_READ',
   'COMPETENCIAS_WRITE',
+  'TAREFAS_READ',
+  'TAREFAS_WRITE',
 ] as const;
 
 export type Permissao = (typeof PERMISSOES)[number];
@@ -56,6 +58,8 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
+  telefone: string | null;
+  senhaDefinidaEm: string | null;
   ativo: boolean;
   cargoId: string;
   cargo: Cargo;
@@ -185,13 +189,45 @@ export interface Notificacao {
 }
 
 export interface DashboardResumo {
-  leadsAtivos: number;
   projetosPorEstagio: { estagio: EstagioProjeto; total: number }[];
   projetosEmExecucao: number;
-  taxaConversao: number;
+  projetosConcluidos: number;
+  concluidosNoMes: number;
+  projetosSemPrazo: number;
   ticketsAbertos: number;
   visitasProximos7Dias: number;
   alertasNaoLidos: number;
   ticketsEmAtraso: number;
   etapasVencendo7Dias: number;
+  valorEmExecucao: number;
+  concentracao: {
+    empresaId: string;
+    empresa: string;
+    projetos: number;
+    valor: number;
+  }[];
+  cargaConsultores: { usuarioId: string; nome: string; marcosAbertos: number }[];
+  marcosDaSemana: {
+    id: string;
+    nome: string;
+    prazo: string | null;
+    projetoId: string;
+    projeto: string;
+  }[];
 }
+
+export interface Tarefa {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  status: StatusTarefa;
+  prazo: string | null;
+  responsavelId: string;
+  responsavel?: { id: string; nome: string; email: string };
+  projetoId: string | null;
+  projeto?: { id: string; titulo: string };
+  concluidaEm: string | null;
+  criadoEm: string;
+}
+
+export type StatusTarefa = 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA';

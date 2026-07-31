@@ -20,6 +20,7 @@ import { VisitasModule } from './visitas/visitas.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificacoesModule } from './notificacoes/notificacoes.module';
 import { CompetenciasModule } from './competencias/competencias.module';
+import { TarefasModule } from './tarefas/tarefas.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CompetenciasModule } from './competencias/competencias.module';
     VisitasModule,
     DashboardModule,
     NotificacoesModule,
+    TarefasModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -15,7 +15,8 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-ink/10 bg-white px-6">
+    // pl-16 no mobile abre espaço pro botão de menu flutuante da sidebar.
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-ink/10 bg-white pl-16 pr-4 lg:px-6">
       <div />
       <div className="flex items-center gap-3">
         {/* Sino de notificações entra no Prompt 16 (NotificationBell) */}

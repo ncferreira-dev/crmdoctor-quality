@@ -5,9 +5,11 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  MinLength,
 } from 'class-validator';
 
+// Cadastro de membro: quem cadastra NÃO define a senha de outra pessoa. O
+// sistema gera um código de primeiro acesso e o próprio membro escolhe a senha
+// ao resgatá-lo.
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
@@ -16,9 +18,9 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(6)
-  senha: string;
+  telefone?: string;
 
   @IsUUID()
   cargoId: string;
