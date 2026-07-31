@@ -13,18 +13,30 @@ async function bootstrap() {
   // cada redeploy deixa conexão pendurada no Neon até dar timeout.
   app.enableShutdownHooks();
 
-  const origins = (process.env.FRONTEND_URL ?? '')
+  const origensPermitidas = (process.env.FRONTEND_URL ?? '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  // Em produção, FRONTEND_URL vazio bloqueia o CORS em vez de liberar geral.
-  // O token fica no localStorage do front, então `origin: true` em produção
-  // deixaria qualquer site chamar a API autenticado.
-  if (!origins.length && process.env.NODE_ENV === 'production') {
-    throw new Error('Defina FRONTEND_URL em produção (origem permitida no CORS)');
-  }
-  app.enableCors({ origin: origins.length ? origins : true });
+  // O front é hospedado na Vercel, que emite uma URL única por deploy além do
+  // alias fixo. Aceitar *.vercel.app cobre os dois sem depender de FRONTEND_URL
+  // estar sincronizado no painel. Continua fechado pro resto (não é origin:true):
+  // o token fica no localStorage, então liberar geral deixaria qualquer site
+  // chamar a API autenticado.
+  const VERCEL_HOST = /^https:\/\/[a-z0-9-]+\.vercel\.app$/;
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Requests sem Origin (curl, health check, server-to-server) passam.
+      if (!origin) {
+        return callback(null, true);
+      }
+      const permitido =
+        origensPermitidas.includes(origin) || VERCEL_HOST.test(origin);
+      return callback(permitido ? null : new Error('Origem não permitida pelo CORS'), permitido);
+    },
+    credentials: true,
+  });
 
   await app.listen(process.env.PORT ?? 3001);
 }
