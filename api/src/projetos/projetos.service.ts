@@ -19,6 +19,9 @@ export class ProjetosService {
       buscar: ({ skip, take }) =>
         this.prisma.projeto.findMany({
           where,
+          // A listagem mostra de qual empresa é cada projeto; sem o include a
+          // tela teria que fazer N chamadas para resolver os nomes.
+          include: { empresa: true },
           orderBy: { criadoEm: 'desc' },
           skip,
           take,

@@ -5,18 +5,16 @@ import Link from 'next/link';
 import { api } from '../../../../lib/api';
 import { usePermissao } from '../../../../hooks/useSessao';
 import { EmpresaCliente, Projeto, ResultadoPaginado } from '../../../../types';
-import { SEGMENTO_LABEL, formatarDataHora } from '../../../../lib/formato';
+import {
+  ESTAGIO_PROJETO_LABEL,
+  SEGMENTO_LABEL,
+  formatarDataHora,
+} from '../../../../lib/formato';
 import { Badge } from '../../../../components/ui/Badge';
 import { Button } from '../../../../components/ui/Button';
 import { TicketsSection } from '../../../../components/empresas/TicketsSection';
 import { EmpresaFormModal } from '../../../../components/empresas/EmpresaFormModal';
-
-const ESTAGIO_PROJETO_LABEL: Record<string, string> = {
-  DIAGNOSTICO: 'Diagnóstico',
-  PROPOSTA: 'Proposta',
-  EXECUCAO: 'Execução',
-  CONCLUIDO: 'Concluído',
-};
+import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
 
 export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -103,13 +101,17 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
         ) : (
           <div className="flex flex-col gap-2">
             {projetos.map((projeto) => (
-              <div
+              <Link
                 key={projeto.id}
-                className="flex items-center justify-between rounded-md border border-ink/10 p-3"
+                href={`/projetos/${projeto.id}`}
+                className="flex items-center justify-between gap-3 rounded-md border border-ink/10 p-3 transition-colors hover:border-brand/40"
               >
-                <p className="font-black leading-none text-ink">{projeto.titulo}</p>
-                <Badge>{ESTAGIO_PROJETO_LABEL[projeto.estagio] ?? projeto.estagio}</Badge>
-              </div>
+                <p className="truncate text-sm font-medium text-ink">{projeto.titulo}</p>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge>{ESTAGIO_PROJETO_LABEL[projeto.estagio] ?? projeto.estagio}</Badge>
+                  <SeloPrazo prazo={projeto.dataLimiteCompliance} />
+                </div>
+              </Link>
             ))}
           </div>
         )}

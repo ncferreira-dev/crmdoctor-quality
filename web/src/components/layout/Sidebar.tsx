@@ -10,6 +10,7 @@ const LINKS_BASE = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/leads', label: 'Leads' },
   { href: '/empresas', label: 'Empresas' },
+  { href: '/projetos', label: 'Projetos' },
   { href: '/agenda', label: 'Agenda' },
 ];
 

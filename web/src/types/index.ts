@@ -92,6 +92,21 @@ export interface EmpresaCliente {
   proximaVisita?: Visita | null;
 }
 
+export type StatusEtapa = 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA';
+
+export interface EtapaProjeto {
+  id: string;
+  projetoId: string;
+  nome: string;
+  ordem: number;
+  responsavelId: string | null;
+  responsavel?: Usuario;
+  prazo: string | null;
+  status: StatusEtapa;
+  concluidaEm: string | null;
+  criadoEm: string;
+}
+
 export interface Projeto {
   id: string;
   titulo: string;
@@ -104,6 +119,7 @@ export interface Projeto {
   criadoEm: string;
   atualizadoEm: string;
   interacoes?: Interacao[];
+  etapas?: EtapaProjeto[];
 }
 
 export interface Interacao {
