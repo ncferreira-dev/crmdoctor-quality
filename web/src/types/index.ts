@@ -125,8 +125,13 @@ export interface Ticket {
   prioridade: number;
   empresaId: string;
   empresa?: EmpresaCliente;
+  abertoEm: string;
+  primeiraRespostaEm: string | null;
   criadoEm: string;
   resolvidoEm: string | null;
+  // Calculados no backend (tickets.utils).
+  prazoLimite: string;
+  emAtraso: boolean;
 }
 
 export interface Consultor {

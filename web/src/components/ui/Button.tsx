@@ -9,10 +9,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTE_CLASSES: Record<Variante, string> = {
-  primary: 'bg-slate-900 text-white hover:bg-slate-700',
-  secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
-  ghost: 'bg-transparent text-slate-600 hover:bg-slate-100',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
+  // Primário é vinho (brand), nunca vermelho — CLAUDE.md. Vermelho (accent)
+  // fica só na variante danger.
+  primary: 'bg-brand text-white hover:bg-brand/90',
+  secondary: 'bg-surface text-ink hover:bg-ink/10',
+  ghost: 'bg-transparent text-ink/60 hover:bg-surface',
+  danger: 'bg-accent text-white hover:bg-accent/90',
 };
 
 export function Button({ variante = 'primary', className = '', ...props }: ButtonProps) {
