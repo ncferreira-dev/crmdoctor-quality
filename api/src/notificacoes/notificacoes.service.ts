@@ -10,13 +10,10 @@ export class NotificacoesService {
   constructor(private prisma: PrismaService) {}
 
   findAll(query: FindNotificacoesQueryDto) {
-    const lida =
-      query.lida === undefined
-        ? undefined
-        : (query.lida as unknown as string) !== 'false' && !!query.lida;
-
+    // query.lida já chega como boolean (ou undefined) via @Transform(paraBoolean)
+    // no DTO, então não precisa reprocessar aqui.
     return this.prisma.notificacao.findMany({
-      where: { lida },
+      where: { lida: query.lida },
       orderBy: { criadoEm: 'desc' },
     });
   }
