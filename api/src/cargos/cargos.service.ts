@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { AuthUser } from '../common/types/auth-user';
+import { exigirNivelMenor } from '../common/rbac/exigir-nivel-menor';
 
 @Injectable()
 export class CargosService {
@@ -26,24 +26,26 @@ export class CargosService {
   }
 
   create(dto: CreateCargoDto, requestUser: AuthUser) {
-    if (dto.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException(
-        'Não é possível criar um cargo de nível igual ou maior que o seu',
-      );
-    }
+    exigirNivelMenor(
+      dto.nivel,
+      requestUser,
+      'Não é possível criar um cargo de nível igual ou maior que o seu',
+    );
     return this.prisma.cargo.create({ data: dto });
   }
 
   async update(id: string, dto: UpdateCargoDto, requestUser: AuthUser) {
     const cargo = await this.findOne(id);
 
-    if (cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException(
-        'Não é possível editar um cargo de nível igual ou maior que o seu',
-      );
-    }
-    if (dto.nivel !== undefined && dto.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException(
+    exigirNivelMenor(
+      cargo.nivel,
+      requestUser,
+      'Não é possível editar um cargo de nível igual ou maior que o seu',
+    );
+    if (dto.nivel !== undefined) {
+      exigirNivelMenor(
+        dto.nivel,
+        requestUser,
         'Não é possível definir um nível igual ou maior que o seu',
       );
     }
@@ -59,11 +61,11 @@ export class CargosService {
     if (!cargo) {
       throw new NotFoundException('Cargo não encontrado');
     }
-    if (cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException(
-        'Não é possível excluir um cargo de nível igual ou maior que o seu',
-      );
-    }
+    exigirNivelMenor(
+      cargo.nivel,
+      requestUser,
+      'Não é possível excluir um cargo de nível igual ou maior que o seu',
+    );
     if (cargo.usuarios.length > 0) {
       throw new ConflictException('Cargo possui usuários vinculados');
     }
