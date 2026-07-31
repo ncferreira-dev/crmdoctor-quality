@@ -1,17 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUser, limparSessao } from '../../lib/auth';
+import { limparSessao } from '../../lib/auth';
+import { useNomeUsuario } from '../../hooks/useSessao';
 import { Button } from '../ui/Button';
 
 export function Header() {
   const router = useRouter();
-  const [nome, setNome] = useState('');
-
-  useEffect(() => {
-    setNome(getUser()?.nome ?? '');
-  }, []);
+  const nome = useNomeUsuario();
 
   function sair() {
     limparSessao();
@@ -19,11 +15,11 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-ink/10 bg-white px-6">
       <div />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Sino de notificações entra no Prompt 16 (NotificationBell) */}
-        <span className="text-sm text-slate-600">{nome}</span>
+        <span className="text-sm text-ink/70">{nome}</span>
         <Button variante="ghost" onClick={sair}>
           Sair
         </Button>

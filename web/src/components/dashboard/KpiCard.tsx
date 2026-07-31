@@ -10,7 +10,7 @@ export function KpiCard({ label, valor, alerta = false }: KpiCardProps) {
   return (
     <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
       <p className="text-xs font-light uppercase tracking-wide text-ink/60">{label}</p>
-      <p className={`mt-2 text-3xl font-black leading-none ${alerta ? 'text-accent' : 'text-ink'}`}>
+      <p className={`dado mt-2 text-3xl font-semibold leading-none ${alerta ? 'text-accent' : 'text-ink'}`}>
         {valor}
       </p>
     </div>

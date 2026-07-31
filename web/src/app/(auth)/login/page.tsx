@@ -37,9 +37,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">CRM Doctor Quality</h1>
+    <div className="flex min-h-screen items-center justify-center bg-night px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm rounded-card bg-white p-8 shadow-overlay"
+      >
+        <h1 className="titulo-pagina">Doctor Quality</h1>
+        <p className="mb-6 mt-1.5 text-[10px] font-light uppercase tracking-[0.18em] text-ink/40">
+          Compliance
+        </p>
 
         <div className="flex flex-col gap-4">
           <Input
@@ -58,7 +64,11 @@ export default function LoginPage() {
             required
           />
 
-          {erro && <p className="text-sm text-red-600">{erro}</p>}
+          {erro && (
+            <p role="alert" className="text-sm text-accent">
+              {erro}
+            </p>
+          )}
 
           <Button type="submit" disabled={carregando} className="mt-2 w-full">
             {carregando ? 'Entrando...' : 'Entrar'}

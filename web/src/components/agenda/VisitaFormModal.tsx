@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { temPermissao } from '../../lib/auth';
+import { usePermissao } from '../../hooks/useSessao';
 import {
   Consultor,
   EmpresaCliente,
@@ -48,7 +48,7 @@ export function VisitaFormModal({
   const [consultores, setConsultores] = useState<Consultor[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const podeEditar = temPermissao('VISITAS_WRITE');
+  const podeEditar = usePermissao('VISITAS_WRITE');
 
   useEffect(() => {
     if (!aberto) return;

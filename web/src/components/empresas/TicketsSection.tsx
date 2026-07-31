@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { temPermissao } from '../../lib/auth';
+import { usePermissao } from '../../hooks/useSessao';
 import { ResultadoPaginado, StatusTicket, Ticket } from '../../types';
 import { PRIORIDADE_LABEL, STATUS_TICKET_LABEL, formatarData } from '../../lib/formato';
 import { Button } from '../ui/Button';
@@ -18,7 +18,7 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
-  const [podeEditar, setPodeEditar] = useState(false);
+  const podeEditar = usePermissao('TICKETS_WRITE');
 
   function carregar() {
     api
@@ -28,7 +28,6 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
   }
 
   useEffect(() => {
-    setPodeEditar(temPermissao('TICKETS_WRITE'));
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);

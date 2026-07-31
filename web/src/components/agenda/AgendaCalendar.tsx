@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { temPermissao } from '../../lib/auth';
+import { usePermissao } from '../../hooks/useSessao';
 import {
   Consultor,
   EmpresaCliente,
@@ -66,11 +66,13 @@ export function AgendaCalendar() {
     aberto: false,
     visita: null,
   });
-  const podeEditar = temPermissao('VISITAS_WRITE');
+  const podeEditar = usePermissao('VISITAS_WRITE');
 
   function carregar() {
     const { de, ate } = intervaloDaVisao(view, refDate);
-    setVisitas(null);
+    // Sem reset para null: ao trocar de mês, os dados anteriores seguem na tela
+    // até os novos chegarem (~200ms). Evita o piscar do esqueleto a cada
+    // navegação — e mantém o setState fora do corpo síncrono do effect.
     api
       .get<ResultadoPaginado<Visita>>(`/visitas?de=${de}&ate=${ate}&limit=100`)
       .then((r) => setVisitas(r.data))
@@ -126,7 +128,7 @@ export function AgendaCalendar() {
       {/* Cabeçalho: título + navegação + troca de visão + novo */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="font-black capitalize leading-none text-ink">{titulo(view, refDate)}</h1>
+          <h1 className="titulo-pagina capitalize">{titulo(view, refDate)}</h1>
           {view !== 'lista' && (
             <div className="flex items-center gap-1">
               <button

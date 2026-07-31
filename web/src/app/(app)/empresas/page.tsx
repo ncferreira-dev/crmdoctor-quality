@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-import { temPermissao } from '../../../lib/auth';
+import { usePermissao } from '../../../hooks/useSessao';
 import { EmpresaCliente, ResultadoPaginado } from '../../../types';
 import { SEGMENTO_LABEL } from '../../../lib/formato';
 import { Button } from '../../../components/ui/Button';
@@ -16,7 +16,7 @@ export default function EmpresasPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
-  const [podeEditar, setPodeEditar] = useState(false);
+  const podeEditar = usePermissao('EMPRESAS_WRITE');
 
   function carregar(termo: string) {
     const query = termo ? `?busca=${encodeURIComponent(termo)}` : '';
@@ -27,7 +27,6 @@ export default function EmpresasPage() {
   }
 
   useEffect(() => {
-    setPodeEditar(temPermissao('EMPRESAS_WRITE'));
     carregar('');
   }, []);
 
@@ -40,7 +39,7 @@ export default function EmpresasPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="font-black leading-none text-ink">Empresas</h1>
+        <h1 className="titulo-pagina">Empresas</h1>
         {podeEditar && <Button onClick={() => setModalAberto(true)}>Nova empresa</Button>}
       </div>
 

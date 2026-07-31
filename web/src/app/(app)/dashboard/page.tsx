@@ -24,7 +24,7 @@ export default function DashboardPage() {
   if (!resumo) {
     return (
       <div>
-        <h1 className="mb-4 font-black leading-none text-ink">Dashboard</h1>
+        <h1 className="titulo-pagina mb-4">Dashboard</h1>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-24 animate-pulse rounded-card bg-surface" />
@@ -38,7 +38,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-4 font-black leading-none text-ink">Dashboard</h1>
+      <h1 className="titulo-pagina mb-4">Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <KpiCard label="Leads ativos" valor={resumo.leadsAtivos} />

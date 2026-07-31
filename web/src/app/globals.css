@@ -1,15 +1,8 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 
   /* Identidade visual (CLAUDE.md) — únicos tokens de cor permitidos no JSX. */
   --color-brand: #6e1c24;
@@ -18,19 +11,62 @@
   --color-surface: #f5f5f5;
   --color-night: #0e0d0d;
 
-  --radius-card: 0.75rem;
-  --shadow-card: 0 1px 3px rgb(14 13 13 / 0.08), 0 1px 2px rgb(14 13 13 / 0.06);
-}
+  /* Raio: contido. Documento regulatório não tem canto redondo de app de
+     consumo — o card é uma ficha, não um balão. */
+  --radius-card: 0.5rem;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Elevação em três degraus. Sombra tingida de night (não preto puro), pra
+     assentar no fundo surface sem sujar. */
+  --shadow-card: 0 1px 2px rgb(14 13 13 / 0.06), 0 1px 3px rgb(14 13 13 / 0.08);
+  --shadow-raised: 0 2px 4px rgb(14 13 13 / 0.06), 0 4px 12px rgb(14 13 13 / 0.08);
+  --shadow-overlay: 0 8px 24px rgb(14 13 13 / 0.16), 0 2px 6px rgb(14 13 13 / 0.08);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Numeral tabular em todo o app: em CRM, coluna de número que "dança" a cada
+     dígito é ruído. Aqui prazo, valor e contador alinham sempre. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Título de página. Existe como utilitário (e não solto em cada tela) pra a
+   regra do CLAUDE.md — font-black, leading-none — valer num lugar só e não
+   derivar tela a tela. */
+.titulo-pagina {
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+/* Dado com peso regulatório (CNPJ, protocolo, prazo, id) vai em mono: dígito
+   alinhado e sem ambiguidade 0/O, 1/l. É legibilidade, não estilo. */
+.dado {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Foco visível e consistente em tudo que recebe teclado (QA checklist).
+   O anel usa brand, e o offset garante contraste sobre card branco e sobre
+   a sidebar night. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Respeita quem pediu menos movimento no sistema (QA checklist / a11y). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

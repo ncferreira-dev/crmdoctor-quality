@@ -3,10 +3,13 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../../lib/api';
+import { usePermissao } from '../../../../hooks/useSessao';
 import { EmpresaCliente, Projeto, ResultadoPaginado } from '../../../../types';
 import { SEGMENTO_LABEL, formatarDataHora } from '../../../../lib/formato';
 import { Badge } from '../../../../components/ui/Badge';
+import { Button } from '../../../../components/ui/Button';
 import { TicketsSection } from '../../../../components/empresas/TicketsSection';
+import { EmpresaFormModal } from '../../../../components/empresas/EmpresaFormModal';
 
 const ESTAGIO_PROJETO_LABEL: Record<string, string> = {
   DIAGNOSTICO: 'Diagnóstico',
@@ -20,9 +23,18 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
   const [empresa, setEmpresa] = useState<EmpresaCliente | null>(null);
   const [projetos, setProjetos] = useState<Projeto[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
+  const podeEditar = usePermissao('EMPRESAS_WRITE');
+
+  function carregarEmpresa() {
+    api
+      .get<EmpresaCliente>(`/empresas/${id}`)
+      .then(setEmpresa)
+      .catch((e: Error) => setErro(e.message));
+  }
 
   useEffect(() => {
-    api.get<EmpresaCliente>(`/empresas/${id}`).then(setEmpresa).catch((e: Error) => setErro(e.message));
+    carregarEmpresa();
     api
       .get<ResultadoPaginado<Projeto>>(`/projetos?empresaId=${id}`)
       .then((r) => setProjetos(r.data))
@@ -43,9 +55,16 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
         <Link href="/empresas" className="text-xs uppercase tracking-wide text-ink/50 hover:text-brand">
           ← Empresas
         </Link>
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="font-black leading-none text-ink">{empresa.nome}</h1>
-          <Badge tom="destaque">{SEGMENTO_LABEL[empresa.segmento]}</Badge>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="titulo-pagina">{empresa.nome}</h1>
+            <Badge tom="destaque">{SEGMENTO_LABEL[empresa.segmento]}</Badge>
+          </div>
+          {podeEditar && (
+            <Button variante="secondary" onClick={() => setEditando(true)}>
+              Editar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -58,17 +77,17 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">CNPJ</p>
-          <p className="mt-2 font-black leading-none text-ink">{empresa.cnpj ?? '—'}</p>
+          <p className="dado mt-2 text-sm leading-none text-ink">{empresa.cnpj ?? '—'}</p>
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">Tickets abertos</p>
-          <p className="mt-2 text-3xl font-black leading-none text-ink">
+          <p className="dado mt-2 text-3xl font-semibold leading-none text-ink">
             {empresa._count?.ticketsAbertos ?? 0}
           </p>
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">Próxima visita</p>
-          <p className="mt-2 font-black leading-none text-ink">
+          <p className="dado mt-2 text-sm leading-none text-ink">
             {empresa.proximaVisita ? formatarDataHora(empresa.proximaVisita.inicio) : '—'}
           </p>
         </div>
@@ -98,6 +117,16 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
 
       {/* Tickets */}
       <TicketsSection empresaId={id} />
+
+      <EmpresaFormModal
+        aberto={editando}
+        empresa={empresa}
+        onFechar={() => setEditando(false)}
+        onSalvo={() => {
+          setEditando(false);
+          carregarEmpresa();
+        }}
+      />
     </div>
   );
 }

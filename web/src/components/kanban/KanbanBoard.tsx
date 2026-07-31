@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { temPermissao } from '../../lib/auth';
+import { usePermissao } from '../../hooks/useSessao';
 import { EstagioLead, Lead, ResultadoPaginado } from '../../types';
 import { KanbanColumn } from './KanbanColumn';
+import { LeadFormModal } from './LeadFormModal';
+import { Button } from '../ui/Button';
 
 const ESTAGIOS: { valor: EstagioLead; titulo: string }[] = [
   { valor: 'NOVO', titulo: 'Novo' },
@@ -23,17 +25,25 @@ const LIMITE_BOARD = 100;
 export function KanbanBoard() {
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [podeEditar, setPodeEditar] = useState(false);
+  const podeEditar = usePermissao('LEADS_WRITE');
   const [idArrastando, setIdArrastando] = useState<string | null>(null);
   const [colunaSobre, setColunaSobre] = useState<EstagioLead | null>(null);
   const [erroMovimento, setErroMovimento] = useState<string | null>(null);
+  const [modal, setModal] = useState<{
+    aberto: boolean;
+    lead: Lead | null;
+    estagio?: EstagioLead;
+  }>({ aberto: false, lead: null });
 
-  useEffect(() => {
-    setPodeEditar(temPermissao('LEADS_WRITE'));
+  function carregar() {
     api
       .get<ResultadoPaginado<Lead>>(`/leads?limit=${LIMITE_BOARD}`)
       .then((resultado) => setLeads(resultado.data))
       .catch((error: Error) => setErro(error.message));
+  }
+
+  useEffect(() => {
+    carregar();
   }, []);
 
   const leadsPorEstagio = useMemo(() => {
@@ -78,7 +88,19 @@ export function KanbanBoard() {
 
   return (
     <div>
-      {erroMovimento ? <p className="mb-3 text-xs text-accent">{erroMovimento}</p> : null}
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h1 className="titulo-pagina">Leads</h1>
+        {podeEditar && (
+          <Button onClick={() => setModal({ aberto: true, lead: null })}>Novo lead</Button>
+        )}
+      </div>
+
+      {erroMovimento ? (
+        <p role="alert" className="mb-3 text-xs text-accent">
+          {erroMovimento}
+        </p>
+      ) : null}
+
       <div className="flex gap-3 overflow-x-auto pb-2">
         {ESTAGIOS.map((estagio) => (
           <KanbanColumn
@@ -90,6 +112,8 @@ export function KanbanBoard() {
             idEmMovimento={idArrastando}
             sobreColuna={colunaSobre === estagio.valor}
             onDragStartCard={setIdArrastando}
+            onSelecionarLead={(lead) => setModal({ aberto: true, lead })}
+            onNovoNaColuna={(est) => setModal({ aberto: true, lead: null, estagio: est })}
             onDragEndCard={() => {
               setIdArrastando(null);
               setColunaSobre(null);
@@ -104,6 +128,17 @@ export function KanbanBoard() {
           />
         ))}
       </div>
+
+      <LeadFormModal
+        aberto={modal.aberto}
+        lead={modal.lead}
+        estagioInicial={modal.estagio}
+        onFechar={() => setModal({ aberto: false, lead: null })}
+        onMudou={() => {
+          setModal({ aberto: false, lead: null });
+          carregar();
+        }}
+      />
     </div>
   );
 }
