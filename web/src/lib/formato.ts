@@ -1,4 +1,20 @@
-import { Segmento, StatusTicket } from '../types';
+import { Segmento, StatusTicket, StatusVisita } from '../types';
+
+export const STATUS_VISITA_LABEL: Record<StatusVisita, string> = {
+  AGENDADA: 'Agendada',
+  CONFIRMADA: 'Confirmada',
+  REALIZADA: 'Realizada',
+  CANCELADA: 'Cancelada',
+};
+
+// Paleta monocromática + accent (CLAUDE.md): os 4 status são diferenciados por
+// tom de brand/ink, não por cores diversas. Chip usado no calendário.
+export const STATUS_VISITA_CHIP: Record<StatusVisita, string> = {
+  AGENDADA: 'bg-brand/70 text-white',
+  CONFIRMADA: 'bg-brand text-white',
+  REALIZADA: 'bg-ink/30 text-ink',
+  CANCELADA: 'bg-surface text-ink/40 line-through',
+};
 
 export const SEGMENTO_LABEL: Record<Segmento, string> = {
   FARMA: 'Farma',
