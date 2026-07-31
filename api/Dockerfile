@@ -20,4 +20,4 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
 EXPOSE 3001
-CMD npx prisma migrate deploy && node dist/main.js
+CMD npx prisma migrate deploy && node dist/src/main.js
