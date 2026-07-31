@@ -1,10 +1,17 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Atrás do proxy do EasyPanel (Traefik): sem confiar 1 hop, o Express veria
+  // o IP do proxy em toda request e o rate limit contaria todo mundo no mesmo
+  // balde. Confiar só 1 hop lê o X-Forwarded-For real sem deixar o cliente
+  // forjar a cadeia inteira.
+  app.set('trust proxy', 1);
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());

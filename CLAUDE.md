@@ -4,6 +4,7 @@
 - Monorepo: api/ (NestJS 10 + Prisma + PostgreSQL/Neon) e web/ (Next.js 16 App Router + Tailwind + TypeScript).
 - Next.js 16: middleware.ts virou proxy.ts (função exportada como `proxy`). Não use o nome antigo.
 - Auth: JWT + argon2. Guard global; rotas liberadas com @Public().
+- Rate limit: @nestjs/throttler (teto global 100 req/60s por IP; /auth/login 5/60s). Precisa de `trust proxy` 1 no main.ts pra ler o IP real atrás do EasyPanel.
 
 ## Convenções
 - Nomes de domínio em português (Lead, EmpresaCliente, Projeto, Interacao, Ticket, Consultor, Visita, Notificacao, Cargo). Código em camelCase.
