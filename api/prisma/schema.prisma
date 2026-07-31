@@ -1,5 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" cobre o dev local; o alvo musl-openssl-3.0 é o container Alpine
+  // do EasyPanel — sem ele o engine gerado não bate com o runtime.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
