@@ -13,12 +13,17 @@ import { KpiCard } from '../../../components/dashboard/KpiCard';
 import { BarraRanking } from '../../../components/dashboard/BarraRanking';
 import { SeloPrazo } from '../../../components/projetos/SeloPrazo';
 
-function moeda(valor: number): string {
-  return valor.toLocaleString('pt-BR', {
+function moeda(valor: number | undefined): string {
+  return (valor ?? 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
     maximumFractionDigits: 0,
   });
+}
+
+// Campo numérico que pode não existir se a API estiver numa versão anterior.
+function num(valor: number | undefined): number {
+  return valor ?? 0;
 }
 
 export default function DashboardPage() {
@@ -49,7 +54,14 @@ export default function DashboardPage() {
     );
   }
 
-  const totalProjetos = resumo.projetosPorEstagio.reduce((s, p) => s + p.total, 0);
+  // Defensivo de propósito: se a API estiver numa versão anterior à do front
+  // (deploy do backend atrasado), campos novos chegam undefined. Melhor a tela
+  // renderizar vazia do que estourar TypeError e não mostrar nada.
+  const porEstagio = resumo.projetosPorEstagio ?? [];
+  const concentracao = resumo.concentracao ?? [];
+  const carga = resumo.cargaConsultores ?? [];
+  const marcos = resumo.marcosDaSemana ?? [];
+  const totalProjetos = porEstagio.reduce((s, p) => s + p.total, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -60,15 +72,15 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
           label="Projetos em execução"
-          valor={resumo.projetosEmExecucao}
+          valor={num(resumo.projetosEmExecucao)}
           href="/projetos"
           nota={`${totalProjetos} no total`}
         />
         <KpiCard
           label="Concluídos"
-          valor={resumo.projetosConcluidos}
+          valor={num(resumo.projetosConcluidos)}
           href="/projetos"
-          nota={`${resumo.concluidosNoMes} este mês`}
+          nota={`${num(resumo.concluidosNoMes)} este mês`}
         />
         <KpiCard
           label="Valor em execução"
@@ -78,35 +90,35 @@ export default function DashboardPage() {
         />
         <KpiCard
           label="Marcos vencendo"
-          valor={resumo.etapasVencendo7Dias}
+          valor={num(resumo.etapasVencendo7Dias)}
           href="/projetos"
           nota="Próximos 7 dias"
-          alerta={resumo.etapasVencendo7Dias > 0}
+          alerta={num(resumo.etapasVencendo7Dias) > 0}
         />
         <KpiCard
           label="Alertas não lidos"
-          valor={resumo.alertasNaoLidos}
+          valor={num(resumo.alertasNaoLidos)}
           href="/projetos"
           nota="Compliance"
-          alerta={resumo.alertasNaoLidos > 0}
+          alerta={num(resumo.alertasNaoLidos) > 0}
         />
         <KpiCard
           label="Projetos sem prazo"
-          valor={resumo.projetosSemPrazo}
+          valor={num(resumo.projetosSemPrazo)}
           href="/projetos"
           nota="Não geram alerta"
-          alerta={resumo.projetosSemPrazo > 0}
+          alerta={num(resumo.projetosSemPrazo) > 0}
         />
         <KpiCard
           label="Tickets abertos"
-          valor={resumo.ticketsAbertos}
+          valor={num(resumo.ticketsAbertos)}
           href="/empresas"
-          nota={resumo.ticketsEmAtraso > 0 ? `${resumo.ticketsEmAtraso} em atraso` : 'Em dia'}
-          alerta={resumo.ticketsEmAtraso > 0}
+          nota={num(resumo.ticketsEmAtraso) > 0 ? `${num(resumo.ticketsEmAtraso)} em atraso` : 'Em dia'}
+          alerta={num(resumo.ticketsEmAtraso) > 0}
         />
         <KpiCard
           label="Visitas na semana"
-          valor={resumo.visitasProximos7Dias}
+          valor={num(resumo.visitasProximos7Dias)}
           href="/agenda"
           nota="Próximos 7 dias"
         />
@@ -117,7 +129,7 @@ export default function DashboardPage() {
         <BarraRanking
           titulo="Concentração por empresa"
           vazio="Nenhum projeto ativo ainda."
-          itens={resumo.concentracao.map((c) => ({
+          itens={concentracao.map((c) => ({
             id: c.empresaId,
             rotulo: c.empresa,
             valor: c.projetos,
@@ -129,7 +141,7 @@ export default function DashboardPage() {
           titulo="Carga por responsável"
           vazio="Nenhum marco atribuído ainda."
           unidade="marcos"
-          itens={resumo.cargaConsultores.map((c) => ({
+          itens={carga.map((c) => ({
             id: c.usuarioId,
             rotulo: c.nome,
             valor: c.marcosAbertos,
@@ -146,7 +158,7 @@ export default function DashboardPage() {
           itens={ESTAGIOS_PROJETO.map((estagio) => ({
             id: estagio,
             rotulo: ESTAGIO_PROJETO_LABEL[estagio],
-            valor: resumo.projetosPorEstagio.find((p) => p.estagio === estagio)?.total ?? 0,
+            valor: porEstagio.find((p) => p.estagio === estagio)?.total ?? 0,
           }))}
         />
 
@@ -155,11 +167,11 @@ export default function DashboardPage() {
           <p className="text-[11px] font-light uppercase tracking-wide text-ink/55">
             Marcos desta semana
           </p>
-          {resumo.marcosDaSemana.length === 0 ? (
+          {marcos.length === 0 ? (
             <p className="mt-4 text-xs text-ink/35">Nenhum marco vencendo nos próximos 7 dias.</p>
           ) : (
             <ul className="mt-4 flex flex-col gap-2">
-              {resumo.marcosDaSemana.map((marco) => (
+              {marcos.map((marco) => (
                 <li key={marco.id}>
                   <Link
                     href={`/projetos/${marco.projetoId}`}

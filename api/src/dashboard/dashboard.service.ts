@@ -11,6 +11,11 @@ export class DashboardService {
     const em7Dias = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000);
     const inicioDoMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
 
+    // Promise.all em vez de $transaction: são contagens independentes, sem
+    // necessidade de consistência transacional entre elas. $transaction executa
+    // sequencialmente — com o banco (Neon/us-east-1) longe do container, eram
+    // ~11 idas e voltas de ~150ms cada, dando 1,7s. Em paralelo, o custo cai
+    // praticamente ao de uma única ida.
     const [
       projetosPorEstagio,
       projetosEmExecucao,
@@ -23,7 +28,10 @@ export class DashboardService {
       ticketsEmAtraso,
       etapasVencendo7Dias,
       valorEmExecucao,
-    ] = await this.prisma.$transaction([
+      concentracao,
+      cargaConsultores,
+      marcosDaSemana,
+    ] = await Promise.all([
       this.prisma.projeto.groupBy({
         by: ['estagio'],
         _count: true,
@@ -57,9 +65,6 @@ export class DashboardService {
         _sum: { valor: true },
         where: { estagio: { not: 'CONCLUIDO' } },
       }),
-    ]);
-
-    const [concentracao, cargaConsultores, marcosDaSemana] = await Promise.all([
       this.concentracaoPorEmpresa(),
       this.cargaPorConsultor(),
       this.marcosVencendo(agora, em7Dias),
