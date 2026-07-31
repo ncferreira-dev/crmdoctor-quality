@@ -40,11 +40,14 @@ async function bootstrap() {
       }
       const permitido =
         origensPermitidas.includes(origin) || VERCEL_HOST.test(origin);
-      return callback(permitido ? null : new Error('Origem não permitida pelo CORS'), permitido);
+      return callback(
+        permitido ? null : new Error('Origem não permitida pelo CORS'),
+        permitido,
+      );
     },
     credentials: true,
   });
 
   await app.listen(process.env.PORT ?? 3001);
 }
-bootstrap();
+void bootstrap();

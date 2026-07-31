@@ -26,10 +26,20 @@ export default tseslint.config(
   },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
+      // Faz a regra "proibido any" do CLAUDE.md ser cumprida pela ferramenta.
+      // Promise solta vira erro: num app com cron de compliance, um await
+      // esquecido é alerta que não dispara e ninguém percebe.
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      // Prefixo _ marca descarte intencional (ex.: tirar senhaHash da resposta
+      // com `const { senhaHash: _senhaHash, ...resto } = user`).
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
+      // Os unsafe-* ficam em warn de propósito: o recommendedTypeChecked
+      // inundaria de erro código que já convive com tipos do Prisma/decorators.
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 );

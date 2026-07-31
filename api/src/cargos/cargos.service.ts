@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
@@ -22,7 +27,9 @@ export class CargosService {
 
   create(dto: CreateCargoDto, requestUser: AuthUser) {
     if (dto.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível criar um cargo de nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível criar um cargo de nível igual ou maior que o seu',
+      );
     }
     return this.prisma.cargo.create({ data: dto });
   }
@@ -31,10 +38,14 @@ export class CargosService {
     const cargo = await this.findOne(id);
 
     if (cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível editar um cargo de nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível editar um cargo de nível igual ou maior que o seu',
+      );
     }
     if (dto.nivel !== undefined && dto.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível definir um nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível definir um nível igual ou maior que o seu',
+      );
     }
 
     return this.prisma.cargo.update({ where: { id }, data: dto });
@@ -49,7 +60,9 @@ export class CargosService {
       throw new NotFoundException('Cargo não encontrado');
     }
     if (cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível excluir um cargo de nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível excluir um cargo de nível igual ou maior que o seu',
+      );
     }
     if (cargo.usuarios.length > 0) {
       throw new ConflictException('Cargo possui usuários vinculados');

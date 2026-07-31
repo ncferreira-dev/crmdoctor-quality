@@ -15,7 +15,16 @@ export async function paginar<T>(params: {
   const { page, limit, buscar, contar } = params;
   const skip = (page - 1) * limit;
 
-  const [data, total] = await Promise.all([buscar({ skip, take: limit }), contar()]);
+  const [data, total] = await Promise.all([
+    buscar({ skip, take: limit }),
+    contar(),
+  ]);
 
-  return { data, total, page, limit, totalPages: total === 0 ? 0 : Math.ceil(total / limit) };
+  return {
+    data,
+    total,
+    page,
+    limit,
+    totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+  };
 }

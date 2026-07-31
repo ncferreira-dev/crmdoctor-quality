@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
@@ -26,7 +31,13 @@ export class LeadsService {
     return paginar({
       page: query.page,
       limit: query.limit,
-      buscar: ({ skip, take }) => this.prisma.lead.findMany({ where, orderBy: { criadoEm: 'desc' }, skip, take }),
+      buscar: ({ skip, take }) =>
+        this.prisma.lead.findMany({
+          where,
+          orderBy: { criadoEm: 'desc' },
+          skip,
+          take,
+        }),
       contar: () => this.prisma.lead.count({ where }),
     });
   }
@@ -58,7 +69,10 @@ export class LeadsService {
 
   async updateEstagio(id: string, dto: UpdateEstagioDto) {
     await this.findOne(id);
-    return this.prisma.lead.update({ where: { id }, data: { estagio: dto.estagio } });
+    return this.prisma.lead.update({
+      where: { id },
+      data: { estagio: dto.estagio },
+    });
   }
 
   async converter(id: string) {
@@ -73,7 +87,9 @@ export class LeadsService {
       throw new ConflictException('Lead já foi convertido em empresa');
     }
     if (!lead.segmento) {
-      throw new BadRequestException('Defina o segmento do lead antes de converter');
+      throw new BadRequestException(
+        'Defina o segmento do lead antes de converter',
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -88,7 +104,10 @@ export class LeadsService {
         },
       });
 
-      await tx.lead.update({ where: { id: lead.id }, data: { estagio: 'GANHO' } });
+      await tx.lead.update({
+        where: { id: lead.id },
+        data: { estagio: 'GANHO' },
+      });
 
       return empresa;
     });

@@ -12,7 +12,7 @@ import { criarExtensaoAuditoria } from './prisma-audit.extension';
       // PrismaService, que também serve de tipo pra injeção em todo o app).
       useFactory: () => {
         const prisma = new PrismaService();
-        return prisma.$extends(criarExtensaoAuditoria(prisma)) as unknown as PrismaService;
+        return prisma.$extends(criarExtensaoAuditoria(prisma));
       },
     },
   ],

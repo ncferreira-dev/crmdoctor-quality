@@ -8,7 +8,9 @@ import { getUsuarioAtualId } from '../common/context/request-context';
 // por isso ficam automaticamente de fora do soft delete/auditoria.
 const MODELOS_COM_SOFT_DELETE = new Set(
   Prisma.dmmf.datamodel.models
-    .filter((modelo) => modelo.fields.some((campo) => campo.name === 'excluidoEm'))
+    .filter((modelo) =>
+      modelo.fields.some((campo) => campo.name === 'excluidoEm'),
+    )
     .map((modelo) => modelo.name),
 );
 
@@ -30,7 +32,10 @@ interface DelegateGenerico {
   findFirstOrThrow(args: { where?: Registro }): Promise<Registro>;
   findMany(args: { where?: Registro }): Promise<Registro[]>;
   update(args: { where?: Registro; data: Registro }): Promise<Registro>;
-  updateMany(args: { where?: Registro; data: Registro }): Promise<{ count: number }>;
+  updateMany(args: {
+    where?: Registro;
+    data: Registro;
+  }): Promise<{ count: number }>;
 }
 
 type Continuacao = (args: unknown) => Promise<unknown>;
@@ -45,6 +50,14 @@ function delegateGenerico(db: PrismaClient, model: string): DelegateGenerico {
 function paraJson(valor: unknown): Prisma.InputJsonValue | undefined {
   if (valor === undefined || valor === null) return undefined;
   return JSON.parse(JSON.stringify(valor)) as Prisma.InputJsonValue;
+}
+
+// `args` do $allOperations é a união gigante de tipos do Prisma; aqui lemos
+// where/data genericamente. Fazer o cast a partir de `unknown` num helper
+// próprio deixa tsc e eslint concordarem (unknown→Registro é mudança de tipo
+// legítima), sem precisar de eslint-disable no cast inline.
+function comoRegistro(valor: unknown): Registro {
+  return valor as Registro;
 }
 
 function comFiltroSoftDelete(where: Registro | undefined): Registro {
@@ -62,13 +75,17 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
         async $allOperations({ model, operation, args, query }) {
           // AuditLog nunca é auditado (evita loop infinito) e nunca é soft-deletado.
           // Models sem excluidoEm (User, Cargo, Notificacao) também ficam de fora.
-          if (!model || model === 'AuditLog' || !MODELOS_COM_SOFT_DELETE.has(model)) {
+          if (
+            !model ||
+            model === 'AuditLog' ||
+            !MODELOS_COM_SOFT_DELETE.has(model)
+          ) {
             return query(args);
           }
 
           const delegate = delegateGenerico(db, model);
           const proximo = query as unknown as Continuacao;
-          const argsObj = args as Registro;
+          const argsObj = comoRegistro(args);
           const where = argsObj.where as Registro | undefined;
           const usuarioId = getUsuarioAtualId();
 
@@ -80,7 +97,13 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
               dados.criadoPorId = usuarioId;
               const resultado = await proximo({ ...argsObj, data: dados });
               await db.auditLog.create({
-                data: { entidade: model, entidadeId: id, acao: 'CREATE', usuarioId, dadosDepois: paraJson(resultado) },
+                data: {
+                  entidade: model,
+                  entidadeId: id,
+                  acao: 'CREATE',
+                  usuarioId,
+                  dadosDepois: paraJson(resultado),
+                },
               });
               return resultado;
             }
@@ -96,7 +119,7 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
               await db.auditLog.createMany({
                 data: lista.map((item) => ({
                   entidade: model,
-                  entidadeId: item.id as string,
+                  entidadeId: item.id,
                   acao: 'CREATE' as const,
                   usuarioId,
                   dadosDepois: paraJson(item),
@@ -107,7 +130,10 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
 
             case 'update': {
               const antes = await delegate.findFirst({ where });
-              const dados = { ...(argsObj.data as Registro), atualizadoPorId: usuarioId };
+              const dados = {
+                ...(argsObj.data as Registro),
+                atualizadoPorId: usuarioId,
+              };
               const depois = await proximo({ ...argsObj, data: dados });
               await db.auditLog.create({
                 data: {
@@ -124,14 +150,24 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
 
             case 'updateMany': {
               const antesLista = await delegate.findMany({ where });
-              const dados = { ...(argsObj.data as Registro), atualizadoPorId: usuarioId };
+              const dados = {
+                ...(argsObj.data as Registro),
+                atualizadoPorId: usuarioId,
+              };
               const resultado = await proximo({ ...argsObj, data: dados });
 
               if (antesLista.length) {
                 const depoisLista = await delegate.findMany({
-                  where: { id: { in: antesLista.map((registro) => registro.id) } },
+                  where: {
+                    id: { in: antesLista.map((registro) => registro.id) },
+                  },
                 });
-                const depoisPorId = new Map(depoisLista.map((registro) => [registro.id as string, registro]));
+                const depoisPorId = new Map(
+                  depoisLista.map((registro) => [
+                    registro.id as string,
+                    registro,
+                  ]),
+                );
                 await db.auditLog.createMany({
                   data: antesLista.map((antes) => ({
                     entidade: model,
@@ -153,9 +189,18 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
                 // erro padrão de "registro não encontrado" (P2025).
                 return query(args);
               }
-              const excluido = await delegate.update({ where, data: { excluidoEm: new Date() } });
+              const excluido = await delegate.update({
+                where,
+                data: { excluidoEm: new Date() },
+              });
               await db.auditLog.create({
-                data: { entidade: model, entidadeId: antes.id as string, acao: 'DELETE', usuarioId, dadosAntes: paraJson(antes) },
+                data: {
+                  entidade: model,
+                  entidadeId: antes.id as string,
+                  acao: 'DELETE',
+                  usuarioId,
+                  dadosAntes: paraJson(antes),
+                },
               });
               return excluido;
             }
@@ -165,7 +210,10 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
               if (!antesLista.length) {
                 return query(args);
               }
-              const resultado = await delegate.updateMany({ where, data: { excluidoEm: new Date() } });
+              const resultado = await delegate.updateMany({
+                where,
+                data: { excluidoEm: new Date() },
+              });
               await db.auditLog.createMany({
                 data: antesLista.map((antes) => ({
                   entidade: model,
@@ -182,9 +230,15 @@ export function criarExtensaoAuditoria(db: PrismaClient) {
             // índice único), então convertemos para findFirst/findFirstOrThrow
             // pra conseguir injetar excluidoEm: null.
             case 'findUnique':
-              return delegate.findFirst({ ...argsObj, where: comFiltroSoftDelete(where) });
+              return delegate.findFirst({
+                ...argsObj,
+                where: comFiltroSoftDelete(where),
+              });
             case 'findUniqueOrThrow':
-              return delegate.findFirstOrThrow({ ...argsObj, where: comFiltroSoftDelete(where) });
+              return delegate.findFirstOrThrow({
+                ...argsObj,
+                where: comFiltroSoftDelete(where),
+              });
 
             case 'findFirst':
             case 'findFirstOrThrow':

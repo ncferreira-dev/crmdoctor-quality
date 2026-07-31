@@ -1,4 +1,12 @@
-import { ArrayUnique, IsArray, IsIn, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import {
+  ArrayUnique,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Min,
+} from 'class-validator';
 import { PERMISSOES, Permissao } from '../../common/constants/permissoes';
 
 export class CreateCargoDto {

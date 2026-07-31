@@ -3,6 +3,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RequestContextInterceptor } from './interceptors/request-context.interceptor';
 
 @Module({
-  providers: [{ provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor }],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
+  ],
 })
 export class CommonModule {}

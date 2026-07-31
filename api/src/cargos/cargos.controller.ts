@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CargosService } from './cargos.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
@@ -28,7 +36,11 @@ export class CargosController {
 
   @RequirePermissao('CARGOS_MANAGE')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateCargoDto, @CurrentUser() user: AuthUser) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCargoDto,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.cargosService.update(id, dto, user);
   }
 

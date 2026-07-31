@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSAO_KEY } from '../decorators/require-permissao.decorator';
 import { Permissao } from '../constants/permissoes';
@@ -9,10 +14,9 @@ export class PermissionsGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const permissaoRequerida = this.reflector.getAllAndOverride<Permissao | undefined>(PERMISSAO_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const permissaoRequerida = this.reflector.getAllAndOverride<
+      Permissao | undefined
+    >(PERMISSAO_KEY, [context.getHandler(), context.getClass()]);
 
     if (!permissaoRequerida) {
       return true;
@@ -22,7 +26,9 @@ export class PermissionsGuard implements CanActivate {
     const user: AuthUser | undefined = request.user;
 
     if (!user?.permissoes?.includes(permissaoRequerida)) {
-      throw new ForbiddenException(`Permissão necessária: ${permissaoRequerida}`);
+      throw new ForbiddenException(
+        `Permissão necessária: ${permissaoRequerida}`,
+      );
     }
 
     return true;

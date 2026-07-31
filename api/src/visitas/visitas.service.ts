@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVisitaDto } from './dto/create-visita.dto';
 import { UpdateVisitaDto } from './dto/update-visita.dto';
@@ -56,7 +60,10 @@ export class VisitasService {
       dto.inicio ?? atual.inicio.toISOString(),
       dto.fim ?? atual.fim.toISOString(),
     );
-    return this.prisma.visita.update({ where: { id }, data: { ...dto, inicio, fim } });
+    return this.prisma.visita.update({
+      where: { id },
+      data: { ...dto, inicio, fim },
+    });
   }
 
   async remove(id: string) {
@@ -72,7 +79,9 @@ export class VisitasService {
     const fim = new Date(fimStr);
 
     if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
-      throw new BadRequestException('inicio e fim devem ser datas ISO 8601 válidas');
+      throw new BadRequestException(
+        'inicio e fim devem ser datas ISO 8601 válidas',
+      );
     }
     if (fim <= inicio) {
       throw new BadRequestException('fim deve ser depois de inicio');

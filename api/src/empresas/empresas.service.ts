@@ -25,25 +25,39 @@ export class EmpresasService {
       page: query.page,
       limit: query.limit,
       buscar: ({ skip, take }) =>
-        this.prisma.empresaCliente.findMany({ where, orderBy: { nome: 'asc' }, skip, take }),
+        this.prisma.empresaCliente.findMany({
+          where,
+          orderBy: { nome: 'asc' },
+          skip,
+          take,
+        }),
       contar: () => this.prisma.empresaCliente.count({ where }),
     });
   }
 
   async findOne(id: string) {
-    const empresa = await this.prisma.empresaCliente.findUnique({ where: { id } });
+    const empresa = await this.prisma.empresaCliente.findUnique({
+      where: { id },
+    });
     if (!empresa) {
       throw new NotFoundException('Empresa não encontrada');
     }
 
-    const [projetosCount, ticketsAbertosCount, proximaVisita] = await Promise.all([
-      this.prisma.projeto.count({ where: { empresaId: id } }),
-      this.prisma.ticket.count({ where: { empresaId: id, status: { not: 'RESOLVIDO' } } }),
-      this.prisma.visita.findFirst({
-        where: { empresaId: id, status: { not: 'CANCELADA' }, inicio: { gte: new Date() } },
-        orderBy: { inicio: 'asc' },
-      }),
-    ]);
+    const [projetosCount, ticketsAbertosCount, proximaVisita] =
+      await Promise.all([
+        this.prisma.projeto.count({ where: { empresaId: id } }),
+        this.prisma.ticket.count({
+          where: { empresaId: id, status: { not: 'RESOLVIDO' } },
+        }),
+        this.prisma.visita.findFirst({
+          where: {
+            empresaId: id,
+            status: { not: 'CANCELADA' },
+            inicio: { gte: new Date() },
+          },
+          orderBy: { inicio: 'asc' },
+        }),
+      ]);
 
     return {
       ...empresa,
@@ -67,7 +81,9 @@ export class EmpresasService {
   }
 
   private async garantirExiste(id: string) {
-    const empresa = await this.prisma.empresaCliente.findUnique({ where: { id } });
+    const empresa = await this.prisma.empresaCliente.findUnique({
+      where: { id },
+    });
     if (!empresa) {
       throw new NotFoundException('Empresa não encontrada');
     }

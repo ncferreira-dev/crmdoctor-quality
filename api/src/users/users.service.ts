@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -34,15 +39,21 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto, requestUser: AuthUser) {
-    const cargo = await this.prisma.cargo.findUnique({ where: { id: dto.cargoId } });
+    const cargo = await this.prisma.cargo.findUnique({
+      where: { id: dto.cargoId },
+    });
     if (!cargo) {
       throw new NotFoundException('Cargo não encontrado');
     }
     if (cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível criar um usuário com cargo de nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível criar um usuário com cargo de nível igual ou maior que o seu',
+      );
     }
 
-    const emailEmUso = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const emailEmUso = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (emailEmUso) {
       throw new ConflictException('E-mail já cadastrado');
     }
@@ -63,22 +74,31 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto, requestUser: AuthUser) {
-    const alvo = await this.prisma.user.findUnique({ where: { id }, include: { cargo: true } });
+    const alvo = await this.prisma.user.findUnique({
+      where: { id },
+      include: { cargo: true },
+    });
     if (!alvo) {
       throw new NotFoundException('Usuário não encontrado');
     }
     if (alvo.cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível editar um usuário com cargo de nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível editar um usuário com cargo de nível igual ou maior que o seu',
+      );
     }
 
     let novoCargoId: string | undefined;
     if (dto.cargoId) {
-      const novoCargo = await this.prisma.cargo.findUnique({ where: { id: dto.cargoId } });
+      const novoCargo = await this.prisma.cargo.findUnique({
+        where: { id: dto.cargoId },
+      });
       if (!novoCargo) {
         throw new NotFoundException('Cargo não encontrado');
       }
       if (novoCargo.nivel >= requestUser.cargoNivel) {
-        throw new ForbiddenException('Não é possível definir um cargo de nível igual ou maior que o seu');
+        throw new ForbiddenException(
+          'Não é possível definir um cargo de nível igual ou maior que o seu',
+        );
       }
       novoCargoId = novoCargo.id;
     }
@@ -99,12 +119,17 @@ export class UsersService {
   }
 
   async remove(id: string, requestUser: AuthUser) {
-    const alvo = await this.prisma.user.findUnique({ where: { id }, include: { cargo: true } });
+    const alvo = await this.prisma.user.findUnique({
+      where: { id },
+      include: { cargo: true },
+    });
     if (!alvo) {
       throw new NotFoundException('Usuário não encontrado');
     }
     if (alvo.cargo.nivel >= requestUser.cargoNivel) {
-      throw new ForbiddenException('Não é possível excluir um usuário com cargo de nível igual ou maior que o seu');
+      throw new ForbiddenException(
+        'Não é possível excluir um usuário com cargo de nível igual ou maior que o seu',
+      );
     }
 
     return this.prisma.user.delete({ where: { id } });

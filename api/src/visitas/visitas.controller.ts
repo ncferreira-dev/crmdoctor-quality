@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { VisitasService } from './visitas.service';
 import { CreateVisitaDto } from './dto/create-visita.dto';
 import { UpdateVisitaDto } from './dto/update-visita.dto';
