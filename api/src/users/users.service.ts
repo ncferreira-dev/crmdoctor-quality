@@ -11,6 +11,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResgatarConviteDto } from './dto/resgatar-convite.dto';
 import { AlterarSenhaDto } from './dto/alterar-senha.dto';
+import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { AuthUser } from '../common/types/auth-user';
 import { exigirNivelMenor } from '../common/rbac/exigir-nivel-menor';
 
@@ -149,6 +150,20 @@ export class UsersService {
     // ehReset distingue os dois casos para a interface escolher o texto certo:
     // reenviar um convite e derrubar a senha de alguém não são a mesma notícia.
     return { codigoConvite, ehReset: alvo.senhaDefinidaEm !== null };
+  }
+
+  // Edição dos próprios dados. Separado do update() pelo mesmo motivo da troca
+  // de senha: lá a hierarquia protege uma pessoa de outra, aqui não há duas
+  // pessoas. Sem isto, quem está no topo do organograma nunca conseguiria
+  // corrigir o próprio nome — exigirNivelMenor pede nível estritamente maior,
+  // e ninguém tem nível maior que o seu.
+  async atualizarPerfil(userId: string, dto: AtualizarPerfilDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { nome: dto.nome, telefone: dto.telefone },
+      include: { cargo: true },
+    });
+    return this.semSegredos(user);
   }
 
   // Troca da própria senha. Não passa pelo update() porque ali quem age é um

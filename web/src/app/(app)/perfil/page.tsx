@@ -2,7 +2,9 @@
 
 import { FormEvent, useId, useState } from 'react';
 import { api } from '../../../lib/api';
+import { atualizarUsuarioSessao } from '../../../lib/auth';
 import { useSessaoUsuario } from '../../../hooks/useSessao';
+import { Usuario } from '../../../types';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 
@@ -12,6 +14,32 @@ export default function PerfilPage() {
   const [erro, setErro] = useState('');
   const [ok, setOk] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  const [erroDados, setErroDados] = useState('');
+  const [okDados, setOkDados] = useState(false);
+  const [salvandoDados, setSalvandoDados] = useState(false);
+
+  async function salvarDados(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const dados = new FormData(evento.currentTarget);
+
+    setErroDados('');
+    setOkDados(false);
+    setSalvandoDados(true);
+    try {
+      const atualizado = await api.patch<Usuario>('/users/me', {
+        nome: String(dados.get('nome')).trim(),
+        telefone: String(dados.get('telefone')).trim() || null,
+      });
+      // Regrava a sessão pra sidebar e o resto do app mostrarem o nome novo
+      // sem precisar sair e entrar de novo.
+      atualizarUsuarioSessao(atualizado);
+      setOkDados(true);
+    } catch (e) {
+      setErroDados(e instanceof Error ? e.message : 'Não foi possível salvar');
+    } finally {
+      setSalvandoDados(false);
+    }
+  }
 
   async function handleSubmit(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -48,12 +76,47 @@ export default function PerfilPage() {
 
       <div className="flex flex-col gap-3 lg:max-w-2xl">
         <section className="rounded-card border border-ink/10 bg-white p-5 shadow-card">
-          <h2 className="text-xs font-light uppercase tracking-wide text-ink/50">Dados</h2>
-          <dl className="mt-3 flex flex-col gap-2.5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <dt className="text-xs text-ink/50">Nome</dt>
-              <dd className="text-sm text-ink">{usuario?.nome ?? '--'}</dd>
-            </div>
+          <h2 className="text-xs font-light uppercase tracking-wide text-ink/50">Meus dados</h2>
+
+          <form onSubmit={salvarDados} className="mt-3 flex flex-col gap-4 sm:max-w-sm">
+            <Input
+              id={`${id}-nome`}
+              name="nome"
+              label="Nome"
+              defaultValue={usuario?.nome ?? ''}
+              key={usuario?.nome}
+              required
+            />
+            <Input
+              id={`${id}-telefone`}
+              name="telefone"
+              label="Telefone"
+              type="tel"
+              defaultValue={usuario?.telefone ?? ''}
+              key={usuario?.telefone}
+            />
+
+            {erroDados && (
+              <p role="alert" className="text-sm text-accent">
+                {erroDados}
+              </p>
+            )}
+            {okDados && (
+              <p role="status" className="text-sm text-brand">
+                Dados atualizados.
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={salvandoDados}
+              className="w-full sm:w-auto sm:self-start"
+            >
+              {salvandoDados ? 'Salvando...' : 'Salvar dados'}
+            </Button>
+          </form>
+
+          <dl className="mt-4 flex flex-col gap-2.5 border-t border-ink/10 pt-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <dt className="text-xs text-ink/50">E-mail</dt>
               <dd className="text-sm text-ink">{usuario?.email ?? '--'}</dd>
@@ -63,8 +126,9 @@ export default function PerfilPage() {
               <dd className="text-sm text-ink">{usuario?.cargo?.nome ?? '--'}</dd>
             </div>
           </dl>
-          <p className="mt-3 border-t border-ink/10 pt-3 text-[11px] leading-relaxed text-ink/45">
-            Nome, e-mail e cargo são alterados por quem administra o sistema, na tela de Membros.
+          <p className="mt-3 text-[11px] leading-relaxed text-ink/45">
+            E-mail e cargo são alterados por quem administra o sistema, na tela de Membros. E-mail é
+            a sua identidade de login, e cargo é o que define o seu acesso.
           </p>
         </section>
 

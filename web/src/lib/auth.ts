@@ -37,6 +37,14 @@ export function salvarSessao(accessToken: string, user: Usuario) {
   invalidar();
 }
 
+// Atualiza só o usuário guardado, mantendo o token. Serve pra quando a pessoa
+// edita o próprio perfil: sem isto o nome novo só apareceria na sidebar depois
+// de sair e entrar de novo.
+export function atualizarUsuarioSessao(user: Usuario) {
+  localStorage.setItem('user', JSON.stringify(user));
+  invalidar();
+}
+
 export function limparSessao() {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('user');

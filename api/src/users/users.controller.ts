@@ -13,6 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResgatarConviteDto } from './dto/resgatar-convite.dto';
 import { AlterarSenhaDto } from './dto/alterar-senha.dto';
+import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { RequirePermissao } from '../common/decorators/require-permissao.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -36,10 +37,20 @@ export class UsersController {
     return this.usersService.resgatarConvite(dto);
   }
 
+  // Os próprios dados: sem permissão e sem hierarquia, o dono age sobre si.
+  // Ambas as rotas /me ficam antes de @Patch(':id') por clareza de leitura.
+  @Patch('me')
+  atualizarPerfil(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: AtualizarPerfilDto,
+  ) {
+    return this.usersService.atualizarPerfil(user.sub, dto);
+  }
+
   // Troca da própria senha: não exige permissão nenhuma, qualquer pessoa
   // logada troca a sua. Rate limit porque a senha atual é verificada aqui, e
   // sem trava o endpoint viraria um oráculo pra adivinhar a senha de uma
-  // sessão roubada. Declarado antes de @Patch(':id') por clareza de leitura.
+  // sessão roubada.
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Patch('me/senha')
   alterarSenha(@CurrentUser() user: AuthUser, @Body() dto: AlterarSenhaDto) {
