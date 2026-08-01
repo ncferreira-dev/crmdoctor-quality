@@ -43,13 +43,27 @@ export default function MembrosPage() {
     carregar();
   }, []);
 
-  async function reenviarConvite(membro: Usuario) {
+  async function gerarCodigo(membro: Usuario) {
+    // Confirmação só no caso de reset: aqui a ação derruba uma senha que
+    // funcionava e tranca a pessoa fora até ela resgatar o código novo. Gerar
+    // código pra quem nunca entrou não tira nada de ninguém.
+    if (
+      !membro.acessoPendente &&
+      !window.confirm(
+        `Isto vai invalidar a senha atual de ${membro.nome}. Ela só volta a entrar usando o código novo. Continuar?`,
+      )
+    ) {
+      return;
+    }
+
     setErro(null);
     try {
-      const r = await api.post<{ codigoConvite: string }>(
+      const r = await api.post<{ codigoConvite: string; ehReset: boolean }>(
         `/users/${membro.id}/reenviar-convite`,
       );
       setCodigoReenviado({ id: membro.id, codigo: r.codigoConvite });
+      // Recarrega pra lista refletir que o acesso ficou pendente.
+      carregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível gerar novo código');
     }
@@ -90,7 +104,7 @@ export default function MembrosPage() {
         <div className="flex flex-col gap-3">
           {membros.map((membro) => {
             const abertas = tarefasDe(membro.id);
-            const pendenteDeAcesso = !membro.senhaDefinidaEm;
+            const pendenteDeAcesso = membro.acessoPendente;
 
             return (
               <div
@@ -113,11 +127,9 @@ export default function MembrosPage() {
 
                   {podeGerenciar && (
                     <div className="flex flex-wrap gap-2">
-                      {pendenteDeAcesso && (
-                        <Button variante="ghost" onClick={() => reenviarConvite(membro)}>
-                          Gerar código
-                        </Button>
-                      )}
+                      <Button variante="ghost" onClick={() => gerarCodigo(membro)}>
+                        {pendenteDeAcesso ? 'Gerar código' : 'Resetar senha'}
+                      </Button>
                       <Button
                         variante="ghost"
                         onClick={() => setModalMembro({ aberto: true, membro })}

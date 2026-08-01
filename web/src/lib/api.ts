@@ -26,7 +26,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   });
 
-  if (response.status === 401) {
+  // 401 no próprio login é credencial errada, não sessão expirada. Sem essa
+  // exceção o tratamento abaixo recarregaria a página de login a cada senha
+  // errada, apagando o que a pessoa digitou antes de ela ler o erro.
+  if (response.status === 401 && !path.startsWith('/auth/login')) {
     limparSessaoERedirecionar();
     throw new Error('Sessão expirada');
   }

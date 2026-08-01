@@ -60,6 +60,9 @@ export interface Usuario {
   email: string;
   telefone: string | null;
   senhaDefinidaEm: string | null;
+  // True enquanto houver código de acesso pendente de resgate. A API nunca
+  // devolve o código em si nas listagens, só este sinal.
+  acessoPendente: boolean;
   ativo: boolean;
   cargoId: string;
   cargo: Cargo;

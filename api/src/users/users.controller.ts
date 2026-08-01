@@ -12,6 +12,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResgatarConviteDto } from './dto/resgatar-convite.dto';
+import { AlterarSenhaDto } from './dto/alterar-senha.dto';
 import { RequirePermissao } from '../common/decorators/require-permissao.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -33,6 +34,16 @@ export class UsersController {
   @Post('resgatar-convite')
   resgatarConvite(@Body() dto: ResgatarConviteDto) {
     return this.usersService.resgatarConvite(dto);
+  }
+
+  // Troca da própria senha: não exige permissão nenhuma, qualquer pessoa
+  // logada troca a sua. Rate limit porque a senha atual é verificada aqui, e
+  // sem trava o endpoint viraria um oráculo pra adivinhar a senha de uma
+  // sessão roubada. Declarado antes de @Patch(':id') por clareza de leitura.
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Patch('me/senha')
+  alterarSenha(@CurrentUser() user: AuthUser, @Body() dto: AlterarSenhaDto) {
+    return this.usersService.alterarSenha(user.sub, dto);
   }
 
   @RequirePermissao('USUARIOS_MANAGE')

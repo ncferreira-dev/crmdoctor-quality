@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
+import { MarcaAnel } from '../../../components/ui/MarcaAnel';
 
 export default function PrimeiroAcessoPage() {
   const router = useRouter();
@@ -44,10 +45,15 @@ export default function PrimeiroAcessoPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-night px-4">
       <div className="w-full max-w-sm rounded-card bg-white p-8 shadow-overlay">
-        <h1 className="titulo-pagina">Primeiro acesso</h1>
-        <p className="mb-6 mt-1.5 text-[10px] font-light uppercase tracking-[0.18em] text-ink/40">
-          Doctor Quality
-        </p>
+        <div className="mb-7 flex flex-col items-center gap-3">
+          <MarcaAnel />
+          <div className="flex flex-col items-center gap-1.5">
+            <h1 className="titulo-pagina">Primeiro acesso</h1>
+            <p className="text-[10px] font-light uppercase tracking-[0.18em] text-ink/40">
+              Doctor Quality
+            </p>
+          </div>
+        </div>
 
         {pronto ? (
           <div className="flex flex-col gap-3">

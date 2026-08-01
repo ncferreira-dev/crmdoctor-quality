@@ -46,8 +46,16 @@ export class AuthService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
-    const { senhaHash: _senhaHash, ...userSemSenha } = user;
+    // Mesmo formato que UsersService.semSegredos devolve, pra o front ter um
+    // só tipo de Usuario. Aqui codigoConvite é sempre null (o login acima
+    // recusa quem tem convite pendente), mas o campo sai da resposta de todo
+    // jeito, em vez de depender dessa garantia continuar valendo.
+    const {
+      senhaHash: _senhaHash,
+      codigoConvite: _codigo,
+      ...userSemSenha
+    } = user;
 
-    return { accessToken, user: userSemSenha };
+    return { accessToken, user: { ...userSemSenha, acessoPendente: false } };
   }
 }

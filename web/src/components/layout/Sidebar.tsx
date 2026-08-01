@@ -75,17 +75,26 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
       animate="visible"
       variants={containerVariants}
     >
-      {/* Perfil do usuário no topo */}
-      <motion.div variants={itemVariants} className="flex items-center gap-3 px-4 py-5">
-        <div className="dado flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
-          {usuario ? iniciais(usuario.nome) : '--'}
-        </div>
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-semibold text-white">
-            {usuario?.nome ?? 'Carregando'}
-          </span>
-          <span className="truncate text-xs text-white/45">{usuario?.email ?? ''}</span>
-        </div>
+      {/* Perfil do usuário no topo. É o acesso a /perfil (trocar a própria
+          senha) — não existe item de menu pra isso, e o bloco com o nome da
+          pessoa é onde ela procura. */}
+      <motion.div variants={itemVariants}>
+        <Link
+          href="/perfil"
+          onClick={aoNavegar}
+          aria-current={pathname === '/perfil' ? 'page' : undefined}
+          className="flex items-center gap-3 rounded-md px-4 py-5 transition-colors hover:bg-white/5"
+        >
+          <div className="dado flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
+            {usuario ? iniciais(usuario.nome) : '--'}
+          </div>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-semibold text-white">
+              {usuario?.nome ?? 'Carregando'}
+            </span>
+            <span className="truncate text-xs text-white/45">{usuario?.email ?? ''}</span>
+          </div>
+        </Link>
       </motion.div>
 
       <motion.div variants={itemVariants} className="mx-4 border-t border-white/10" />
