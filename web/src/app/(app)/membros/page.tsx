@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
-import { ResultadoPaginado, Tarefa, Usuario } from '../../../types';
+import { ResultadoPaginado, StatusTarefa, Tarefa, Usuario } from '../../../types';
 import { STATUS_TAREFA_LABEL } from '../../../lib/formato';
+
+const STATUS_TAREFA = Object.keys(STATUS_TAREFA_LABEL) as StatusTarefa[];
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { SeloPrazo } from '../../../components/projetos/SeloPrazo';
@@ -91,8 +93,26 @@ export default function MembrosPage() {
     }
   }
 
+  // Concluídas continuam na lista, no fim e apagadas. Some da lista seria mais
+  // limpo, mas deixaria a conclusão sem volta: quem clicou errado não teria
+  // como reabrir a tarefa por tela nenhuma.
   function tarefasDe(membroId: string) {
-    return tarefas.filter((t) => t.responsavelId === membroId && t.status !== 'CONCLUIDA');
+    return tarefas
+      .filter((t) => t.responsavelId === membroId)
+      .sort((a, b) => Number(a.status === 'CONCLUIDA') - Number(b.status === 'CONCLUIDA'));
+  }
+
+  async function mudarStatusTarefa(tarefa: Tarefa, status: StatusTarefa) {
+    // Otimista, no mesmo padrão dos tickets: reflete na hora e reverte se a
+    // API recusar.
+    const anterior = tarefas;
+    setTarefas((atual) => atual.map((t) => (t.id === tarefa.id ? { ...t, status } : t)));
+    try {
+      await api.patch(`/tarefas/${tarefa.id}`, { status });
+    } catch (e) {
+      setTarefas(anterior);
+      setErro(e instanceof Error ? e.message : 'Não foi possível mudar o status da tarefa');
+    }
   }
 
   return (
@@ -125,7 +145,7 @@ export default function MembrosPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {membros.map((membro) => {
-            const abertas = tarefasDe(membro.id);
+            const suasTarefas = tarefasDe(membro.id);
             const pendenteDeAcesso = membro.acessoPendente;
 
             return (
@@ -191,23 +211,52 @@ export default function MembrosPage() {
                   </div>
                 )}
 
-                {/* Tarefas abertas do membro */}
-                {abertas.length > 0 && (
+                {/* Tarefas do membro */}
+                {suasTarefas.length > 0 && (
                   <ul className="mt-3 flex flex-col gap-1.5 border-t border-ink/10 pt-3">
-                    {abertas.map((tarefa) => (
-                      <li
-                        key={tarefa.id}
-                        className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                      >
-                        <span className="min-w-0 truncate text-ink/80">{tarefa.titulo}</span>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <span className="text-[11px] text-ink/45">
-                            {STATUS_TAREFA_LABEL[tarefa.status]}
+                    {suasTarefas.map((tarefa) => {
+                      const concluida = tarefa.status === 'CONCLUIDA';
+                      return (
+                        <li
+                          key={tarefa.id}
+                          className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                        >
+                          <span
+                            className={`min-w-0 truncate ${
+                              concluida ? 'text-ink/35 line-through' : 'text-ink/80'
+                            }`}
+                          >
+                            {tarefa.titulo}
                           </span>
-                          {tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} />}
-                        </div>
-                      </li>
-                    ))}
+                          <div className="flex shrink-0 items-center gap-2">
+                            {/* Prazo só enquanto a tarefa está aberta: em tarefa
+                                concluída o selo de atraso é ruído, o prazo já
+                                não cobra nada de ninguém. */}
+                            {!concluida && tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} />}
+                            {podeGerenciar ? (
+                              <select
+                                value={tarefa.status}
+                                onChange={(e) =>
+                                  mudarStatusTarefa(tarefa, e.target.value as StatusTarefa)
+                                }
+                                aria-label={`Status da tarefa ${tarefa.titulo}`}
+                                className="shrink-0 rounded-md border border-ink/15 bg-white px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none"
+                              >
+                                {STATUS_TAREFA.map((s) => (
+                                  <option key={s} value={s}>
+                                    {STATUS_TAREFA_LABEL[s]}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-[11px] text-ink/45">
+                                {STATUS_TAREFA_LABEL[tarefa.status]}
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

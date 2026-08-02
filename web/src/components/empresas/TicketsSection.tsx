@@ -52,6 +52,21 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
     }
   }
 
+  // Carimba a primeira resposta. Não é uma caixa de mensagem: o endpoint não
+  // recebe texto, só marca a hora. É desse carimbo que depende o "Em atraso" —
+  // o ticket fica atrasado enquanto passa do prazo da prioridade sem primeira
+  // resposta registrada. Sem esta ação, todo ticket vencido ficava marcado
+  // como atrasado para sempre, mesmo já atendido.
+  async function registrarResposta(ticket: Ticket) {
+    setErro(null);
+    try {
+      const atualizado = await api.patch<Ticket>(`/tickets/${ticket.id}/responder`);
+      setTickets((atual) => atual?.map((t) => (t.id === ticket.id ? atualizado : t)) ?? null);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Não foi possível registrar a resposta');
+    }
+  }
+
   async function mudarStatus(ticket: Ticket, status: StatusTicket) {
     // Otimista: reflete na hora, reverte se a API recusar.
     const anterior = tickets;
@@ -86,7 +101,7 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
           {tickets.map((ticket) => (
             <div
               key={ticket.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-ink/10 p-3"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 p-3"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -95,23 +110,34 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
                 </div>
                 <p className="mt-1 text-xs text-ink/60">
                   {PRIORIDADE_LABEL[ticket.prioridade]} · aberto em {formatarData(ticket.abertoEm)}
+                  {ticket.primeiraRespostaEm
+                    ? ` · respondido em ${formatarData(ticket.primeiraRespostaEm)}`
+                    : ''}
                 </p>
               </div>
-              {podeEditar ? (
-                <select
-                  value={ticket.status}
-                  onChange={(e) => mudarStatus(ticket, e.target.value as StatusTicket)}
-                  className="shrink-0 rounded-md border border-ink/15 bg-white px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none"
-                >
-                  {STATUS.map((s) => (
-                    <option key={s} value={s}>
-                      {STATUS_TICKET_LABEL[s]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <Badge>{STATUS_TICKET_LABEL[ticket.status]}</Badge>
-              )}
+              <div className="flex shrink-0 items-center gap-2">
+                {podeEditar && !ticket.primeiraRespostaEm && (
+                  <Button variante="secondary" onClick={() => registrarResposta(ticket)}>
+                    Registrar resposta
+                  </Button>
+                )}
+                {podeEditar ? (
+                  <select
+                    value={ticket.status}
+                    onChange={(e) => mudarStatus(ticket, e.target.value as StatusTicket)}
+                    aria-label={`Status do ticket ${ticket.titulo}`}
+                    className="rounded-md border border-ink/15 bg-white px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none"
+                  >
+                    {STATUS.map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_TICKET_LABEL[s]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Badge>{STATUS_TICKET_LABEL[ticket.status]}</Badge>
+                )}
+              </div>
             </div>
           ))}
         </div>

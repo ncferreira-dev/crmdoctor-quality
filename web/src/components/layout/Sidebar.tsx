@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { limparSessao } from '../../lib/auth';
-import { useSessaoUsuario } from '../../hooks/useSessao';
+import { usePermissao, useSessaoUsuario } from '../../hooks/useSessao';
+import { Permissao } from '../../types';
 import {
   ChevronRight,
   IconeAgenda,
+  IconeCargos,
   IconeDashboard,
   IconeEmpresas,
   IconeMembros,
@@ -22,6 +24,9 @@ interface ItemNav {
   icone: ReactNode;
   // Abre um respiro antes do item (agrupamento visual).
   separar?: boolean;
+  // Quando presente, o item some para quem não tem a permissão. Menu que leva
+  // a uma tela onde a pessoa não pode fazer nada é ruído, não descoberta.
+  permissao?: Permissao;
 }
 
 // Só entram rotas que EXISTEM. Link que leva a 404 é pior que ausência de link.
@@ -31,6 +36,7 @@ const NAV: ItemNav[] = [
   { href: '/projetos', label: 'Projetos', icone: <IconeProjetos /> },
   { href: '/agenda', label: 'Agenda', icone: <IconeAgenda /> },
   { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true },
+  { href: '/cargos', label: 'Cargos', icone: <IconeCargos />, permissao: 'CARGOS_MANAGE' },
 ];
 
 // Entrada em cascata: os itens deslizam em sequência, 60ms entre cada.
@@ -62,6 +68,12 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const usuario = useSessaoUsuario();
+  // Um hook por permissão usada no menu, porque hook não roda dentro de laço.
+  // Hoje só Cargos é restrito; quando outro item precisar, entra mais uma linha.
+  const concedida: Partial<Record<Permissao, boolean>> = {
+    CARGOS_MANAGE: usePermissao('CARGOS_MANAGE'),
+  };
+  const itensVisiveis = NAV.filter((item) => !item.permissao || concedida[item.permissao]);
 
   function sair() {
     limparSessao();
@@ -103,7 +115,7 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
           flui por componentes motion. Um elemento comum no meio da cadeia faz
           os filhos nunca receberem "visible" e ficarem invisíveis. */}
       <motion.nav variants={containerVariants} className="mt-3 flex flex-1 flex-col gap-0.5 px-3">
-        {NAV.map((item) => {
+        {itensVisiveis.map((item) => {
           const ativo = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           return (
             <motion.div
