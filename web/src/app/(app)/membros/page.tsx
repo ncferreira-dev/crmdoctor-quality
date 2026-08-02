@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
-import { usePermissao } from '../../../hooks/useSessao';
+import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { ResultadoPaginado, Tarefa, Usuario } from '../../../types';
 import { STATUS_TAREFA_LABEL } from '../../../lib/formato';
 import { Button } from '../../../components/ui/Button';
@@ -27,6 +27,7 @@ export default function MembrosPage() {
     null,
   );
   const podeGerenciar = usePermissao('USUARIOS_MANAGE');
+  const eu = useSessaoUsuario();
 
   function carregar() {
     api
@@ -66,6 +67,27 @@ export default function MembrosPage() {
       carregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível gerar novo código');
+    }
+  }
+
+  // Desativar em vez de excluir: a pessoa é responsável por etapas e tarefas, e
+  // apagá-la levaria o histórico junto (o banco recusaria pelos vínculos, aliás).
+  // Conta desativada não entra mais; o que ela fez continua registrado.
+  async function alternarAtivo(membro: Usuario) {
+    const acao = membro.ativo ? 'desativar' : 'reativar';
+    if (
+      membro.ativo &&
+      !window.confirm(`Desativar ${membro.nome}? A pessoa perde o acesso ao sistema.`)
+    ) {
+      return;
+    }
+
+    setErro(null);
+    try {
+      await api.patch(`/users/${membro.id}`, { ativo: !membro.ativo });
+      carregar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : `Não foi possível ${acao} o membro`);
     }
   }
 
@@ -142,6 +164,18 @@ export default function MembrosPage() {
                       >
                         Enviar tarefa
                       </Button>
+                      {/* Escondido na própria conta: o backend já recusa (a
+                          hierarquia pede nível maior, e ninguém tem nível maior
+                          que o próprio), mas oferecer um botão que só dá erro é
+                          pior do que não oferecer. */}
+                      {membro.id !== eu?.id && (
+                        <Button
+                          variante={membro.ativo ? 'danger' : 'secondary'}
+                          onClick={() => alternarAtivo(membro)}
+                        >
+                          {membro.ativo ? 'Desativar' : 'Reativar'}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
