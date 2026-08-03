@@ -236,6 +236,20 @@ export class UsersService {
       'Não é possível excluir um usuário com cargo de nível igual ou maior que o seu',
     );
 
+    // Exclusão é hard delete (User não tem excluidoEm). Tarefa.responsavelId é
+    // obrigatório e nenhuma relação tem cascade, então apagar quem tem trabalho
+    // vinculado ou estouraria uma FK no banco (erro cru) ou levaria o histórico
+    // junto. Barramos antes, com mensagem clara: desative em vez de excluir.
+    const [tarefas, etapas] = await Promise.all([
+      this.prisma.tarefa.count({ where: { responsavelId: id } }),
+      this.prisma.etapaProjeto.count({ where: { responsavelId: id } }),
+    ]);
+    if (tarefas > 0 || etapas > 0) {
+      throw new ConflictException(
+        'Este membro é responsável por tarefas ou etapas. Reatribua esse trabalho ou apenas desative o membro.',
+      );
+    }
+
     return this.prisma.user.delete({ where: { id } });
   }
 }

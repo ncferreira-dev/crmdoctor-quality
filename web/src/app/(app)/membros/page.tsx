@@ -93,6 +93,27 @@ export default function MembrosPage() {
     }
   }
 
+  // Exclusão definitiva, e só de conta já desativada: o passo reversível
+  // (desativar) vem primeiro de propósito. O backend recusa se o membro tiver
+  // trabalho vinculado — a mensagem dele explica o porquê.
+  async function excluir(membro: Usuario) {
+    if (
+      !window.confirm(
+        `Excluir ${membro.nome} de vez? Esta ação não tem volta. Se a pessoa tiver histórico, prefira deixá-la só desativada.`,
+      )
+    ) {
+      return;
+    }
+
+    setErro(null);
+    try {
+      await api.del(`/users/${membro.id}`);
+      carregar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Não foi possível excluir o membro');
+    }
+  }
+
   // Concluídas continuam na lista, no fim e apagadas. Some da lista seria mais
   // limpo, mas deixaria a conclusão sem volta: quem clicou errado não teria
   // como reabrir a tarefa por tela nenhuma.
@@ -194,6 +215,13 @@ export default function MembrosPage() {
                           onClick={() => alternarAtivo(membro)}
                         >
                           {membro.ativo ? 'Desativar' : 'Reativar'}
+                        </Button>
+                      )}
+                      {/* Excluir só aparece em conta já desativada: força passar
+                          pelo desativar (reversível) antes do apagar (definitivo). */}
+                      {membro.id !== eu?.id && !membro.ativo && (
+                        <Button variante="ghost" onClick={() => excluir(membro)}>
+                          Excluir
                         </Button>
                       )}
                     </div>
