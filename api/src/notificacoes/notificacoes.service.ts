@@ -1,13 +1,35 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { FindNotificacoesQueryDto } from './dto/find-notificacoes-query.dto';
 
+// Chave do heartbeat na tabela cron_execucoes. /health/cron lê pela mesma
+// constante (exportada) para os dois lados nunca divergirem.
+export const CRON_COMPLIANCE = 'compliance-prazos';
+
 @Injectable()
-export class NotificacoesService {
+export class NotificacoesService implements OnApplicationBootstrap {
   private readonly logger = new Logger(NotificacoesService.name);
 
   constructor(private prisma: PrismaService) {}
+
+  // Roda o cron no boot. Dois motivos: o deploy diário costuma acontecer fora
+  // das 8h, e sem isto o /health/cron responderia 503 até a primeira execução
+  // agendada, fazendo o monitor externo alarmar falso depois de cada deploy.
+  // É seguro rodar de novo: a criação de notificações é idempotente por
+  // constraint. O catch existe porque heartbeat não pode derrubar o boot.
+  async onApplicationBootstrap() {
+    try {
+      await this.executarCronCompliance();
+    } catch (erro) {
+      this.logger.error('Cron de compliance falhou no boot', erro);
+    }
+  }
 
   findAll(query: FindNotificacoesQueryDto) {
     // query.lida já chega como boolean (ou undefined) via @Transform(paraBoolean)
@@ -34,6 +56,14 @@ export class NotificacoesService {
   @Cron(CronExpression.EVERY_DAY_AT_8AM, { timeZone: 'America/Sao_Paulo' })
   async executarCronCompliance() {
     const resultado = await this.verificarPrazosCompliance();
+    // Heartbeat DEPOIS do trabalho: só registra execução que terminou. Se a
+    // verificação lançar, o carimbo não avança e o /health/cron acusa.
+    const executadoEm = new Date();
+    await this.prisma.cronExecucao.upsert({
+      where: { nome: CRON_COMPLIANCE },
+      update: { executadoEm },
+      create: { nome: CRON_COMPLIANCE, executadoEm },
+    });
     this.logger.log(
       `Cron de compliance: ${resultado.criadas} notificação(ões) criada(s) ` +
         `(${resultado.projetos} projeto(s), ${resultado.etapas} etapa(s))`,

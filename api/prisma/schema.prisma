@@ -339,6 +339,19 @@ model Visita {
   @@map("visitas")
 }
 
+// Heartbeat dos jobs agendados. Uma linha por job (upsert pela chave nome):
+// registra a última execução bem-sucedida. /health/cron lê daqui e responde
+// 503 quando o cron de compliance fica >26h sem rodar — é o que transforma
+// "o cron morreu em silêncio" em alerta observável de fora.
+model CronExecucao {
+  id          String   @id @default(uuid())
+  nome        String   @unique
+  executadoEm DateTime
+  criadoEm    DateTime @default(now())
+
+  @@map("cron_execucoes")
+}
+
 model Notificacao {
   id             String        @id @default(uuid())
   tipo           String        @default("COMPLIANCE_PRAZO")

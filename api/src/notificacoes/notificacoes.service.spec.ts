@@ -9,6 +9,7 @@ function criarMockPrisma() {
     projeto: { findMany: jest.fn() },
     etapaProjeto: { findMany: jest.fn() },
     notificacao: { createMany: jest.fn() },
+    cronExecucao: { upsert: jest.fn() },
   };
 }
 
@@ -46,6 +47,32 @@ describe('NotificacoesService — cron de compliance', () => {
       whereProjeto.dataLimiteCompliance.gte.getTime();
     expect(span).toBe(15 * DIA);
     expect(whereProjeto.estagio).toEqual({ not: 'CONCLUIDO' });
+  });
+
+  it('registra o heartbeat só DEPOIS da verificação terminar', async () => {
+    const prisma = criarMockPrisma();
+    prisma.projeto.findMany.mockResolvedValue([]);
+    prisma.etapaProjeto.findMany.mockResolvedValue([]);
+
+    await servicoCom(prisma).executarCronCompliance();
+
+    const arg = prisma.cronExecucao.upsert.mock.calls[0][0] as {
+      where: { nome: string };
+      create: { executadoEm: Date };
+    };
+    expect(arg.where.nome).toBe('compliance-prazos');
+    expect(arg.create.executadoEm).toBeInstanceOf(Date);
+  });
+
+  it('NÃO registra heartbeat quando a verificação falha', async () => {
+    const prisma = criarMockPrisma();
+    prisma.projeto.findMany.mockRejectedValue(new Error('banco fora'));
+    prisma.etapaProjeto.findMany.mockResolvedValue([]);
+
+    await expect(servicoCom(prisma).executarCronCompliance()).rejects.toThrow();
+    // É o contrato do /health/cron: carimbo parado = alerta. Se o carimbo
+    // avançasse em execução falhada, o monitor nunca acusaria nada.
+    expect(prisma.cronExecucao.upsert).not.toHaveBeenCalled();
   });
 
   it('não cria nada quando não há prazos vencendo', async () => {
