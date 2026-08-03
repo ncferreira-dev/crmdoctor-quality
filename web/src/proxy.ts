@@ -13,6 +13,9 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+// primeiro-acesso é público como o login: quem resgata o código ainda não tem
+// senha nem sessão. Sem excluir aqui, o proxy expulsa a pessoa para /login —
+// onde ela não consegue entrar, porque a senha só existe depois do resgate.
 export const config = {
-  matcher: ['/((?!login|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!login|primeiro-acesso|_next/static|_next/image|favicon.ico).*)'],
 };
