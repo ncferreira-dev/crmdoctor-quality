@@ -3,7 +3,7 @@
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { limparSessao } from '../../lib/auth';
 import { usePermissao, useSessaoUsuario } from '../../hooks/useSessao';
 import { Permissao } from '../../types';
@@ -195,29 +195,29 @@ export function Sidebar() {
         </svg>
       </button>
 
-      <AnimatePresence>
-        {aberta && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={() => setAberta(false)}
-            className="fixed inset-0 z-50 bg-night/50 lg:hidden"
+      {/* Sem AnimatePresence, pelo mesmo motivo documentado em ui/Modal.tsx: a
+          saída animava até o fim e o nó ficava no DOM com opacity 0 e
+          pointer-events auto. No celular isso matava a tela inteira depois da
+          primeira vez que o menu abrisse, e o consultor usa isto em campo. */}
+      {aberta && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+          onClick={() => setAberta(false)}
+          className="fixed inset-0 z-50 bg-night/50 lg:hidden"
+        >
+          <motion.aside
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="h-full w-64 bg-night"
           >
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              onClick={(e) => e.stopPropagation()}
-              className="h-full w-64 bg-night"
-            >
-              <ConteudoMenu aoNavegar={() => setAberta(false)} />
-            </motion.aside>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <ConteudoMenu aoNavegar={() => setAberta(false)} />
+          </motion.aside>
+        </motion.div>
+      )}
     </>
   );
 }
