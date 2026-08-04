@@ -8,7 +8,7 @@ import { EstagioProjeto, Projeto } from '../../../../types';
 import {
   ESTAGIOS_PROJETO,
   ESTAGIO_PROJETO_LABEL,
-  formatarData,
+  formatarDataCivil,
 } from '../../../../lib/formato';
 import { Button } from '../../../../components/ui/Button';
 import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
@@ -102,7 +102,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
             <SeloPrazo prazo={projeto.dataLimiteCompliance} />
             {projeto.dataLimiteCompliance && (
               <span className="dado text-sm text-ink/60">
-                {formatarData(projeto.dataLimiteCompliance)}
+                {formatarDataCivil(projeto.dataLimiteCompliance)}
               </span>
             )}
           </div>

@@ -35,6 +35,24 @@ export const STATUS_ETAPA_LABEL: Record<StatusEtapa, string> = {
   CONCLUIDA: 'Concluída',
 };
 
+// Prazo, dataLimiteCompliance e dataReferencia são @db.Date no banco: data
+// civil, sem hora. O Prisma devolve "2026-08-16T00:00:00.000Z", e converter
+// isso para America/Sao_Paulo joga o instante para as 21h do dia ANTERIOR — a
+// tela passava a anunciar 15/08 um prazo que vence 16/08. Num CRM de
+// compliance, prazo com um dia a menos é informação errada, não detalhe. Data
+// civil é lida direto da string, sem passar por fuso nenhum.
+export function formatarDataCivil(iso: string): string {
+  const [ano, mes, dia] = iso.slice(0, 10).split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+// Mesma data civil, como Date à meia-noite LOCAL, para poder comparar com hoje
+// sem que o fuso empurre a conta para o dia vizinho.
+function dataCivilLocal(iso: string): Date {
+  const [ano, mes, dia] = iso.slice(0, 10).split('-').map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
 export type UrgenciaPrazo = 'vencido' | 'critico' | 'proximo' | 'tranquilo' | 'sem-prazo';
 
 // A régua de urgência do compliance. O cron alerta a 15 dias, então a UI usa a
@@ -43,10 +61,7 @@ export type UrgenciaPrazo = 'vencido' | 'critico' | 'proximo' | 'tranquilo' | 's
 export function urgenciaDoPrazo(prazoIso: string | null): UrgenciaPrazo {
   if (!prazoIso) return 'sem-prazo';
 
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const prazo = new Date(prazoIso);
-  const dias = Math.round((prazo.getTime() - hoje.getTime()) / (24 * 60 * 60 * 1000));
+  const dias = diasAteOPrazo(prazoIso);
 
   if (dias < 0) return 'vencido';
   if (dias <= 7) return 'critico';
@@ -57,7 +72,10 @@ export function urgenciaDoPrazo(prazoIso: string | null): UrgenciaPrazo {
 export function diasAteOPrazo(prazoIso: string): number {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  return Math.round((new Date(prazoIso).getTime() - hoje.getTime()) / (24 * 60 * 60 * 1000));
+  // Meia-noite local dos dois lados: a conta dá dias inteiros exatos, sem
+  // depender de Math.round para compensar as 3h de diferença de fuso.
+  const diff = dataCivilLocal(prazoIso).getTime() - hoje.getTime();
+  return Math.round(diff / (24 * 60 * 60 * 1000));
 }
 
 // Texto humano do prazo, já com o sinal de urgência embutido.
