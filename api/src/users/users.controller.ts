@@ -63,13 +63,13 @@ export class UsersController {
     return this.usersService.reenviarConvite(id, user);
   }
 
-  @RequirePermissao('USUARIOS_MANAGE')
+  @RequirePermissao('USUARIOS_READ')
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
-  @RequirePermissao('USUARIOS_MANAGE')
+  @RequirePermissao('USUARIOS_READ')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);

@@ -29,6 +29,7 @@ export default function MembrosPage() {
     null,
   );
   const podeGerenciar = usePermissao('USUARIOS_MANAGE');
+  const podeEnviarTarefa = usePermissao('TAREFAS_WRITE');
   const eu = useSessaoUsuario();
 
   function carregar() {
@@ -188,28 +189,38 @@ export default function MembrosPage() {
                     </p>
                   </div>
 
-                  {podeGerenciar && (
+                  {/* Enviar tarefa depende de TAREFAS_WRITE, não de gerenciar
+                      membros: quem coordena a equipe (só vê membros) ainda
+                      distribui trabalho. O resto é gestão de conta e exige
+                      USUARIOS_MANAGE. */}
+                  {(podeGerenciar || podeEnviarTarefa) && (
                     <div className="flex flex-wrap gap-2">
-                      <Button variante="ghost" onClick={() => gerarCodigo(membro)}>
-                        {pendenteDeAcesso ? 'Gerar código' : 'Resetar senha'}
-                      </Button>
-                      <Button
-                        variante="ghost"
-                        onClick={() => setModalMembro({ aberto: true, membro })}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variante="secondary"
-                        onClick={() => setModalTarefa({ aberto: true, membro })}
-                      >
-                        Enviar tarefa
-                      </Button>
+                      {podeGerenciar && (
+                        <Button variante="ghost" onClick={() => gerarCodigo(membro)}>
+                          {pendenteDeAcesso ? 'Gerar código' : 'Resetar senha'}
+                        </Button>
+                      )}
+                      {podeGerenciar && (
+                        <Button
+                          variante="ghost"
+                          onClick={() => setModalMembro({ aberto: true, membro })}
+                        >
+                          Editar
+                        </Button>
+                      )}
+                      {podeEnviarTarefa && (
+                        <Button
+                          variante="secondary"
+                          onClick={() => setModalTarefa({ aberto: true, membro })}
+                        >
+                          Enviar tarefa
+                        </Button>
+                      )}
                       {/* Escondido na própria conta: o backend já recusa (a
                           hierarquia pede nível maior, e ninguém tem nível maior
                           que o próprio), mas oferecer um botão que só dá erro é
                           pior do que não oferecer. */}
-                      {membro.id !== eu?.id && (
+                      {podeGerenciar && membro.id !== eu?.id && (
                         <Button
                           variante={membro.ativo ? 'danger' : 'secondary'}
                           onClick={() => alternarAtivo(membro)}
@@ -219,7 +230,7 @@ export default function MembrosPage() {
                       )}
                       {/* Excluir só aparece em conta já desativada: força passar
                           pelo desativar (reversível) antes do apagar (definitivo). */}
-                      {membro.id !== eu?.id && !membro.ativo && (
+                      {podeGerenciar && membro.id !== eu?.id && !membro.ativo && (
                         <Button variante="ghost" onClick={() => excluir(membro)}>
                           Excluir
                         </Button>

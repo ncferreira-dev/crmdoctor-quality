@@ -35,7 +35,7 @@ const NAV: ItemNav[] = [
   { href: '/empresas', label: 'Empresas', icone: <IconeEmpresas /> },
   { href: '/projetos', label: 'Projetos', icone: <IconeProjetos /> },
   { href: '/agenda', label: 'Agenda', icone: <IconeAgenda /> },
-  { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true },
+  { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true, permissao: 'USUARIOS_READ' },
   { href: '/cargos', label: 'Cargos', icone: <IconeCargos />, permissao: 'CARGOS_MANAGE' },
 ];
 
@@ -72,6 +72,7 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
   // Hoje só Cargos é restrito; quando outro item precisar, entra mais uma linha.
   const concedida: Partial<Record<Permissao, boolean>> = {
     CARGOS_MANAGE: usePermissao('CARGOS_MANAGE'),
+    USUARIOS_READ: usePermissao('USUARIOS_READ'),
   };
   const itensVisiveis = NAV.filter((item) => !item.permissao || concedida[item.permissao]);
 

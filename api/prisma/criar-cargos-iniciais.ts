@@ -45,6 +45,7 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'TAREFAS_WRITE',
       'NOTIFICACOES_READ',
       'DASHBOARD_READ',
+      'USUARIOS_READ',
       'USUARIOS_MANAGE',
       'CARGOS_MANAGE',
     ],
@@ -75,7 +76,8 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'TAREFAS_WRITE',
       'NOTIFICACOES_READ',
       'DASHBOARD_READ',
-      'USUARIOS_MANAGE',
+      // Coordenador vê a equipe, mas não contrata/edita/reseta: só READ.
+      'USUARIOS_READ',
     ],
   },
   {

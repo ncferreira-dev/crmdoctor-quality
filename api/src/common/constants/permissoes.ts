@@ -16,6 +16,10 @@ export const PERMISSOES = [
   'NOTIFICACOES_READ',
   'DASHBOARD_READ',
   'CARGOS_MANAGE',
+  // Membros: READ é só ver a lista; MANAGE é criar, editar, excluir e resetar
+  // senha. Quem tem MANAGE precisa ter READ também (as listagens exigem READ) —
+  // por isso os cargos que gerenciam recebem os dois.
+  'USUARIOS_READ',
   'USUARIOS_MANAGE',
   'COMPETENCIAS_READ',
   'COMPETENCIAS_WRITE',

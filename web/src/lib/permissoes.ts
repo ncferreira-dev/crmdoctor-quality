@@ -98,6 +98,7 @@ export const GRUPOS_PERMISSAO: GrupoPermissao[] = [
     titulo: 'Administração',
     descricao: 'Quem entra no sistema e o que cada um pode fazer',
     itens: [
+      { permissao: 'USUARIOS_READ', label: 'Ver membros' },
       { permissao: 'USUARIOS_MANAGE', label: 'Gerenciar membros' },
       { permissao: 'CARGOS_MANAGE', label: 'Gerenciar cargos' },
     ],
@@ -118,4 +119,6 @@ export const LEITURA_IMPLICADA: Partial<Record<Permissao, Permissao>> = {
   INTERACOES_WRITE: 'INTERACOES_READ',
   CONSULTORES_WRITE: 'CONSULTORES_READ',
   COMPETENCIAS_WRITE: 'COMPETENCIAS_READ',
+  // Gerenciar membros pressupõe vê-los: a listagem exige READ.
+  USUARIOS_MANAGE: 'USUARIOS_READ',
 };
