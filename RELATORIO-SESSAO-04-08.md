@@ -415,3 +415,56 @@ aviso no console é o gatilho para isso.
 **Anotação que virou achado:** a `web/` não tem nenhum teste. Toda a rede de
 segurança automatizada do projeto está na API. Instalar Vitest é decisão tua,
 por causa da regra de não instalar biblioteca sem avisar.
+
+## Decisão tua registrada: o cargo Consultor foi descartado
+
+Você disse "não quero mais esse cargo consultor". Ele nunca chegou a existir no
+banco, então não houve nada a desfazer em produção. O que fiz foi tirar o bloco
+do `prisma/criar-cargos-iniciais.ts`, para ninguém criar por engano rodando o
+script, e deixar escrito ali o porquê.
+
+Nada no sistema dependia dele. Quem pode receber visita é definido pela
+permissão `VISITAS_WRITE`, não pelo nome do cargo: é assim que a rota
+`GET /visitas/consultores` monta a lista. O campo `User.especialidade` e o
+vínculo com Competência continuam servindo para marcar quem faz trabalho de
+campo, com o cargo que a operação quiser.
+
+Aproveitei e escrevi no topo do script o aviso que faltava: o `upsert` regrava
+por cima, e hoje rodá-lo tiraria `CONSULTORES_READ` e `CONSULTORES_WRITE` dos
+três cargos de produção. São strings mortas desde que o módulo de consultores
+foi apagado, então isso é limpeza. Medi comparando o script com o que a API de
+produção devolve em `/cargos`.
+
+## Fechamento da sessão 2
+
+**Estado ao sair.** Branch `sessao-auto-04-08`, quatro commits, nenhum push,
+como manda o envelope. API: typecheck limpo, 58 testes passando (eram 46), zero
+erro de lint. Web: typecheck limpo, build de produção compila, zero erro de
+lint. Conferido no navegador contra o banco local em `/dashboard`,
+`/agenda`, `/projetos` e `/competencias`, sem erro no console.
+
+**O que ficou de fora, e por quê.** Itens 18 a 23 (estados de carregamento e
+erro, estados vazios, celular em 390px, acessibilidade, testes de permissão por
+cargo, lista de rotas mortas) não foram começados. Preferi entregar três itens
+fechados e conferidos a deixar seis pela metade na branch.
+
+**Anotações que valem para o próximo turno:**
+
+- O modal aberto pelo botão "+ Evento" se chama "Nova visita". A incoerência que
+  o relatório de ontem previu está na tela.
+- Os blocos de visita na célula do mês são `button` sem nome acessível. É a
+  primeira coisa do item 21.
+- A `web/` não tem executor de teste. Toda a rede automatizada está na API.
+
+## Para o Nícolas ler primeiro
+
+1. O prazo de compliance **estava errado em um dia** quando o container subia
+   entre 21h e meia-noite, e o número errado ficava congelado na notificação.
+   Consertado e provado com teste (item 16). Está na branch, não em produção.
+2. Toda lista de opção do sistema **cortava calada no registro 101**. Agora
+   carrega tudo, conferido com 150 registros de verdade (item 17).
+3. Nada quebrou: 58 testes verdes, build compilando, telas conferidas.
+4. O cargo Consultor foi tirado do script, como você pediu. Nunca existiu no
+   banco, então não houve nada a desfazer.
+5. Depende de você: dar push nesta branch, e decidir sobre o Vitest na web, que
+   hoje não tem nenhum teste.

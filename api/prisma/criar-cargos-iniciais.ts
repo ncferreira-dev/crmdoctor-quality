@@ -6,9 +6,16 @@
 //   node dist/prisma/criar-cargos-iniciais.js
 //
 // É idempotente: rodar duas vezes não duplica nem quebra, só regrava nível e
-// permissões dos três cargos abaixo. Editar depois pela tela de Cargos é o
-// caminho normal — este script existe só para não deixar você preenchendo três
-// formulários na mão no primeiro dia.
+// permissões dos cargos abaixo. Editar depois pela tela de Cargos é o caminho
+// normal. Este script existe só para não deixar você preenchendo formulário na
+// mão no primeiro dia.
+//
+// ATENÇÃO ao upsert: ele regrava por cima. Rodar hoje contra a produção tiraria
+// CONSULTORES_READ e CONSULTORES_WRITE do CEO, do Coordenador e do Analista.
+// Essas duas permissões deixaram de existir no código em 04/08/2026, quando o
+// módulo de consultores foi apagado, então são strings mortas sobrando no banco
+// e perdê-las é limpeza, não regressão. Se alguém ajustar cargo pela tela
+// depois disso, o ajuste se perde na próxima execução.
 
 import { PrismaClient } from '@prisma/client';
 import { Permissao } from '../src/common/constants/permissoes';
@@ -102,22 +109,12 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'DASHBOARD_READ',
     ],
   },
-  {
-    nome: 'Consultor',
-    nivel: 20,
-    // Quem faz a visita em campo. Só o que sustenta a própria agenda: ver a
-    // empresa onde vai visitar e cuidar das próprias visitas. Não mexe em
-    // projeto, ticket, lead nem vê a lista de membros — ajuste fino depois
-    // pela tela de Cargos, se o dia a dia pedir mais.
-    permissoes: [
-      'VISITAS_READ',
-      'VISITAS_WRITE',
-      'EMPRESAS_READ',
-      'COMPETENCIAS_READ',
-      'NOTIFICACOES_READ',
-      'DASHBOARD_READ',
-    ],
-  },
+  // O cargo Consultor foi desenhado em 04/08/2026 e descartado pelo Nícolas no
+  // mesmo dia, antes de existir no banco. Não recrie aqui: quem faz visita em
+  // campo continua sendo um User com o cargo que a operação decidir, e o que
+  // habilita receber visita é a permissão VISITAS_WRITE, não o nome do cargo
+  // (ver a rota GET /visitas/consultores). Se um dia ele voltar, o caminho é a
+  // tela de Cargos, não este script.
 ];
 
 async function main() {
