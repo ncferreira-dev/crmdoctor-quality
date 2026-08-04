@@ -6,6 +6,7 @@ import { usePermissao } from '../../hooks/useSessao';
 import {
   ConsultorDaVisita,
   EmpresaCliente,
+  Projeto,
   ResultadoPaginado,
   StatusVisita,
   Visita,
@@ -57,6 +58,7 @@ export function AgendaCalendar() {
 
   const [consultores, setConsultores] = useState<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>([]);
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
+  const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [filtroConsultor, setFiltroConsultor] = useState('');
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -90,7 +92,28 @@ export function AgendaCalendar() {
       .then(setConsultores)
       .catch(() => {});
     api.get<ResultadoPaginado<EmpresaCliente>>('/empresas?limit=100').then((r) => setEmpresas(r.data)).catch(() => {});
+    // A mesma lista serve para duas coisas: o seletor de projeto do formulário
+    // e as marcas de prazo no calendário. Carregada uma vez, não a cada mês.
+    api
+      .get<ResultadoPaginado<Projeto>>('/projetos?limit=100')
+      .then((r) => setProjetos(r.data))
+      .catch(() => {});
   }, []);
+
+  // Prazo de compliance por dia. É informação diferente de visita: ninguém
+  // "comparece" a um prazo, ele só vence. Por isso vai num mapa separado, com
+  // desenho separado, em vez de virar mais um bloco na grade.
+  const prazosPorDia = useMemo(() => {
+    const mapa = new Map<string, Projeto[]>();
+    for (const projeto of projetos) {
+      if (!projeto.dataLimiteCompliance || projeto.estagio === 'CONCLUIDO') continue;
+      // Data civil (@db.Date): fatiar a string evita o fuso jogar o prazo para
+      // o dia anterior, que é o bug que a tela já teve com esses campos.
+      const chave = projeto.dataLimiteCompliance.slice(0, 10);
+      mapa.set(chave, [...(mapa.get(chave) ?? []), projeto]);
+    }
+    return mapa;
+  }, [projetos]);
 
   const visitasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -173,9 +196,11 @@ export function AgendaCalendar() {
             ))}
           </div>
           {podeEditar && (
+            // "Evento" e não "Nova visita": a agenda passou a mostrar prazo de
+            // projeto junto com visita, e o botão nomeia o que a tela comporta.
             <Button onClick={() => abrirNovo()}>
               <Plus />
-              Nova visita
+              Evento
             </Button>
           )}
         </div>
@@ -241,6 +266,7 @@ export function AgendaCalendar() {
         <MonthView
           refDate={refDate}
           visitasPorDia={visitasPorDia}
+          prazosPorDia={prazosPorDia}
           onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
           onSelecionarDia={abrirNovo}
         />
@@ -262,9 +288,14 @@ export function AgendaCalendar() {
       )}
 
       <VisitaFormModal
+        // Remonta a cada abertura: é o que faz o formulário nascer com a visita
+        // certa (ou vazio, no caso de uma nova) sem precisar de effect de
+        // sincronia lá dentro.
+        key={`${modal.visita?.id ?? 'novo'}-${modal.inicio ?? ''}`}
         aberto={modal.aberto}
         visita={modal.visita}
         inicioSugerido={modal.inicio}
+        projetos={projetos}
         onFechar={() => setModal({ aberto: false, visita: null })}
         onMudou={() => {
           setModal({ aberto: false, visita: null });

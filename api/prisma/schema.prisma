@@ -211,6 +211,7 @@ model Projeto {
   notificacoes         Notificacao[]
   etapas               EtapaProjeto[]
   tarefas              Tarefa[]
+  visitas              Visita[]
   criadoEm             DateTime       @default(now())
   atualizadoEm         DateTime       @updatedAt
   excluidoEm           DateTime?
@@ -306,6 +307,13 @@ model Visita {
   consultor       User           @relation(fields: [consultorId], references: [id])
   empresaId       String
   empresa         EmpresaCliente @relation(fields: [empresaId], references: [id])
+
+  // Opcional de propósito: a consultoria vende projeto de compliance e a visita
+  // costuma ser execução de um marco dele, mas nem toda visita pertence a um
+  // projeto (reunião comercial, diagnóstico inicial). Obrigar quebraria as
+  // visitas que já existem e mentiria sobre as que nunca terão projeto.
+  projetoId       String?
+  projeto         Projeto?       @relation(fields: [projetoId], references: [id])
   inicio          DateTime       @db.Timestamptz(3)
   fim             DateTime       @db.Timestamptz(3)
   tipoServico     String
@@ -330,6 +338,7 @@ model Visita {
   // Por isso inicio/fim são dois timestamptz (não "data + hora em texto").
   @@index([consultorId, inicio])
   @@index([empresaId, inicio])
+  @@index([projetoId])
   @@map("visitas")
 }
 

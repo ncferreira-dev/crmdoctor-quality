@@ -18,6 +18,16 @@ const SELECT_CONSULTOR = {
   especialidade: true,
 };
 
+// O que a agenda precisa saber do projeto: como se chama e quando vence. Não
+// vale trazer o projeto inteiro (descrição, valor) para dentro de cada bloco
+// do calendário.
+const SELECT_PROJETO = {
+  id: true,
+  titulo: true,
+  estagio: true,
+  dataLimiteCompliance: true,
+};
+
 @Injectable()
 export class VisitasService {
   constructor(private prisma: PrismaService) {}
@@ -38,7 +48,11 @@ export class VisitasService {
       buscar: ({ skip, take }) =>
         this.prisma.visita.findMany({
           where,
-          include: { consultor: { select: SELECT_CONSULTOR }, empresa: true },
+          include: {
+            consultor: { select: SELECT_CONSULTOR },
+            empresa: true,
+            projeto: { select: SELECT_PROJETO },
+          },
           orderBy: { inicio: 'asc' },
           skip,
           take,
@@ -50,7 +64,11 @@ export class VisitasService {
   async findOne(id: string) {
     const visita = await this.prisma.visita.findUnique({
       where: { id },
-      include: { consultor: { select: SELECT_CONSULTOR }, empresa: true },
+      include: {
+        consultor: { select: SELECT_CONSULTOR },
+        empresa: true,
+        projeto: { select: SELECT_PROJETO },
+      },
     });
     if (!visita) {
       throw new NotFoundException('Visita não encontrada');
@@ -69,8 +87,9 @@ export class VisitasService {
     });
   }
 
-  create(dto: CreateVisitaDto) {
+  async create(dto: CreateVisitaDto) {
     const { inicio, fim } = this.validarPeriodo(dto.inicio, dto.fim);
+    await this.validarProjetoDaEmpresa(dto.projetoId, dto.empresaId);
     return this.prisma.visita.create({ data: { ...dto, inicio, fim } });
   }
 
@@ -79,6 +98,12 @@ export class VisitasService {
     const { inicio, fim } = this.validarPeriodo(
       dto.inicio ?? atual.inicio.toISOString(),
       dto.fim ?? atual.fim.toISOString(),
+    );
+    // A empresa da visita pode estar mudando no mesmo PATCH: valida o projeto
+    // contra a empresa que vai valer depois da edição, não contra a de antes.
+    await this.validarProjetoDaEmpresa(
+      dto.projetoId,
+      dto.empresaId ?? atual.empresaId,
     );
     return this.prisma.visita.update({
       where: { id },
@@ -89,6 +114,30 @@ export class VisitasService {
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.visita.delete({ where: { id } });
+  }
+
+  // Uma visita da empresa A não pode executar um projeto da empresa B. O banco
+  // não tem como garantir isso (são duas chaves estrangeiras independentes),
+  // então a regra vive aqui. `undefined` = campo não veio no PATCH; `null` =
+  // desvincular de propósito. Nenhum dos dois precisa de checagem.
+  private async validarProjetoDaEmpresa(
+    projetoId: string | null | undefined,
+    empresaId: string,
+  ) {
+    if (!projetoId) return;
+
+    const projeto = await this.prisma.projeto.findUnique({
+      where: { id: projetoId },
+      select: { empresaId: true },
+    });
+    if (!projeto) {
+      throw new NotFoundException('Projeto não encontrado');
+    }
+    if (projeto.empresaId !== empresaId) {
+      throw new BadRequestException(
+        'O projeto selecionado é de outra empresa. Escolha um projeto da empresa da visita.',
+      );
+    }
   }
 
   // Hoje só validamos o range (fim > inicio) em código. A trava de conflito

@@ -26,6 +26,11 @@ export function VisitaChip({ visita, onClick, variante = 'compacto' }: VisitaChi
         <span className="block font-black leading-tight">{horaMinuto(visita.inicio)}</span>
         <span className="block truncate">{empresa}</span>
         {visita.consultor && <span className="block truncate opacity-80">{visita.consultor.nome}</span>}
+        {/* O projeto é o motivo da visita existir. Aparece na visão de semana e
+            dia, onde há espaço, e não no chip compacto do mês. */}
+        {visita.projeto && (
+          <span className="mt-0.5 block truncate opacity-70">{visita.projeto.titulo}</span>
+        )}
       </button>
     );
   }

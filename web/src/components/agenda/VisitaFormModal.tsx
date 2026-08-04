@@ -6,6 +6,7 @@ import { usePermissao } from '../../hooks/useSessao';
 import {
   ConsultorDaVisita,
   EmpresaCliente,
+  Projeto,
   ResultadoPaginado,
   StatusVisita,
   Visita,
@@ -32,6 +33,9 @@ interface VisitaFormModalProps {
   visita?: Visita | null;
   // Pré-preenche início/fim quando o usuário clica num dia/hora vazio.
   inicioSugerido?: string;
+  // Os projetos já carregados pela agenda. Vêm de fora para o modal não repetir
+  // a mesma consulta a cada abertura.
+  projetos: Projeto[];
   onFechar: () => void;
   onMudou: () => void;
 }
@@ -40,6 +44,7 @@ export function VisitaFormModal({
   aberto,
   visita,
   inicioSugerido,
+  projetos,
   onFechar,
   onMudou,
 }: VisitaFormModalProps) {
@@ -49,6 +54,36 @@ export function VisitaFormModal({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const podeEditar = usePermissao('VISITAS_WRITE');
+
+  // Empresa e projeto são controlados, e não defaultValue como o resto do
+  // formulário, por dois motivos: a lista de projetos depende da empresa
+  // escolhida (projeto é sempre de uma empresa só), e as opções chegam da API
+  // depois do primeiro render. Com defaultValue, o valor gravado se perdia:
+  // no instante da montagem a opção certa ainda não existia no select, e
+  // defaultValue não é reaplicado quando ela aparece.
+  //
+  // O estado nasce direto da prop, sem effect de sincronia: quem garante que
+  // ele começa certo a cada abertura é a `key` que a agenda passa neste
+  // componente, que o remonta. Sincronizar por effect violaria a regra
+  // react-hooks/set-state-in-effect e renderizaria a tela duas vezes.
+  const [empresaId, setEmpresaId] = useState(visita?.empresaId ?? '');
+  const [projetoId, setProjetoId] = useState(visita?.projetoId ?? '');
+
+  // Trocar a empresa invalida o projeto escolhido: ele é da empresa anterior, e
+  // a API recusa essa combinação. Melhor limpar do que deixar a pessoa salvar
+  // para descobrir no erro.
+  function trocarEmpresa(novaEmpresaId: string) {
+    setEmpresaId(novaEmpresaId);
+    if (novaEmpresaId !== visita?.empresaId) {
+      setProjetoId('');
+    } else {
+      setProjetoId(visita?.projetoId ?? '');
+    }
+  }
+
+  const projetosDaEmpresa = projetos.filter(
+    (projeto) => projeto.empresaId === empresaId && projeto.estagio !== 'CONCLUIDO',
+  );
 
   useEffect(() => {
     if (!aberto) return;
@@ -71,6 +106,9 @@ export function VisitaFormModal({
     const corpo = {
       empresaId: String(form.get('empresaId')),
       consultorId: String(form.get('consultorId')),
+      // null (e não undefined) quando ninguém escolheu projeto: é assim que a
+      // edição desvincula. undefined significaria "não mexi neste campo".
+      projetoId: String(form.get('projetoId')) || null,
       inicio,
       fim,
       tipoServico: String(form.get('tipoServico')),
@@ -110,13 +148,43 @@ export function VisitaFormModal({
   return (
     <Modal aberto={aberto} titulo={editando ? 'Editar visita' : 'Nova visita'} onFechar={onFechar}>
       <form onSubmit={enviar} className="flex flex-col gap-3">
-        <Select id="empresaId" name="empresaId" label="Local (empresa)" defaultValue={visita?.empresaId ?? ''} required>
+        <Select
+          id="empresaId"
+          name="empresaId"
+          label="Local (empresa)"
+          value={empresaId}
+          onChange={(evento) => trocarEmpresa(evento.target.value)}
+          required
+        >
           <option value="" disabled>
             Selecione a empresa
           </option>
           {empresas.map((e) => (
             <option key={e.id} value={e.id}>
               {e.nome}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          id="projetoId"
+          name="projetoId"
+          label="Projeto"
+          value={projetoId}
+          onChange={(evento) => setProjetoId(evento.target.value)}
+          disabled={!empresaId}
+          ajuda={
+            !empresaId
+              ? 'Escolha a empresa primeiro.'
+              : projetosDaEmpresa.length === 0
+                ? 'Esta empresa não tem projeto em andamento. A visita fica sem vínculo.'
+                : 'Opcional. Vincule quando a visita for execução de um projeto.'
+          }
+        >
+          <option value="">Sem projeto</option>
+          {projetosDaEmpresa.map((projeto) => (
+            <option key={projeto.id} value={projeto.id}>
+              {projeto.titulo}
             </option>
           ))}
         </Select>

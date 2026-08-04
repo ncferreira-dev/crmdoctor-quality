@@ -177,12 +177,23 @@ export interface ConsultorDaVisita {
   especialidade: string | null;
 }
 
+// O que a API devolve dentro da visita: só o suficiente para o bloco da agenda
+// dizer a que projeto a visita pertence.
+export interface ProjetoDaVisita {
+  id: string;
+  titulo: string;
+  estagio: EstagioProjeto;
+  dataLimiteCompliance: string | null;
+}
+
 export interface Visita {
   id: string;
   consultorId: string;
   consultor?: ConsultorDaVisita;
   empresaId: string;
   empresa?: EmpresaCliente;
+  projetoId: string | null;
+  projeto?: ProjetoDaVisita | null;
   inicio: string;
   fim: string;
   tipoServico: string;
