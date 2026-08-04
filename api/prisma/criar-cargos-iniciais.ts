@@ -21,7 +21,9 @@ const prisma = new PrismaClient();
 const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = [
   {
     nome: 'CEO',
-    nivel: 90,
+    // 100, não 90: é o nível que o CEO já tem em produção. Como o upsert abaixo
+    // regrava o nível, deixar 90 aqui rebaixaria o CEO a cada execução.
+    nivel: 100,
     // Tudo. Quem responde pela empresa precisa enxergar tudo e definir quem
     // faz o quê, inclusive mexer nos cargos abaixo do dele.
     permissoes: [
