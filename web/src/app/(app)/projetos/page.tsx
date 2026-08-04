@@ -139,7 +139,11 @@ export default function ProjetosPage() {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge>{ESTAGIO_PROJETO_LABEL[projeto.estagio]}</Badge>
-                <SeloPrazo prazo={projeto.dataLimiteCompliance} />
+                {/* Projeto concluído não cobra prazo de ninguém: mesmo critério
+                      já usado em tarefa e marco concluídos. */}
+                  {projeto.estagio !== 'CONCLUIDO' && (
+                    <SeloPrazo prazo={projeto.dataLimiteCompliance} />
+                  )}
               </div>
             </Link>
           ))}

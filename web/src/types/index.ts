@@ -162,6 +162,10 @@ export interface Ticket {
   primeiraRespostaEm: string | null;
   criadoEm: string;
   resolvidoEm: string | null;
+  // Quem digitou o chamado no CRM, resolvido a partir do criadoPorId da
+  // auditoria. Não é quem abriu o chamado do lado do cliente: esse não tem
+  // campo no modelo.
+  registradoPor: { id: string; nome: string } | null;
   // Calculados no backend (tickets.utils).
   prazoLimite: string;
   emAtraso: boolean;

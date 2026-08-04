@@ -36,12 +36,43 @@ export class TicketsService {
       contar: () => this.prisma.ticket.count({ where }),
     });
 
-    return { ...resultado, data: resultado.data.map(comCamposCalculados) };
+    const comNomes = await this.comQuemRegistrou(
+      resultado.data.map(comCamposCalculados),
+    );
+    return { ...resultado, data: comNomes };
   }
 
   async findOne(id: string) {
     const ticket = await this.buscarOuFalhar(id);
-    return comCamposCalculados(ticket);
+    const [comNome] = await this.comQuemRegistrou([comCamposCalculados(ticket)]);
+    return comNome;
+  }
+
+  // Quem registrou o chamado no sistema. `criadoPorId` vem da extensão de
+  // auditoria e é só uma coluna de texto, sem relação no schema, então o nome
+  // é resolvido aqui com uma consulta a mais em vez de um include.
+  //
+  // ATENÇÃO ao que este campo NÃO é: ele diz quem digitou o ticket no CRM, não
+  // quem abriu o chamado do lado do cliente. Essa segunda pessoa não tem campo
+  // no modelo hoje.
+  private async comQuemRegistrou<T extends { criadoPorId?: string | null }>(
+    tickets: T[],
+  ): Promise<(T & { registradoPor: { id: string; nome: string } | null })[]> {
+    const ids = [...new Set(tickets.map((t) => t.criadoPorId).filter(Boolean))];
+    if (ids.length === 0) {
+      return tickets.map((t) => ({ ...t, registradoPor: null }));
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: ids as string[] } },
+      select: { id: true, nome: true },
+    });
+    const porId = new Map(users.map((u) => [u.id, u]));
+
+    return tickets.map((t) => ({
+      ...t,
+      registradoPor: (t.criadoPorId && porId.get(t.criadoPorId)) || null,
+    }));
   }
 
   private async buscarOuFalhar(id: string) {

@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import { ResultadoPaginado, StatusTicket, Ticket } from '../../types';
-import { PRIORIDADE_LABEL, STATUS_TICKET_LABEL, formatarData } from '../../lib/formato';
+import { PRIORIDADE_LABEL, STATUS_TICKET_LABEL, formatarDataHora } from '../../lib/formato';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -12,6 +12,54 @@ import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 
 const STATUS = Object.keys(STATUS_TICKET_LABEL) as StatusTicket[];
+
+// Prioridade é o que define o prazo de resposta, então merece cor e não só
+// texto cinza no meio da linha. Alta usa accent; o resto fica neutro para o
+// vermelho não perder peso.
+function SeloPrioridade({ prioridade }: { prioridade: number }) {
+  const alta = prioridade === 1;
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+        alta ? 'bg-accent/10 text-accent' : 'bg-surface text-ink/55'
+      }`}
+    >
+      {PRIORIDADE_LABEL[prioridade]}
+    </span>
+  );
+}
+
+// A vida do chamado numa linha: quando entrou, se já foi respondido e quando
+// fechou. Antes a tela dizia só a data de abertura, e o prazo de resposta
+// existia calculado na API sem aparecer em lugar nenhum: dava para saber que
+// um ticket estava atrasado, nunca quanto tempo ainda restava.
+function LinhaDoTempo({ ticket }: { ticket: Ticket }) {
+  const respondido = Boolean(ticket.primeiraRespostaEm);
+  const resolvido = Boolean(ticket.resolvidoEm);
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink/50">
+      <span className="dado">Aberto em {formatarDataHora(ticket.abertoEm)}</span>
+
+      {respondido ? (
+        <span className="dado text-brand">
+          Respondido em {formatarDataHora(ticket.primeiraRespostaEm as string)}
+        </span>
+      ) : (
+        <span className={`dado ${ticket.emAtraso ? 'text-accent' : ''}`}>
+          {ticket.emAtraso ? 'Resposta venceu em ' : 'Responder até '}
+          {formatarDataHora(ticket.prazoLimite)}
+        </span>
+      )}
+
+      {resolvido && (
+        <span className="dado">Resolvido em {formatarDataHora(ticket.resolvidoEm as string)}</span>
+      )}
+
+      {ticket.registradoPor && <span>Registrado por {ticket.registradoPor.nome}</span>}
+    </div>
+  );
+}
 
 interface TicketsSectionProps {
   empresaId: string;
@@ -114,19 +162,23 @@ export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
           {tickets.map((ticket) => (
             <div
               key={ticket.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 p-3"
+              className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-ink/10 p-3"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate font-black leading-none text-ink">{ticket.titulo}</p>
+                  <SeloPrioridade prioridade={ticket.prioridade} />
                   {ticket.emAtraso && <Badge tom="alerta">Em atraso</Badge>}
                 </div>
-                <p className="mt-1 text-xs text-ink/60">
-                  {PRIORIDADE_LABEL[ticket.prioridade]} · aberto em {formatarData(ticket.abertoEm)}
-                  {ticket.primeiraRespostaEm
-                    ? ` · respondido em ${formatarData(ticket.primeiraRespostaEm)}`
-                    : ''}
-                </p>
+
+                {/* A descrição existia no banco e não aparecia em tela nenhuma:
+                    a lista mostrava título, prioridade e data, e ninguém
+                    conseguia saber do que o chamado tratava sem ir ao banco. */}
+                {ticket.descricao && (
+                  <p className="mt-1.5 text-xs leading-relaxed text-ink/70">{ticket.descricao}</p>
+                )}
+
+                <LinhaDoTempo ticket={ticket} />
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {podeEditar && !ticket.primeiraRespostaEm && (
