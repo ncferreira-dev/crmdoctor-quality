@@ -127,11 +127,11 @@ export default function PerfilPage() {
           <dl className="mt-4 flex flex-col gap-2.5 border-t border-ink/10 pt-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <dt className="text-xs text-ink/50">E-mail</dt>
-              <dd className="text-sm text-ink">{usuario?.email ?? '--'}</dd>
+              <dd className="text-sm text-ink">{usuario?.email ?? 'Carregando'}</dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <dt className="text-xs text-ink/50">Cargo</dt>
-              <dd className="text-sm text-ink">{usuario?.cargo?.nome ?? '--'}</dd>
+              <dd className="text-sm text-ink">{usuario?.cargo?.nome ?? 'Carregando'}</dd>
             </div>
           </dl>
           <p className="mt-3 text-[11px] leading-relaxed text-ink/45">

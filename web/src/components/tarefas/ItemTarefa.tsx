@@ -55,7 +55,7 @@ export function ItemTarefa({
           <div className="flex shrink-0 items-center gap-2">
             {/* Prazo só enquanto a tarefa está aberta: em tarefa concluída o
                 selo de atraso é ruído, o prazo já não cobra nada de ninguém. */}
-            {!concluida && tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} />}
+            {!concluida && tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} tipo="tarefa" />}
 
             {/* "Em andamento" existe no modelo e é o que diferencia "vou fazer"
                 de "estou fazendo".

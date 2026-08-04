@@ -6,6 +6,7 @@ import { usePermissao } from '../../hooks/useSessao';
 import { EtapaProjeto, StatusEtapa } from '../../types';
 import { STATUS_ETAPA_LABEL } from '../../lib/formato';
 import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { SeloPrazo } from './SeloPrazo';
@@ -135,7 +136,7 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
                       o selo de urgência no que ainda está aberto. */}
                   {etapa.status !== 'CONCLUIDA' && etapa.prazo && (
                     <div className="mt-1">
-                      <SeloPrazo prazo={etapa.prazo} />
+                      <SeloPrazo prazo={etapa.prazo} tipo="marco" />
                     </div>
                   )}
                 </div>
@@ -144,18 +145,18 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
               <div className="flex shrink-0 items-center gap-2">
                 {podeEditar ? (
                   <>
-                    <select
+                    <Select
+                      tamanho="compacto"
                       value={etapa.status}
                       onChange={(e) => mudarStatus(etapa, e.target.value as StatusEtapa)}
                       aria-label={`Status de ${etapa.nome}`}
-                      className="rounded-md border border-ink/15 bg-white px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none"
                     >
                       {STATUS.map((s) => (
                         <option key={s} value={s}>
                           {STATUS_ETAPA_LABEL[s]}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     <button
                       type="button"
                       onClick={() => excluir(etapa)}

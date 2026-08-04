@@ -8,6 +8,7 @@ import { STATUS_TAREFA_LABEL } from '../../../lib/formato';
 
 const STATUS_TAREFA = Object.keys(STATUS_TAREFA_LABEL) as StatusTarefa[];
 import { Button } from '../../../components/ui/Button';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { SeloPrazo } from '../../../components/projetos/SeloPrazo';
 import { MembroFormModal } from '../../../components/membros/MembroFormModal';
@@ -272,26 +273,27 @@ export default function MembrosPage() {
                             {/* Prazo só enquanto a tarefa está aberta: em tarefa
                                 concluída o selo de atraso é ruído, o prazo já
                                 não cobra nada de ninguém. */}
-                            {!concluida && tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} />}
+                            {!concluida && tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} tipo="tarefa" />}
                             {/* Mexer em tarefa depende de TAREFAS_WRITE, não de
                                 gerenciar membros: com podeGerenciar aqui, o
                                 Coordenador enxergava a própria tarefa no card e
                                 não conseguia mudar o status dela. */}
                             {podeEnviarTarefa ? (
-                              <select
+                              <Select
+                                tamanho="compacto"
                                 value={tarefa.status}
                                 onChange={(e) =>
                                   mudarStatusTarefa(tarefa, e.target.value as StatusTarefa)
                                 }
                                 aria-label={`Status da tarefa ${tarefa.titulo}`}
-                                className="shrink-0 rounded-md border border-ink/15 bg-white px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none"
+                                className="shrink-0"
                               >
                                 {STATUS_TAREFA.map((s) => (
                                   <option key={s} value={s}>
                                     {STATUS_TAREFA_LABEL[s]}
                                   </option>
                                 ))}
-                              </select>
+                              </Select>
                             ) : (
                               <span className="text-[11px] text-ink/45">
                                 {STATUS_TAREFA_LABEL[tarefa.status]}

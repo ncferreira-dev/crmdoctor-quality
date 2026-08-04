@@ -68,14 +68,49 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
 
       {/* Cabeçalho com contato e contadores */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {/* Vazio não é traço. Traço não diz se o dado não existe, se ninguém
+            cadastrou ou se a tela falhou, e não oferece saída nenhuma. Cada
+            card em branco aqui diz o que falta e, quando dá, leva à ação. */}
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">Contato</p>
-          <p className="mt-2 font-black leading-none text-ink">{empresa.contatoNome ?? '—'}</p>
-          <p className="mt-1 text-xs text-ink/60">{empresa.email ?? empresa.telefone ?? ''}</p>
+          {empresa.contatoNome ? (
+            <>
+              <p className="mt-2 font-black leading-none text-ink">{empresa.contatoNome}</p>
+              <p className="mt-1 text-xs text-ink/60">{empresa.email ?? empresa.telefone ?? ''}</p>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-sm leading-snug text-ink/45">Sem contato cadastrado</p>
+              {podeEditar && (
+                <button
+                  type="button"
+                  onClick={() => setEditando(true)}
+                  className="mt-1 text-xs font-medium text-brand underline-offset-2 hover:underline"
+                >
+                  Adicionar contato
+                </button>
+              )}
+            </>
+          )}
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">CNPJ</p>
-          <p className="dado mt-2 text-sm leading-none text-ink">{empresa.cnpj ?? '—'}</p>
+          {empresa.cnpj ? (
+            <p className="dado mt-2 text-sm leading-none text-ink">{empresa.cnpj}</p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm leading-snug text-ink/45">Sem CNPJ cadastrado</p>
+              {podeEditar && (
+                <button
+                  type="button"
+                  onClick={() => setEditando(true)}
+                  className="mt-1 text-xs font-medium text-brand underline-offset-2 hover:underline"
+                >
+                  Adicionar CNPJ
+                </button>
+              )}
+            </>
+          )}
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">Tickets abertos</p>
@@ -85,9 +120,21 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">Próxima visita</p>
-          <p className="dado mt-2 text-sm leading-none text-ink">
-            {empresa.proximaVisita ? formatarDataHora(empresa.proximaVisita.inicio) : '—'}
-          </p>
+          {empresa.proximaVisita ? (
+            <p className="dado mt-2 text-sm leading-none text-ink">
+              {formatarDataHora(empresa.proximaVisita.inicio)}
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm leading-snug text-ink/45">Nenhuma visita agendada</p>
+              <Link
+                href="/agenda"
+                className="mt-1 inline-block text-xs font-medium text-brand underline-offset-2 hover:underline"
+              >
+                Abrir a agenda
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

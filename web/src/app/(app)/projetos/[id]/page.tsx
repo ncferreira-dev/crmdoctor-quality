@@ -55,7 +55,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
 
   const valor = projeto.valor
     ? Number(projeto.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    : '—';
+    : 'Sem valor definido';
 
   return (
     <div className="flex flex-col gap-4">

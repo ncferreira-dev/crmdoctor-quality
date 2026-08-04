@@ -40,7 +40,9 @@ export function WeekView({ refDate, visitasPorDia, onSelecionarVisita, onSelecio
             </button>
             <div className="flex flex-1 flex-col gap-1">
               {visitas.length === 0 ? (
-                <span className="text-[11px] text-ink/30">—</span>
+                // Dia livre é informação, e o traço não dizia isso. Clicar no
+                // número do dia acima abre o formulário já naquela data.
+                <span className="text-[11px] text-ink/30">Livre</span>
               ) : (
                 visitas.map((v) => (
                   <VisitaChip key={v.id} visita={v} variante="detalhado" onClick={onSelecionarVisita} />

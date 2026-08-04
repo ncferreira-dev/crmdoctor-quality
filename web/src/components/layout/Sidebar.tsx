@@ -107,8 +107,15 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
           aria-current={pathname === '/perfil' ? 'page' : undefined}
           className="flex items-center gap-3 rounded-md px-4 py-5 transition-colors hover:bg-white/5"
         >
-          <div className="dado flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
-            {usuario ? iniciais(usuario.nome) : '--'}
+          {/* Sem iniciais, o círculo fica só apagado. Antes escrevia "--", que
+              parecia dado faltando em vez do meio segundo entre montar a tela e
+              ler a sessão. */}
+          <div
+            className={`dado flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
+              usuario ? 'bg-brand' : 'bg-white/10'
+            }`}
+          >
+            {usuario ? iniciais(usuario.nome) : ''}
           </div>
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-sm font-semibold text-white">
