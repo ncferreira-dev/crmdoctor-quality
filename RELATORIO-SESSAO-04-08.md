@@ -265,3 +265,66 @@ Para jogar a sessão inteira fora, sem tocar em nada anterior:
 ```bash
 git reset --hard origin/main
 ```
+
+---
+
+# Sessão 2 (04/08/2026, a partir das 20h25)
+
+## Estado verificado ao chegar
+
+Conferi tudo por fora antes de escrever qualquer linha. O que segue é medição,
+não leitura do relatório acima.
+
+### Bateu
+
+| O que o relatório afirma | Como conferi | Resultado |
+|---|---|---|
+| Typecheck limpo nos dois lados | `tsc --noEmit` na api e na web | Limpo |
+| 46 testes passando | `npx jest` | 7 suítes, 46 testes, verde |
+| Árvore de trabalho limpa | `git status` | Nada modificado, nada pela metade |
+| Migrations locais em dia | `_prisma_migrations` no `crm_dq_local` | As 7 aplicadas, nenhuma falha |
+| Painel de alertas no dashboard | Navegador, `/dashboard` como CEO | 2 alertas listados, com data e botão de baixa |
+| Sino no cabeçalho | Mesma tela | Badge com 2, botão rotulado |
+| Prazo de projeto na agenda | `/agenda`, visão Mês | Marca PRAZO com desenho próprio, separada da visita |
+| Overlay invisível corrigido | Abri e fechei o modal e medi o DOM | Esc fecha, zero elemento `fixed` com z-index alto sobrando, e `elementFromPoint` no centro devolve conteúdo da página |
+| Console limpo | DevTools nas telas visitadas | Nenhum erro |
+| `.env` local não aponta para produção | `grep -o 'ep-[a-z0-9-]*' api/.env` | `ep-rapid-dew`, que é a branch `vercel-dev`. Seguro para continuar |
+
+### Não bateu
+
+**1. "Lint com zero erros" era meia verdade.** O `npm run lint` da api roda
+`eslint --fix`. Ele conserta e sai verde, então o número zero é o resultado
+depois do conserto, não o estado do código commitado. Rodando `eslint` sem
+`--fix`, o código de ontem tinha **3 erros de formatação** em
+`tickets.service.ts` e `tickets.utils.spec.ts`. Virou o item 0 desta sessão.
+
+**2. O atalho "seguro" de rodar local apontava para banco remoto.** O contexto
+afirma que `.claude/launch.json` tem as entradas `api-local` e `web`. Não tinha.
+Tinha uma entrada `api` rodando `npm run start:dev`, que carrega o `.env` e
+portanto conecta no Neon `vercel-dev`. Quem confiasse no atalho estaria mexendo
+em banco remoto achando que estava na própria máquina. Corrigido no item 0.
+
+**3. "15 commits locais, nenhum push. Nada foi a produção." deixou de valer.**
+Os commits foram enviados às 19h51 e estão em produção desde as 20h04, front e
+API. Conferido: o token que a API emite hoje traz só `sub`, `iat` e `exp`, que é
+a assinatura da correção `36e8f56`. Como o container liga a API com
+`prisma migrate deploy && node`, API no ar significa migration aplicada.
+
+### Duas coisas que anotei de passagem
+
+- O botão diz "+ Evento" e o modal que ele abre se chama "Nova visita". A
+  incoerência é a mesma que o relatório de ontem levanta na proposta de
+  modelagem, agora visível na tela.
+- Os blocos de visita na célula do mês são `button` sem nome acessível. Entra no
+  item 21.
+
+## Item 0: lint de verdade e atalho local que não engana
+
+`eslint` sem `--fix` na api voltou a dar zero erro, e `.claude/launch.json`
+passou a ter `api-local` (que roda `start:local`, o do Postgres da máquina) em
+vez de `api` (que rodava contra o Neon).
+
+Critério de aceite: `npx eslint "{src,apps,libs,test}/**/*.ts"` na pasta `api`
+termina com 0 erros, e subir o preview `api-local` conecta no banco da máquina.
+Conferido: o heartbeat que a API local devolve é exatamente a linha gravada na
+tabela `cron_execucoes` do `crm_dq_local`.

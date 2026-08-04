@@ -44,7 +44,9 @@ export class TicketsService {
 
   async findOne(id: string) {
     const ticket = await this.buscarOuFalhar(id);
-    const [comNome] = await this.comQuemRegistrou([comCamposCalculados(ticket)]);
+    const [comNome] = await this.comQuemRegistrou([
+      comCamposCalculados(ticket),
+    ]);
     return comNome;
   }
 

@@ -90,7 +90,11 @@ describe('SLA de tickets', () => {
 // prendem a regra num lugar só e provam que os dois consumidores usam ela.
 describe('whereEmAberto', () => {
   it('conta todo status que não seja RESOLVIDO', () => {
-    const abertos: StatusTicket[] = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_CLIENTE'];
+    const abertos: StatusTicket[] = [
+      'ABERTO',
+      'EM_ANDAMENTO',
+      'AGUARDANDO_CLIENTE',
+    ];
     const filtro = whereEmAberto();
 
     for (const status of abertos) {
@@ -118,7 +122,9 @@ describe('a contagem do card e a do dashboard falam a mesma língua', () => {
       chamadas,
       prisma: {
         empresaCliente: {
-          findUnique: jest.fn().mockResolvedValue({ id: 'e-1', nome: 'Opella' }),
+          findUnique: jest
+            .fn()
+            .mockResolvedValue({ id: 'e-1', nome: 'Opella' }),
         },
         projeto: {
           count: jest.fn().mockResolvedValue(0),
