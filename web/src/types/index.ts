@@ -29,8 +29,6 @@ export const PERMISSOES = [
   'INTERACOES_WRITE',
   'TICKETS_READ',
   'TICKETS_WRITE',
-  'CONSULTORES_READ',
-  'CONSULTORES_WRITE',
   'VISITAS_READ',
   'VISITAS_WRITE',
   'NOTIFICACOES_READ',
@@ -65,9 +63,20 @@ export interface Usuario {
   // devolve o código em si nas listagens, só este sinal.
   acessoPendente: boolean;
   ativo: boolean;
+  // Só relevante para quem atua como consultor (visita cliente em campo).
+  especialidade: string | null;
+  competencias?: Competencia[];
   cargoId: string;
   cargo: Cargo;
   criadoEm: string;
+}
+
+export interface Competencia {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
 export interface Lead {
@@ -158,18 +167,20 @@ export interface Ticket {
   emAtraso: boolean;
 }
 
-export interface Consultor {
+// Versão enxuta do User devolvida dentro de Visita (GET /visitas) e usada na
+// lista de opções do formulário (GET /visitas/consultores). Consultor não é
+// mais uma entidade própria: é qualquer User com permissão de agenda.
+export interface ConsultorDaVisita {
   id: string;
   nome: string;
-  especialidade: string;
-  ativo: boolean;
-  criadoEm: string;
+  email: string;
+  especialidade: string | null;
 }
 
 export interface Visita {
   id: string;
   consultorId: string;
-  consultor?: Consultor;
+  consultor?: ConsultorDaVisita;
   empresaId: string;
   empresa?: EmpresaCliente;
   inicio: string;

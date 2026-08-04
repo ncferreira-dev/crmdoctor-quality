@@ -9,6 +9,15 @@ import { UpdateVisitaDto } from './dto/update-visita.dto';
 import { FindVisitasQueryDto } from './dto/find-visitas-query.dto';
 import { paginar } from '../common/utils/paginar';
 
+// Consultor aqui é um User — nunca incluir o registro inteiro (viria com
+// senhaHash e codigoConvite). Só os campos que a agenda mostra.
+const SELECT_CONSULTOR = {
+  id: true,
+  nome: true,
+  email: true,
+  especialidade: true,
+};
+
 @Injectable()
 export class VisitasService {
   constructor(private prisma: PrismaService) {}
@@ -29,7 +38,7 @@ export class VisitasService {
       buscar: ({ skip, take }) =>
         this.prisma.visita.findMany({
           where,
-          include: { consultor: true, empresa: true },
+          include: { consultor: { select: SELECT_CONSULTOR }, empresa: true },
           orderBy: { inicio: 'asc' },
           skip,
           take,
@@ -41,12 +50,23 @@ export class VisitasService {
   async findOne(id: string) {
     const visita = await this.prisma.visita.findUnique({
       where: { id },
-      include: { consultor: true, empresa: true },
+      include: { consultor: { select: SELECT_CONSULTOR }, empresa: true },
     });
     if (!visita) {
       throw new NotFoundException('Visita não encontrada');
     }
     return visita;
+  }
+
+  // Lista enxuta para popular o seletor de consultor no formulário de visita.
+  // Gate é VISITAS_READ (não USUARIOS_READ): quem monta a agenda precisa
+  // dessa lista mesmo sem enxergar o cadastro de membros inteiro.
+  consultoresDisponiveis() {
+    return this.prisma.user.findMany({
+      where: { ativo: true, cargo: { permissoes: { has: 'VISITAS_WRITE' } } },
+      select: { id: true, nome: true },
+      orderBy: { nome: 'asc' },
+    });
   }
 
   create(dto: CreateVisitaDto) {

@@ -35,8 +35,6 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'INTERACOES_WRITE',
       'TICKETS_READ',
       'TICKETS_WRITE',
-      'CONSULTORES_READ',
-      'CONSULTORES_WRITE',
       'VISITAS_READ',
       'VISITAS_WRITE',
       'COMPETENCIAS_READ',
@@ -66,8 +64,6 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'INTERACOES_WRITE',
       'TICKETS_READ',
       'TICKETS_WRITE',
-      'CONSULTORES_READ',
-      'CONSULTORES_WRITE',
       'VISITAS_READ',
       'VISITAS_WRITE',
       'COMPETENCIAS_READ',
@@ -84,8 +80,8 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
     nome: 'Analista de validação/qualificação',
     nivel: 30,
     // Executa: toca projeto, ticket, tarefa, visita e registra interação.
-    // Empresas, leads, consultores e competências só de leitura — consulta o
-    // cadastro para trabalhar, não é quem mantém o cadastro.
+    // Empresas, leads e competências só de leitura — consulta o cadastro
+    // para trabalhar, não é quem mantém o cadastro.
     permissoes: [
       'PROJETOS_READ',
       'PROJETOS_WRITE',
@@ -99,7 +95,22 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'INTERACOES_WRITE',
       'EMPRESAS_READ',
       'LEADS_READ',
-      'CONSULTORES_READ',
+      'COMPETENCIAS_READ',
+      'NOTIFICACOES_READ',
+      'DASHBOARD_READ',
+    ],
+  },
+  {
+    nome: 'Consultor',
+    nivel: 20,
+    // Quem faz a visita em campo. Só o que sustenta a própria agenda: ver a
+    // empresa onde vai visitar e cuidar das próprias visitas. Não mexe em
+    // projeto, ticket, lead nem vê a lista de membros — ajuste fino depois
+    // pela tela de Cargos, se o dia a dia pedir mais.
+    permissoes: [
+      'VISITAS_READ',
+      'VISITAS_WRITE',
+      'EMPRESAS_READ',
       'COMPETENCIAS_READ',
       'NOTIFICACOES_READ',
       'DASHBOARD_READ',

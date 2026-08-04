@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import {
-  Consultor,
+  ConsultorDaVisita,
   EmpresaCliente,
   ResultadoPaginado,
   StatusVisita,
@@ -45,7 +45,7 @@ export function VisitaFormModal({
 }: VisitaFormModalProps) {
   const editando = Boolean(visita);
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
-  const [consultores, setConsultores] = useState<Consultor[]>([]);
+  const [consultores, setConsultores] = useState<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const podeEditar = usePermissao('VISITAS_WRITE');
@@ -57,8 +57,8 @@ export function VisitaFormModal({
       .then((r) => setEmpresas(r.data))
       .catch(() => setEmpresas([]));
     api
-      .get<ResultadoPaginado<Consultor>>('/consultores?limit=100')
-      .then((r) => setConsultores(r.data))
+      .get<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>('/visitas/consultores')
+      .then(setConsultores)
       .catch(() => setConsultores([]));
   }, [aberto]);
 

@@ -97,6 +97,15 @@ export function IconeCargos({ className = 'h-full w-full' }: IconProps) {
   );
 }
 
+export function IconeCompetencias({ className = 'h-full w-full' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="5" />
+      <path d="m8.5 13.5-1.5 7 5-3 5 3-1.5-7" />
+    </svg>
+  );
+}
+
 export function IconeSair({ className = 'h-full w-full' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

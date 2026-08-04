@@ -1,6 +1,6 @@
 import { Permissao } from '../types';
 
-// As 22 permissões da API agrupadas por assunto. A lista crua é ilegível para
+// As permissões da API agrupadas por assunto. A lista crua é ilegível para
 // quem não escreveu o backend: "COMPETENCIAS_WRITE" não diz a ninguém o que
 // libera. Aqui cada módulo vira uma linha com o que ele permite, em português.
 //
@@ -71,14 +71,6 @@ export const GRUPOS_PERMISSAO: GrupoPermissao[] = [
     ],
   },
   {
-    titulo: 'Consultores',
-    descricao: 'Equipe técnica que atende as visitas',
-    itens: [
-      { permissao: 'CONSULTORES_READ', label: 'Ver' },
-      { permissao: 'CONSULTORES_WRITE', label: 'Criar e editar' },
-    ],
-  },
-  {
     titulo: 'Competências',
     descricao: 'Especialidades associadas aos consultores',
     itens: [
@@ -117,7 +109,6 @@ export const LEITURA_IMPLICADA: Partial<Record<Permissao, Permissao>> = {
   VISITAS_WRITE: 'VISITAS_READ',
   LEADS_WRITE: 'LEADS_READ',
   INTERACOES_WRITE: 'INTERACOES_READ',
-  CONSULTORES_WRITE: 'CONSULTORES_READ',
   COMPETENCIAS_WRITE: 'COMPETENCIAS_READ',
   // Gerenciar membros pressupõe vê-los: a listagem exige READ.
   USUARIOS_MANAGE: 'USUARIOS_READ',

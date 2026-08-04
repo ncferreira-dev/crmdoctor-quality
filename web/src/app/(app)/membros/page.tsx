@@ -186,6 +186,7 @@ export default function MembrosPage() {
                     <p className="mt-1 truncate text-xs text-ink/55">
                       {membro.email}
                       {membro.telefone ? ` · ${membro.telefone}` : ''}
+                      {membro.especialidade ? ` · ${membro.especialidade}` : ''}
                     </p>
                   </div>
 

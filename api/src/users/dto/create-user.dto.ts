@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsNotEmpty,
@@ -28,4 +29,15 @@ export class CreateUserDto {
   @IsOptional()
   @IsBoolean()
   ativo?: boolean;
+
+  // Só faz sentido para quem atua como consultor, mas fica livre para
+  // qualquer cargo: não é a hierarquia que decide isso, é o formulário.
+  @IsOptional()
+  @IsString()
+  especialidade?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  competenciaIds?: string[];
 }

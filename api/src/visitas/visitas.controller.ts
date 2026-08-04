@@ -24,6 +24,14 @@ export class VisitasController {
     return this.visitasService.findAll(query);
   }
 
+  // Antes de ':id': rota estática precisa vir primeiro, senão o Nest tenta
+  // casar "consultores" como :id.
+  @RequirePermissao('VISITAS_READ')
+  @Get('consultores')
+  consultoresDisponiveis() {
+    return this.visitasService.consultoresDisponiveis();
+  }
+
   @RequirePermissao('VISITAS_READ')
   @Get(':id')
   findOne(@Param('id') id: string) {

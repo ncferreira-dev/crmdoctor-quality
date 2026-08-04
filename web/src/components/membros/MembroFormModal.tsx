@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { Cargo, Usuario } from '../../types';
+import { Cargo, Competencia, ResultadoPaginado, Usuario } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -18,6 +18,10 @@ interface MembroFormModalProps {
 export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFormModalProps) {
   const editando = Boolean(membro);
   const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [competencias, setCompetencias] = useState<Competencia[]>([]);
+  const [competenciasSelecionadas, setCompetenciasSelecionadas] = useState<Set<string>>(
+    () => new Set(membro?.competencias?.map((c) => c.id) ?? []),
+  );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // O código só existe no instante da criação — é o que se repassa ao membro.
@@ -35,7 +39,20 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
         setErro(null);
       })
       .catch(() => setCargos([]));
+    api
+      .get<ResultadoPaginado<Competencia>>('/competencias?limit=100')
+      .then((r) => setCompetencias(r.data))
+      .catch(() => setCompetencias([]));
   }, [aberto]);
+
+  function alternarCompetencia(id: string) {
+    setCompetenciasSelecionadas((atual) => {
+      const proxima = new Set(atual);
+      if (proxima.has(id)) proxima.delete(id);
+      else proxima.add(id);
+      return proxima;
+    });
+  }
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -45,6 +62,8 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
       email: String(form.get('email')),
       telefone: String(form.get('telefone')) || undefined,
       cargoId: String(form.get('cargoId')),
+      especialidade: String(form.get('especialidade')) || undefined,
+      competenciaIds: [...competenciasSelecionadas],
     };
 
     setSalvando(true);
@@ -127,6 +146,45 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
             </option>
           ))}
         </Select>
+
+        <div className="flex flex-col gap-2 rounded-md border border-ink/10 px-3 py-2.5">
+          <span className="text-xs font-light uppercase tracking-wide text-ink/60">
+            Consultor (opcional)
+          </span>
+          <p className="text-[11px] text-ink/45">
+            Só preencha se este membro faz visita técnica em cliente.
+          </p>
+          <Input
+            id="especialidade"
+            name="especialidade"
+            label="Especialidade"
+            defaultValue={membro?.especialidade ?? ''}
+            placeholder="Ex: Auditoria de BPF, Segurança de alimentos"
+          />
+          {competencias.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-light uppercase tracking-wide text-ink/60">
+                Competências
+              </span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {competencias.map((c) => (
+                  <label
+                    key={c.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-ink/80"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={competenciasSelecionadas.has(c.id)}
+                      onChange={() => alternarCompetencia(c.id)}
+                      className="size-4 accent-brand"
+                    />
+                    {c.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {!editando && (
           <p className="text-[11px] text-ink/45">

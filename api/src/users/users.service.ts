@@ -39,7 +39,7 @@ export class UsersService {
   private async buscarComCargoOuFalhar(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { cargo: true },
+      include: { cargo: true, competencias: true },
     });
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
@@ -57,7 +57,7 @@ export class UsersService {
 
   async findAll() {
     const users = await this.prisma.user.findMany({
-      include: { cargo: true },
+      include: { cargo: true, competencias: true },
       orderBy: { nome: 'asc' },
     });
     return users.map((u) => this.semSegredos(u));
@@ -96,8 +96,12 @@ export class UsersService {
         codigoConvite,
         cargoId: dto.cargoId,
         ativo: dto.ativo ?? true,
+        especialidade: dto.especialidade,
+        competencias: dto.competenciaIds
+          ? { connect: dto.competenciaIds.map((id) => ({ id })) }
+          : undefined,
       },
-      include: { cargo: true },
+      include: { cargo: true, competencias: true },
     });
 
     // O código volta UMA vez, na resposta da criação: é o que quem cadastrou
@@ -221,8 +225,18 @@ export class UsersService {
         telefone: dto.telefone,
         ativo: dto.ativo,
         cargoId: novoCargoId,
+        especialidade: dto.especialidade,
+        // set (não connect): a edição manda a lista completa de competências
+        // marcadas no formulário, então substitui em vez de acumular.
+        competencias: dto.competenciaIds
+          ? {
+              set: dto.competenciaIds.map((competenciaId) => ({
+                id: competenciaId,
+              })),
+            }
+          : undefined,
       },
-      include: { cargo: true },
+      include: { cargo: true, competencias: true },
     });
 
     return this.semSegredos(user);
@@ -236,17 +250,19 @@ export class UsersService {
       'Não é possível excluir um usuário com cargo de nível igual ou maior que o seu',
     );
 
-    // Exclusão é hard delete (User não tem excluidoEm). Tarefa.responsavelId é
-    // obrigatório e nenhuma relação tem cascade, então apagar quem tem trabalho
-    // vinculado ou estouraria uma FK no banco (erro cru) ou levaria o histórico
-    // junto. Barramos antes, com mensagem clara: desative em vez de excluir.
-    const [tarefas, etapas] = await Promise.all([
+    // Exclusão é hard delete (User não tem excluidoEm). Tarefa.responsavelId e
+    // Visita.consultorId são obrigatórios e nenhuma relação tem cascade, então
+    // apagar quem tem trabalho vinculado ou estouraria uma FK no banco (erro
+    // cru) ou levaria o histórico junto. Barramos antes, com mensagem clara:
+    // desative em vez de excluir.
+    const [tarefas, etapas, visitas] = await Promise.all([
       this.prisma.tarefa.count({ where: { responsavelId: id } }),
       this.prisma.etapaProjeto.count({ where: { responsavelId: id } }),
+      this.prisma.visita.count({ where: { consultorId: id } }),
     ]);
-    if (tarefas > 0 || etapas > 0) {
+    if (tarefas > 0 || etapas > 0 || visitas > 0) {
       throw new ConflictException(
-        'Este membro é responsável por tarefas ou etapas. Reatribua esse trabalho ou apenas desative o membro.',
+        'Este membro é responsável por tarefas, etapas ou visitas. Reatribua esse trabalho ou apenas desative o membro.',
       );
     }
 

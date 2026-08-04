@@ -11,6 +11,7 @@ import {
   ChevronRight,
   IconeAgenda,
   IconeCargos,
+  IconeCompetencias,
   IconeDashboard,
   IconeEmpresas,
   IconeMembros,
@@ -36,6 +37,7 @@ const NAV: ItemNav[] = [
   { href: '/projetos', label: 'Projetos', icone: <IconeProjetos /> },
   { href: '/agenda', label: 'Agenda', icone: <IconeAgenda /> },
   { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true, permissao: 'USUARIOS_READ' },
+  { href: '/competencias', label: 'Competências', icone: <IconeCompetencias />, permissao: 'COMPETENCIAS_READ' },
   { href: '/cargos', label: 'Cargos', icone: <IconeCargos />, permissao: 'CARGOS_MANAGE' },
 ];
 
@@ -69,10 +71,10 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
   const router = useRouter();
   const usuario = useSessaoUsuario();
   // Um hook por permissão usada no menu, porque hook não roda dentro de laço.
-  // Hoje só Cargos é restrito; quando outro item precisar, entra mais uma linha.
   const concedida: Partial<Record<Permissao, boolean>> = {
     CARGOS_MANAGE: usePermissao('CARGOS_MANAGE'),
     USUARIOS_READ: usePermissao('USUARIOS_READ'),
+    COMPETENCIAS_READ: usePermissao('COMPETENCIAS_READ'),
   };
   const itensVisiveis = NAV.filter((item) => !item.permissao || concedida[item.permissao]);
 

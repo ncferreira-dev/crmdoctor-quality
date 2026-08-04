@@ -15,7 +15,6 @@ import { EmpresasModule } from './empresas/empresas.module';
 import { ProjetosModule } from './projetos/projetos.module';
 import { InteracoesModule } from './interacoes/interacoes.module';
 import { TicketsModule } from './tickets/tickets.module';
-import { ConsultoresModule } from './consultores/consultores.module';
 import { VisitasModule } from './visitas/visitas.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificacoesModule } from './notificacoes/notificacoes.module';
@@ -39,7 +38,6 @@ import { TarefasModule } from './tarefas/tarefas.module';
     ProjetosModule,
     InteracoesModule,
     TicketsModule,
-    ConsultoresModule,
     CompetenciasModule,
     VisitasModule,
     DashboardModule,

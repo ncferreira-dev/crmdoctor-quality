@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import {
-  Consultor,
+  ConsultorDaVisita,
   EmpresaCliente,
   ResultadoPaginado,
   StatusVisita,
@@ -55,7 +55,7 @@ export function AgendaCalendar() {
   const [visitas, setVisitas] = useState<Visita[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [consultores, setConsultores] = useState<Consultor[]>([]);
+  const [consultores, setConsultores] = useState<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>([]);
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
   const [filtroConsultor, setFiltroConsultor] = useState('');
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
@@ -85,7 +85,10 @@ export function AgendaCalendar() {
   }, [view, refDate]);
 
   useEffect(() => {
-    api.get<ResultadoPaginado<Consultor>>('/consultores?limit=100').then((r) => setConsultores(r.data)).catch(() => {});
+    api
+      .get<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>('/visitas/consultores')
+      .then(setConsultores)
+      .catch(() => {});
     api.get<ResultadoPaginado<EmpresaCliente>>('/empresas?limit=100').then((r) => setEmpresas(r.data)).catch(() => {});
   }, []);
 

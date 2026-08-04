@@ -82,9 +82,9 @@ enum StatusTarefa {
 // enum de banco de propósito: adicionar uma permissão nova não pede migration.
 //   LEADS_READ, LEADS_WRITE, EMPRESAS_READ, EMPRESAS_WRITE, PROJETOS_READ,
 //   PROJETOS_WRITE, INTERACOES_READ, INTERACOES_WRITE, TICKETS_READ,
-//   TICKETS_WRITE, CONSULTORES_READ, CONSULTORES_WRITE, VISITAS_READ,
-//   VISITAS_WRITE, NOTIFICACOES_READ, DASHBOARD_READ, CARGOS_MANAGE,
-//   USUARIOS_MANAGE, COMPETENCIAS_READ, COMPETENCIAS_WRITE
+//   TICKETS_WRITE, VISITAS_READ, VISITAS_WRITE, NOTIFICACOES_READ,
+//   DASHBOARD_READ, CARGOS_MANAGE, USUARIOS_READ, USUARIOS_MANAGE,
+//   COMPETENCIAS_READ, COMPETENCIAS_WRITE, TAREFAS_READ, TAREFAS_WRITE
 model Cargo {
   id           String   @id @default(uuid())
   nome         String   @unique
@@ -112,10 +112,16 @@ model User {
   codigoConvite   String?   @unique
   senhaDefinidaEm DateTime?
 
+  // Só preenchido para quem atua como consultor (visita cliente em campo).
+  // Nulo para os demais cargos — não é um atributo de todo membro.
+  especialidade String?
+
   cargoId           String
   cargo             Cargo          @relation(fields: [cargoId], references: [id])
   etapasResponsavel EtapaProjeto[]
   tarefas           Tarefa[]
+  visitas           Visita[]
+  competencias      Competencia[]
   criadoEm          DateTime       @default(now())
 
   @@map("users")
@@ -255,28 +261,13 @@ model Ticket {
   @@map("tickets")
 }
 
-model Consultor {
-  id              String        @id @default(uuid())
-  nome            String
-  especialidade   String
-  ativo           Boolean       @default(true)
-  visitas         Visita[]
-  competencias    Competencia[]
-  criadoEm        DateTime      @default(now())
-  excluidoEm      DateTime?
-  criadoPorId     String?
-  atualizadoPorId String?
-
-  @@map("consultores")
-}
-
 model Competencia {
-  id              String      @id @default(uuid())
-  nome            String      @unique
+  id              String   @id @default(uuid())
+  nome            String   @unique
   descricao       String?
-  consultores     Consultor[]
-  criadoEm        DateTime    @default(now())
-  atualizadoEm    DateTime    @updatedAt
+  usuarios        User[]
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
   excluidoEm      DateTime?
   criadoPorId     String?
   atualizadoPorId String?
@@ -308,8 +299,11 @@ model EtapaProjeto {
 
 model Visita {
   id              String         @id @default(uuid())
+  // consultorId aponta para User (cargo Consultor, ou qualquer cargo com
+  // VISITAS_WRITE) — Consultor deixou de ser uma entidade separada porque o
+  // consultor passou a logar no sistema.
   consultorId     String
-  consultor       Consultor      @relation(fields: [consultorId], references: [id])
+  consultor       User           @relation(fields: [consultorId], references: [id])
   empresaId       String
   empresa         EmpresaCliente @relation(fields: [empresaId], references: [id])
   inicio          DateTime       @db.Timestamptz(3)
