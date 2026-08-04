@@ -35,6 +35,14 @@ export const STATUS_ETAPA_LABEL: Record<StatusEtapa, string> = {
   CONCLUIDA: 'Concluída',
 };
 
+// Maiúscula só na primeira letra da frase inteira. Existe porque o CSS
+// `capitalize` maiusculiza CADA palavra e produz "Agosto De 2026" e
+// "Terça-Feira": em português, preposição e artigo no meio da data ficam em
+// minúscula. Formatação de texto é trabalho de função, não de folha de estilo.
+export function capitalizarPrimeira(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 // Prazo, dataLimiteCompliance e dataReferencia são @db.Date no banco: data
 // civil, sem hora. O Prisma devolve "2026-08-16T00:00:00.000Z", e converter
 // isso para America/Sao_Paulo joga o instante para as 21h do dia ANTERIOR — a

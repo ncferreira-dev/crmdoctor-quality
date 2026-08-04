@@ -11,8 +11,9 @@ import {
   StatusVisita,
   Visita,
 } from '../../types';
-import { STATUS_VISITA_LABEL } from '../../lib/formato';
+import { STATUS_VISITA_LABEL, capitalizarPrimeira } from '../../lib/formato';
 import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 import { ChevronLeft, ChevronRight, Plus, SearchIcon } from '../ui/icons';
 import { agruparPorDia, intervaloDaVisao } from './agendaUtils';
 import { MonthView } from './MonthView';
@@ -32,20 +33,29 @@ const VIEWS: { valor: View; label: string }[] = [
 
 const STATUS = Object.keys(STATUS_VISITA_LABEL) as StatusVisita[];
 
+// Maiúscula só na primeira letra, aqui e não no CSS: `capitalize` maiusculiza
+// cada palavra e escrevia "Agosto De 2026" e "Terça-Feira, 04 De Agosto".
 function titulo(view: View, refDate: Date): string {
   if (view === 'mes') {
-    return refDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    return capitalizarPrimeira(
+      refDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+    );
   }
   if (view === 'dia') {
-    return refDate.toLocaleDateString('pt-BR', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
+    return capitalizarPrimeira(
+      refDate.toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }),
+    );
   }
   if (view === 'semana') {
-    return `Semana de ${refDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`;
+    // O mês abreviado do pt-BR vem com ponto ("4 de ago."), que numa frase
+    // curta de cabeçalho só polui.
+    const dia = refDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    return `Semana de ${dia.replace('.', '')}`;
   }
   return 'Próximas visitas';
 }
@@ -131,6 +141,14 @@ export function AgendaCalendar() {
 
   const visitasPorDia = useMemo(() => agruparPorDia(visitasFiltradas), [visitasFiltradas]);
 
+  // Tipos de serviço já cadastrados, para o formulário sugerir em vez de deixar
+  // cada pessoa escrever a própria versão. Sai da lista carregada, sem consulta
+  // extra: o campo continua livre, só deixa de partir do zero toda vez.
+  const tiposDeServico = useMemo(() => {
+    const usados = new Set((visitas ?? []).map((v) => v.tipoServico.trim()).filter(Boolean));
+    return [...usados].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [visitas]);
+
   function navegar(direcao: -1 | 1) {
     setRefDate((atual) => {
       const nova = new Date(atual);
@@ -154,7 +172,7 @@ export function AgendaCalendar() {
       {/* Cabeçalho: título + navegação + troca de visão + novo */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="titulo-pagina capitalize">{titulo(view, refDate)}</h1>
+          <h1 className="titulo-pagina">{titulo(view, refDate)}</h1>
           {view !== 'lista' && (
             <div className="flex items-center gap-1">
               <button
@@ -180,7 +198,9 @@ export function AgendaCalendar() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* flex-wrap: no celular as quatro visões mais o botão não cabem numa
+            linha só, e sem quebrar o botão saía cortado pela borda da tela. */}
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 rounded-lg border border-ink/15 p-1">
             {VIEWS.map((v) => (
               <button
@@ -219,42 +239,48 @@ export function AgendaCalendar() {
             className="w-full rounded-md border border-ink/15 py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink/40 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
-        <select
+        {/* Os três filtros usam o Select do design system, e não <select> cru:
+            antes tinham borda e foco próprios, montados na mão, que já
+            divergiam do resto do sistema. */}
+        <Select
+          id="filtro-consultor"
+          aria-label="Filtrar por consultor"
           value={filtroConsultor}
           onChange={(e) => setFiltroConsultor(e.target.value)}
-          className="rounded-md border border-ink/15 bg-white px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
         >
-          <option value="">Todos consultores</option>
+          <option value="">Todos os consultores</option>
           {consultores.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}
             </option>
           ))}
-        </select>
-        <select
+        </Select>
+        <Select
+          id="filtro-empresa"
+          aria-label="Filtrar por empresa"
           value={filtroEmpresa}
           onChange={(e) => setFiltroEmpresa(e.target.value)}
-          className="rounded-md border border-ink/15 bg-white px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
         >
-          <option value="">Todas empresas</option>
+          <option value="">Todas as empresas</option>
           {empresas.map((emp) => (
             <option key={emp.id} value={emp.id}>
               {emp.nome}
             </option>
           ))}
-        </select>
-        <select
+        </Select>
+        <Select
+          id="filtro-status"
+          aria-label="Filtrar por status"
           value={filtroStatus}
           onChange={(e) => setFiltroStatus(e.target.value)}
-          className="rounded-md border border-ink/15 bg-white px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
         >
-          <option value="">Todos status</option>
+          <option value="">Todos os status</option>
           {STATUS.map((s) => (
             <option key={s} value={s}>
               {STATUS_VISITA_LABEL[s]}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Conteúdo */}
@@ -296,6 +322,7 @@ export function AgendaCalendar() {
         visita={modal.visita}
         inicioSugerido={modal.inicio}
         projetos={projetos}
+        tiposDeServico={tiposDeServico}
         onFechar={() => setModal({ aberto: false, visita: null })}
         onMudou={() => {
           setModal({ aberto: false, visita: null });

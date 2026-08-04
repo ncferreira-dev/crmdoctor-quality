@@ -12,6 +12,12 @@ import {
   Visita,
 } from '../../types';
 import { STATUS_VISITA_LABEL } from '../../lib/formato';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -28,6 +34,20 @@ function paraInputLocal(iso: string | undefined): string {
   return ajustado.toISOString().slice(0, 16);
 }
 
+// Uma hora depois, no mesmo formato do input. Duração padrão de visita: é o
+// palpite que acerta na maioria e que a pessoa corrige em dois cliques quando
+// erra.
+function umaHoraDepois(valorDoInput: string): string {
+  if (!valorDoInput) return '';
+  // O valor do input não tem fuso, então o Date já nasce no horário local.
+  // paraInputLocal faz a conversão de volta sozinho: compensar o fuso aqui
+  // também somava as 3 horas duas vezes e sugeria fim 4 horas depois.
+  const data = new Date(valorDoInput);
+  if (Number.isNaN(data.getTime())) return '';
+  data.setHours(data.getHours() + 1);
+  return paraInputLocal(data.toISOString());
+}
+
 interface VisitaFormModalProps {
   aberto: boolean;
   visita?: Visita | null;
@@ -36,6 +56,9 @@ interface VisitaFormModalProps {
   // Os projetos já carregados pela agenda. Vêm de fora para o modal não repetir
   // a mesma consulta a cada abertura.
   projetos: Projeto[];
+  // Os tipos de serviço já usados em visitas anteriores, para sugerir em vez de
+  // deixar cada pessoa inventar a própria grafia.
+  tiposDeServico: string[];
   onFechar: () => void;
   onMudou: () => void;
 }
@@ -45,6 +68,7 @@ export function VisitaFormModal({
   visita,
   inicioSugerido,
   projetos,
+  tiposDeServico,
   onFechar,
   onMudou,
 }: VisitaFormModalProps) {
@@ -68,6 +92,36 @@ export function VisitaFormModal({
   // react-hooks/set-state-in-effect e renderizaria a tela duas vezes.
   const [empresaId, setEmpresaId] = useState(visita?.empresaId ?? '');
   const [projetoId, setProjetoId] = useState(visita?.projetoId ?? '');
+  const [inicio, setInicio] = useState(paraInputLocal(visita?.inicio ?? inicioSugerido));
+  // Visita nova já abre com o fim uma hora depois. Em visita existente vale o
+  // que está gravado.
+  const [fim, setFim] = useState(
+    visita ? paraInputLocal(visita.fim) : umaHoraDepois(paraInputLocal(inicioSugerido)),
+  );
+  const [erros, setErros] = useState<ErrosForm>({});
+
+  // Visita nova nasce com o fim uma hora depois do início, e mexer no início
+  // arrasta o fim junto enquanto ele ainda não foi editado à mão. Antes o campo
+  // vinha vazio e cobrava uma digitação que quase sempre é "uma hora depois".
+  // Em visita já existente o fim gravado manda, e nada é arrastado.
+  function trocarInicio(novoInicio: string) {
+    setInicio(novoInicio);
+    // Mexeu no horário, some o erro de horário: manter a mensagem cobrando algo
+    // que a pessoa acabou de corrigir é ruído.
+    setErros((atuais) => {
+      const limpos = { ...atuais };
+      delete limpos.inicio;
+      delete limpos.fim;
+      return limpos;
+    });
+    if (!novoInicio) return;
+
+    const fimEsperadoAntes = umaHoraDepois(inicio);
+    const fimFoiEditadoAMao = fim !== '' && fim !== fimEsperadoAntes;
+    if (!fimFoiEditadoAMao) {
+      setFim(umaHoraDepois(novoInicio));
+    }
+  }
 
   // Trocar a empresa invalida o projeto escolhido: ele é da empresa anterior, e
   // a API recusa essa combinação. Melhor limpar do que deixar a pessoa salvar
@@ -100,8 +154,26 @@ export function VisitaFormModal({
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
-    const inicio = new Date(String(form.get('inicio'))).toISOString();
-    const fim = new Date(String(form.get('fim'))).toISOString();
+
+    // Validação própria, com a mensagem embaixo do campo. O formulário tem
+    // noValidate para o navegador não disparar o balão dele por cima.
+    const problemas = validarObrigatorios(form, {
+      empresaId: 'Escolha a empresa da visita.',
+      consultorId: 'Escolha quem vai fazer a visita.',
+      inicio: 'Informe quando a visita começa.',
+      fim: 'Informe quando a visita termina.',
+      tipoServico: 'Diga o que será feito na visita.',
+    });
+    // Regra que o navegador não tem como conhecer, e que a API recusaria depois.
+    if (!problemas.fim && inicio && fim && new Date(fim) <= new Date(inicio)) {
+      problemas.fim = 'O fim precisa ser depois do início.';
+    }
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
 
     const corpo = {
       empresaId: String(form.get('empresaId')),
@@ -109,9 +181,9 @@ export function VisitaFormModal({
       // null (e não undefined) quando ninguém escolheu projeto: é assim que a
       // edição desvincula. undefined significaria "não mexi neste campo".
       projetoId: String(form.get('projetoId')) || null,
-      inicio,
-      fim,
-      tipoServico: String(form.get('tipoServico')),
+      inicio: new Date(String(form.get('inicio'))).toISOString(),
+      fim: new Date(String(form.get('fim'))).toISOString(),
+      tipoServico: String(form.get('tipoServico')).trim(),
       status: String(form.get('status')) as StatusVisita,
       observacoes: String(form.get('observacoes')) || undefined,
     };
@@ -147,18 +219,19 @@ export function VisitaFormModal({
 
   return (
     <Modal aberto={aberto} titulo={editando ? 'Editar visita' : 'Nova visita'} onFechar={onFechar}>
-      <form onSubmit={enviar} className="flex flex-col gap-3">
+      {/* noValidate: quem valida é o design system, com a mensagem embaixo do
+          campo. O balão nativo do navegador aparecia solto num canto da tela,
+          longe do campo que estava cobrando. */}
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-3">
         <Select
           id="empresaId"
           name="empresaId"
           label="Local (empresa)"
           value={empresaId}
           onChange={(evento) => trocarEmpresa(evento.target.value)}
-          required
+          erro={erros.empresaId}
         >
-          <option value="" disabled>
-            Selecione a empresa
-          </option>
+          <option value="">Selecione a empresa</option>
           {empresas.map((e) => (
             <option key={e.id} value={e.id}>
               {e.nome}
@@ -189,10 +262,14 @@ export function VisitaFormModal({
           ))}
         </Select>
 
-        <Select id="consultorId" name="consultorId" label="Consultor" defaultValue={visita?.consultorId ?? ''} required>
-          <option value="" disabled>
-            Selecione o consultor
-          </option>
+        <Select
+          id="consultorId"
+          name="consultorId"
+          label="Consultor"
+          defaultValue={visita?.consultorId ?? ''}
+          erro={erros.consultorId}
+        >
+          <option value="">Selecione o consultor</option>
           {consultores.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}
@@ -206,27 +283,45 @@ export function VisitaFormModal({
             name="inicio"
             label="Início"
             type="datetime-local"
-            defaultValue={paraInputLocal(visita?.inicio ?? inicioSugerido)}
-            required
+            value={inicio}
+            onChange={(evento) => trocarInicio(evento.target.value)}
+            erro={erros.inicio}
           />
           <Input
             id="fim"
             name="fim"
             label="Fim"
             type="datetime-local"
-            defaultValue={paraInputLocal(visita?.fim)}
-            required
+            value={fim}
+            onChange={(evento) => setFim(evento.target.value)}
+            erro={erros.fim}
           />
         </div>
 
+        {/* Lista das opções já usadas, com o campo livre continuando livre.
+            Sem isto, "Auditoria", "auditoria" e "AUDITORIA" viram três coisas
+            diferentes no terceiro cadastro. Um <datalist> resolve sem inventar
+            uma tabela nova nem tirar de ninguém a chance de escrever um tipo
+            que ainda não existe. */}
         <Input
           id="tipoServico"
           name="tipoServico"
           label="Tipo de serviço"
           defaultValue={visita?.tipoServico ?? ''}
           placeholder="Ex: Auditoria, Treinamento, Diagnóstico"
-          required
+          list="tipos-de-servico"
+          erro={erros.tipoServico}
+          ajuda={
+            tiposDeServico.length > 0
+              ? 'Escolha um dos já usados ou escreva um novo.'
+              : undefined
+          }
         />
+        <datalist id="tipos-de-servico">
+          {tiposDeServico.map((tipo) => (
+            <option key={tipo} value={tipo} />
+          ))}
+        </datalist>
 
         <Select id="status" name="status" label="Status" defaultValue={visita?.status ?? 'AGENDADA'}>
           {STATUS.map((s) => (

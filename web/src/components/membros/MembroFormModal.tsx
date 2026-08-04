@@ -3,6 +3,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { Cargo, Competencia, ResultadoPaginado, Usuario } from '../../types';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -24,6 +30,7 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
   );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
   // O código só existe no instante da criação — é o que se repassa ao membro.
   const [codigoGerado, setCodigoGerado] = useState<string | null>(null);
 
@@ -57,6 +64,23 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
+
+    const problemas = validarObrigatorios(form, {
+      nome: 'Informe o nome do membro.',
+      email: 'Informe o e-mail, que é como a pessoa entra no sistema.',
+      cargoId: 'Escolha o cargo, que é o que define o acesso.',
+    });
+    const email = String(form.get('email') ?? '');
+    if (!problemas.email && !email.includes('@')) {
+      problemas.email = 'Este e-mail não parece válido.';
+    }
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
+
     const corpo = {
       nome: String(form.get('nome')),
       email: String(form.get('email')),
@@ -119,15 +143,22 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
 
   return (
     <Modal aberto={aberto} titulo={editando ? 'Editar membro' : 'Novo membro'} onFechar={onFechar}>
-      <form onSubmit={enviar} className="flex flex-col gap-3">
-        <Input id="nome" name="nome" label="Nome" defaultValue={membro?.nome ?? ''} required autoFocus />
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-3">
+        <Input
+          id="nome"
+          name="nome"
+          label="Nome"
+          defaultValue={membro?.nome ?? ''}
+          erro={erros.nome}
+          autoFocus
+        />
         <Input
           id="email"
           name="email"
           label="E-mail"
           type="email"
           defaultValue={membro?.email ?? ''}
-          required
+          erro={erros.email}
         />
         <Input
           id="telefone"
@@ -136,10 +167,14 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
           defaultValue={membro?.telefone ?? ''}
           placeholder="(11) 90000-0000"
         />
-        <Select id="cargoId" name="cargoId" label="Cargo" defaultValue={membro?.cargoId ?? ''} required>
-          <option value="" disabled>
-            Selecione o cargo
-          </option>
+        <Select
+          id="cargoId"
+          name="cargoId"
+          label="Cargo"
+          defaultValue={membro?.cargoId ?? ''}
+          erro={erros.cargoId}
+        >
+          <option value="">Selecione o cargo</option>
           {cargos.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}

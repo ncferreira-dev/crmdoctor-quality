@@ -4,6 +4,12 @@ import { FormEvent, useState } from 'react';
 import { api } from '../../lib/api';
 import { EstagioLead, Lead, Segmento } from '../../types';
 import { SEGMENTO_LABEL } from '../../lib/formato';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -30,10 +36,19 @@ export function LeadFormModal({
   const editando = Boolean(lead);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
+
+    const problemas = validarObrigatorios(form, { nome: 'Informe o nome do contato.' });
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
     const segmento = String(form.get('segmento'));
 
     const corpo = {
@@ -82,8 +97,15 @@ export function LeadFormModal({
 
   return (
     <Modal aberto={aberto} titulo={editando ? 'Editar lead' : 'Novo lead'} onFechar={onFechar}>
-      <form onSubmit={enviar} className="flex flex-col gap-3">
-        <Input id="nome" name="nome" label="Nome do contato" defaultValue={lead?.nome ?? ''} required autoFocus />
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-3">
+        <Input
+          id="nome"
+          name="nome"
+          label="Nome do contato"
+          defaultValue={lead?.nome ?? ''}
+          erro={erros.nome}
+          autoFocus
+        />
         <Input
           id="empresaNome"
           name="empresaNome"

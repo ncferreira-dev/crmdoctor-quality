@@ -122,18 +122,18 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
                   </Button>
                 )}
                 {podeEditar ? (
-                  <select
+                  <Select
+                    tamanho="compacto"
                     value={ticket.status}
                     onChange={(e) => mudarStatus(ticket, e.target.value as StatusTicket)}
                     aria-label={`Status do ticket ${ticket.titulo}`}
-                    className="rounded-md border border-ink/15 bg-white px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none"
                   >
                     {STATUS.map((s) => (
                       <option key={s} value={s}>
                         {STATUS_TICKET_LABEL[s]}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 ) : (
                   <Badge>{STATUS_TICKET_LABEL[ticket.status]}</Badge>
                 )}

@@ -5,6 +5,12 @@ import { api } from '../../lib/api';
 import { GRUPOS_PERMISSAO, LEITURA_IMPLICADA } from '../../lib/permissoes';
 import { Cargo, Permissao } from '../../types';
 import { Modal } from '../ui/Modal';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
@@ -54,6 +60,7 @@ function FormularioCargo({
   );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
 
   function alternar(permissao: Permissao) {
     setSelecionadas((atual) => {
@@ -74,9 +81,30 @@ function FormularioCargo({
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
+
+    const problemas = validarObrigatorios(form, {
+      nome: 'Dê um nome ao cargo.',
+      nivel: 'Informe o nível do cargo.',
+    });
+    const nivel = Number(form.get('nivel'));
+    if (!problemas.nivel && (nivel < 1 || nivel >= meuNivel)) {
+      problemas.nivel = `O nível precisa ser entre 1 e ${meuNivel - 1}, abaixo do seu.`;
+    }
+    // Cargo sem permissão nenhuma entra no sistema e não enxerga nada. Melhor
+    // avisar aqui do que a pessoa descobrir quando o novo membro reclamar.
+    if (selecionadas.size === 0) {
+      problemas.nome = 'Marque ao menos uma permissão: cargo sem permissão não vê nada.';
+    }
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
+
     const corpo = {
       nome: String(form.get('nome')).trim(),
-      nivel: Number(form.get('nivel')),
+      nivel,
       permissoes: [...selecionadas],
     };
 
@@ -97,14 +125,14 @@ function FormularioCargo({
   }
 
   return (
-    <form onSubmit={enviar} className="flex flex-col gap-4">
+    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
       <Input
         id="nome"
         name="nome"
         label="Nome do cargo"
         placeholder="Diretoria, Consultor, Analista"
         defaultValue={cargo?.nome ?? ''}
-        required
+        erro={erros.nome}
         autoFocus
       />
 
@@ -117,7 +145,7 @@ function FormularioCargo({
           min={1}
           max={meuNivel - 1}
           defaultValue={cargo?.nivel ?? ''}
-          required
+          erro={erros.nivel}
         />
         <p className="text-[11px] leading-relaxed text-ink/45">
           Número maior manda em número menor. Quem tem nível mais alto gerencia quem tem nível mais

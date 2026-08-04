@@ -3,6 +3,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { Projeto, ResultadoPaginado, Usuario } from '../../types';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -30,6 +36,7 @@ export function TarefaFormModal({
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
 
   useEffect(() => {
     if (!aberto) return;
@@ -48,6 +55,15 @@ export function TarefaFormModal({
     evento.preventDefault();
     if (!membro) return;
     const form = new FormData(evento.currentTarget);
+
+    const problemas = validarObrigatorios(form, { titulo: 'Diga o que precisa ser feito.' });
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
+
     const prazo = String(form.get('prazo'));
     const projetoId = String(form.get('projetoId'));
 
@@ -75,13 +91,13 @@ export function TarefaFormModal({
       titulo={tituloProprio ?? (membro ? `Nova tarefa para ${membro.nome}` : 'Nova tarefa')}
       onFechar={onFechar}
     >
-      <form onSubmit={enviar} className="flex flex-col gap-3">
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-3">
         <Input
           id="titulo"
           name="titulo"
           label="Tarefa"
           placeholder="Ex: Revisar dossiê da Clínica X"
-          required
+          erro={erros.titulo}
           autoFocus
         />
         <Input id="descricao" name="descricao" label="Detalhes" />

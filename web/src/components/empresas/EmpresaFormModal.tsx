@@ -4,6 +4,12 @@ import { FormEvent, useState } from 'react';
 import { api } from '../../lib/api';
 import { EmpresaCliente, Segmento } from '../../types';
 import { SEGMENTO_LABEL } from '../../lib/formato';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -22,10 +28,20 @@ export function EmpresaFormModal({ aberto, empresa, onFechar, onSalvo }: Empresa
   const editando = Boolean(empresa);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
+
+    const problemas = validarObrigatorios(form, { nome: 'Informe o nome da empresa.' });
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
+
     const corpo = {
       nome: String(form.get('nome')),
       segmento: String(form.get('segmento')) as Segmento,
@@ -51,8 +67,14 @@ export function EmpresaFormModal({ aberto, empresa, onFechar, onSalvo }: Empresa
 
   return (
     <Modal aberto={aberto} titulo={editando ? 'Editar empresa' : 'Nova empresa'} onFechar={onFechar}>
-      <form onSubmit={enviar} className="flex flex-col gap-3">
-        <Input id="nome" name="nome" label="Nome" defaultValue={empresa?.nome ?? ''} required />
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-3">
+        <Input
+          id="nome"
+          name="nome"
+          label="Nome"
+          defaultValue={empresa?.nome ?? ''}
+          erro={erros.nome}
+        />
         <Select id="segmento" name="segmento" label="Segmento" defaultValue={empresa?.segmento ?? 'FARMA'}>
           {SEGMENTOS.map((s) => (
             <option key={s} value={s}>

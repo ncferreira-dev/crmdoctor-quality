@@ -3,6 +3,12 @@
 import { FormEvent, useState } from 'react';
 import { api } from '../../lib/api';
 import { Competencia } from '../../types';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -23,10 +29,20 @@ export function CompetenciaFormModal({
   const editando = Boolean(competencia);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
+
+    const problemas = validarObrigatorios(form, { nome: 'Informe o nome da competência.' });
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
+
     const corpo = {
       nome: String(form.get('nome')),
       descricao: String(form.get('descricao')) || undefined,
@@ -54,14 +70,19 @@ export function CompetenciaFormModal({
       titulo={editando ? 'Editar competência' : 'Nova competência'}
       onFechar={onFechar}
     >
-      <form key={competencia?.id ?? 'nova'} onSubmit={enviar} className="flex flex-col gap-3">
+      <form
+        key={competencia?.id ?? 'nova'}
+        onSubmit={enviar}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         <Input
           id="nome"
           name="nome"
           label="Nome"
           defaultValue={competencia?.nome ?? ''}
           placeholder="Ex: Auditoria de BPF"
-          required
+          erro={erros.nome}
           autoFocus
         />
         <Input

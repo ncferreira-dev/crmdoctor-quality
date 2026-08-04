@@ -3,6 +3,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { EmpresaCliente, Projeto, ResultadoPaginado } from '../../types';
+import {
+  ErrosForm,
+  focarPrimeiroErro,
+  temErro,
+  validarObrigatorios,
+} from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -34,6 +40,7 @@ export function ProjetoFormModal({
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<ErrosForm>({});
 
   useEffect(() => {
     if (!aberto || empresaFixaId) return;
@@ -48,6 +55,20 @@ export function ProjetoFormModal({
     const form = new FormData(evento.currentTarget);
     const valorBruto = String(form.get('valor'));
     const dataLimite = String(form.get('dataLimiteCompliance'));
+
+    const obrigatorios: Record<string, string> = { titulo: 'Dê um título ao projeto.' };
+    // A empresa só é campo do formulário quando o projeto está nascendo fora da
+    // tela de uma empresa.
+    if (!editando && !empresaFixaId) {
+      obrigatorios.empresaId = 'Escolha a empresa do projeto.';
+    }
+    const problemas = validarObrigatorios(form, obrigatorios);
+    if (temErro(problemas)) {
+      setErros(problemas);
+      focarPrimeiroErro(problemas);
+      return;
+    }
+    setErros({});
 
     const corpo = {
       titulo: String(form.get('titulo')),
@@ -90,22 +111,26 @@ export function ProjetoFormModal({
 
   return (
     <Modal aberto={aberto} titulo={editando ? 'Editar projeto' : 'Novo projeto'} onFechar={onFechar}>
-      <form onSubmit={enviar} className="flex flex-col gap-3">
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-3">
         <Input
           id="titulo"
           name="titulo"
           label="Título"
           defaultValue={projeto?.titulo ?? ''}
           placeholder="Ex: Auditoria RDC 430"
-          required
+          erro={erros.titulo}
           autoFocus
         />
 
         {!editando && !empresaFixaId && (
-          <Select id="empresaId" name="empresaId" label="Empresa" defaultValue="" required>
-            <option value="" disabled>
-              Selecione a empresa
-            </option>
+          <Select
+            id="empresaId"
+            name="empresaId"
+            label="Empresa"
+            defaultValue=""
+            erro={erros.empresaId}
+          >
+            <option value="">Selecione a empresa</option>
             {empresas.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.nome}
