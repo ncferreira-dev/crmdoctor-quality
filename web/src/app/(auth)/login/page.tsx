@@ -1,8 +1,7 @@
 'use client';
 
-import { FormEvent, useId, useState } from 'react';
+import { FormEvent, useId, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { salvarSessao } from '../../../lib/auth';
 import { Usuario } from '../../../types';
@@ -15,13 +14,30 @@ interface LoginResponse {
   user: Usuario;
 }
 
+// Query string lida de forma segura pra SSR: no servidor devolve vazio, no
+// cliente o valor real. useSearchParams forçaria a página a ser dinâmica.
+const semAssinatura = () => () => {};
+function useQueryString(): string {
+  return useSyncExternalStore(
+    semAssinatura,
+    () => window.location.search,
+    () => '',
+  );
+}
+
 export default function LoginPage() {
-  const router = useRouter();
   const id = useId();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+
+  // ?de=/membros — anotado pelo proxy ao expulsar quem estava sem sessão.
+  // Só aceitamos caminho interno (começa com "/" e não "//"): sem essa checagem
+  // o parâmetro viraria um open redirect para site de terceiro.
+  const query = useQueryString();
+  const deBruto = new URLSearchParams(query).get('de');
+  const destino = deBruto && deBruto.startsWith('/') && !deBruto.startsWith('//') ? deBruto : null;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -31,7 +47,12 @@ export default function LoginPage() {
     try {
       const { accessToken, user } = await api.post<LoginResponse>('/auth/login', { email, senha });
       salvarSessao(accessToken, user);
-      router.push('/dashboard');
+      // Navegação COMPLETA de propósito, não router.push: o Next guarda em
+      // cache de rota os redirects que o proxy fez enquanto a pessoa estava
+      // deslogada, e um push client-side não limpa esse cache — Membros/Cargos
+      // continuariam "lembrando" que levam pro login. Recarregar zera tudo.
+      window.location.assign(destino ?? '/dashboard');
+      return;
     } catch (e) {
       // A API responde 429 quando estoura o limite de tentativas. Dizer isso em
       // vez de "senha inválida" evita que a pessoa continue tentando à toa.
@@ -59,7 +80,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4">
+        {destino && (
+          <p
+            role="status"
+            className="mt-5 rounded-md bg-surface px-3 py-2 text-center text-xs leading-relaxed text-ink/60"
+          >
+            Sua sessão expirou. Entre de novo e você volta direto para onde estava.
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className={`${destino ? 'mt-4' : 'mt-7'} flex flex-col gap-4`}>
           <Input
             id={`${id}-email`}
             label="E-mail"

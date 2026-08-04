@@ -1,6 +1,8 @@
 import { Permissao, Usuario } from '../types';
 
-const OITO_HORAS_EM_SEGUNDOS = 60 * 60 * 8;
+// Mesma duração do JWT na API (auth.module). Se mudar lá, mude aqui: cookie
+// vivendo mais que o token gera bounce silencioso; menos, desloga à toa.
+const SETE_DIAS_EM_SEGUNDOS = 60 * 60 * 24 * 7;
 
 // Store mínima da sessão. Existe porque getUser() faz JSON.parse e devolveria
 // um objeto novo a cada chamada — e useSyncExternalStore compara por
@@ -33,7 +35,7 @@ export function salvarSessao(accessToken: string, user: Usuario) {
   localStorage.setItem('accessToken', accessToken);
   localStorage.setItem('user', JSON.stringify(user));
   // Cookie espelho só pra o middleware (server-side) conseguir checar se existe token.
-  document.cookie = `accessToken=${accessToken}; path=/; max-age=${OITO_HORAS_EM_SEGUNDOS}`;
+  document.cookie = `accessToken=${accessToken}; path=/; max-age=${SETE_DIAS_EM_SEGUNDOS}`;
   invalidar();
 }
 

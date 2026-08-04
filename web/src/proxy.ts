@@ -7,7 +7,14 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('accessToken');
 
   if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const url = new URL('/login', request.url);
+    // Leva o destino junto (?de=/membros): o login devolve a pessoa para onde
+    // ela tentou ir, em vez de largá-la no dashboard.
+    const destino = request.nextUrl.pathname;
+    if (destino !== '/') {
+      url.searchParams.set('de', destino);
+    }
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();

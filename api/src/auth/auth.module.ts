@@ -17,7 +17,12 @@ import { PermissionsGuard } from '../common/guards/permissions.guard';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '8h' },
+        // 7 dias: CRM interno de uso diário. Com 8h a sessão vencia no meio do
+        // expediente seguinte e derrubava a pessoa sem aviso. O contrapeso de
+        // segurança segue de pé: as permissões são relidas do banco a cada
+        // request, então desativar a conta corta o acesso na hora mesmo com
+        // token ainda válido.
+        signOptions: { expiresIn: '7d' },
       }),
     }),
   ],

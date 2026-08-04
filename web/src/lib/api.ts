@@ -10,7 +10,10 @@ function limparSessaoERedirecionar() {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('user');
   document.cookie = 'accessToken=; path=/; max-age=0';
-  window.location.href = '/login';
+  // ?de= devolve a pessoa à página em que estava depois do novo login, e é o
+  // que faz a tela de login mostrar o aviso de sessão expirada.
+  const de = window.location.pathname;
+  window.location.href = de && de !== '/' ? `/login?de=${encodeURIComponent(de)}` : '/login';
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
