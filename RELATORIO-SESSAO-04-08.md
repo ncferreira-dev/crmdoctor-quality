@@ -328,3 +328,51 @@ Critério de aceite: `npx eslint "{src,apps,libs,test}/**/*.ts"` na pasta `api`
 termina com 0 erros, e subir o preview `api-local` conecta no banco da máquina.
 Conferido: o heartbeat que a API local devolve é exatamente a linha gravada na
 tabela `cron_execucoes` do `crm_dq_local`.
+
+## Item 16: o erro de um dia no prazo de compliance existe, e foi consertado
+
+**O defeito, medido.** O cron calculava "hoje" a partir do relógio UTC:
+
+```ts
+const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+```
+
+Entre 21h e 23h59 de Brasília o UTC já está no dia seguinte. Como o cron também
+roda **no boot do container**, e deploy à noite acontece, um container que sobe
+às 22h calcula "hoje" como amanhã. Duas consequências:
+
+1. A frase sai com um dia a menos. Prazo em 16/08 visto na noite de 04/08 vira
+   "vence em 11 dias" em vez de 12.
+2. O prazo que vence hoje fica **fora** da janela `gte: hoje` e não gera alerta
+   naquela execução.
+
+E o erro não se conserta sozinho: a mensagem é gravada pronta na notificação, e
+o `@@unique([projetoId, tipo, dataReferencia])` impede regravar. O número errado
+fica congelado até o prazo mudar.
+
+**O conserto.** Camada de aplicação, sem migration. Nasceu
+`api/src/common/utils/dia-civil.ts` com `inicioDoDiaCivil()` e `diasEntre()`. A
+data civil vem do `Intl` com fuso `America/Sao_Paulo`, não de um `-3` fixo, para
+não quebrar se o horário de verão voltar.
+
+**Como sei que resolveu.** 12 testes novos, 58 no total (eram 46). O
+`dia-civil.spec.ts` guarda a fórmula antiga dentro do teste e mede a diferença,
+então ele **prova** o erro em vez de só afirmar que existia:
+
+| Cenário | Antes | Agora |
+|---|---|---|
+| 8h de Brasília (cron agendado) | certo | certo, nada mudou |
+| 23h30 de 04/08 (boot noturno) | janela começava em 05/08 | começa em 04/08 |
+| 22h de 31/08 (virada do mês) | pulava para 01/09 | fica em 31/08 |
+| Prazo vencendo hoje, às 23h30 | ficava fora do alerta | entra, com "vence em 0 dias" |
+
+**O que NÃO consertei, e é decisão tua.** A mensagem guarda um número relativo
+("vence em 12 dias") em texto fixo. Lida três dias depois, ela está errada por
+três dias, e isso não tem nada a ver com fuso. O caminho certo é a tela calcular
+a partir de `dataReferencia`, que já está gravada na notificação, e a mensagem
+guardar só o fato. Mexe no texto de alerta que já existe no banco, então parei
+aqui.
+
+**Varredura.** Procurei o mesmo padrão no resto da API
+(`getUTCDate`, `setHours`, `Date.UTC`): o cron era o único lugar. O front já
+tinha sido corrigido ontem com `formatarDataCivil`.

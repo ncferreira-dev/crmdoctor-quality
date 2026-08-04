@@ -137,3 +137,83 @@ describe('NotificacoesService — cron de compliance', () => {
     expect(arg.data[0]).not.toHaveProperty('projetoId');
   });
 });
+
+// O cron roda no boot do container, e deploy à noite acontece. Entre 21h e
+// 23h59 de Brasília o relógio UTC já está no dia seguinte, e é aí que a conta
+// de "vence em N dias" errava por um dia. A frase fica gravada na notificação e
+// o @@unique impede regravar, então o número errado sobrevive até o prazo mudar.
+describe('NotificacoesService — janela e contagem no fuso de Brasília', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  async function rodarEm(instante: string, prazo: string) {
+    jest.useFakeTimers().setSystemTime(new Date(instante));
+    const prisma = criarMockPrisma();
+    prisma.projeto.findMany.mockResolvedValue([
+      {
+        id: 'p1',
+        titulo: 'Auditoria FDA',
+        // Campo @db.Date volta do Prisma como meia-noite UTC do dia civil.
+        dataLimiteCompliance: new Date(prazo),
+        empresa: { nome: 'Clínica X' },
+      },
+    ]);
+    prisma.etapaProjeto.findMany.mockResolvedValue([]);
+    prisma.notificacao.createMany.mockResolvedValue({ count: 1 });
+
+    await servicoCom(prisma).verificarPrazosCompliance();
+
+    const where = (
+      prisma.projeto.findMany.mock.calls[0][0] as {
+        where: { dataLimiteCompliance: { gte: Date; lte: Date } };
+      }
+    ).where;
+    const arg = prisma.notificacao.createMany.mock.calls[0][0] as CreateManyArg;
+    return { inicioDaJanela: where.dataLimiteCompliance.gte, arg };
+  }
+
+  it('às 23h30 de Brasília ainda conta a partir de hoje, não de amanhã', async () => {
+    // 04/08 23h30 em Brasília, que em UTC já é 05/08 02h30.
+    const { inicioDaJanela, arg } = await rodarEm(
+      '2026-08-05T02:30:00.000Z',
+      '2026-08-16T00:00:00.000Z',
+    );
+
+    expect(inicioDaJanela.toISOString()).toBe('2026-08-04T00:00:00.000Z');
+    // De 04/08 para 16/08 são 12 dias. A fórmula antiga diria 11.
+    expect(arg.data[0].mensagem).toContain('vence em 12 dias');
+  });
+
+  it('na virada do mês o alerta não pula para o mês seguinte', async () => {
+    // 31/08 22h em Brasília, que em UTC já é 01/09 01h.
+    const { inicioDaJanela, arg } = await rodarEm(
+      '2026-09-01T01:00:00.000Z',
+      '2026-09-10T00:00:00.000Z',
+    );
+
+    expect(inicioDaJanela.toISOString()).toBe('2026-08-31T00:00:00.000Z');
+    expect(arg.data[0].mensagem).toContain('vence em 10 dias');
+  });
+
+  it('no horário do cron agendado (8h de Brasília) nada muda', async () => {
+    const { inicioDaJanela, arg } = await rodarEm(
+      '2026-08-05T11:00:00.000Z',
+      '2026-08-16T00:00:00.000Z',
+    );
+
+    expect(inicioDaJanela.toISOString()).toBe('2026-08-05T00:00:00.000Z');
+    expect(arg.data[0].mensagem).toContain('vence em 11 dias');
+  });
+
+  it('prazo que vence hoje continua dentro da janela, e não vira "vence em -1"', async () => {
+    // 04/08 23h30 em Brasília, prazo hoje (04/08).
+    const { inicioDaJanela, arg } = await rodarEm(
+      '2026-08-05T02:30:00.000Z',
+      '2026-08-04T00:00:00.000Z',
+    );
+
+    expect(inicioDaJanela.toISOString()).toBe('2026-08-04T00:00:00.000Z');
+    expect(arg.data[0].mensagem).toContain('vence em 0 dias');
+  });
+});

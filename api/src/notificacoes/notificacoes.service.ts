@@ -7,6 +7,7 @@ import {
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { FindNotificacoesQueryDto } from './dto/find-notificacoes-query.dto';
+import { diasEntre, inicioDoDiaCivil } from '../common/utils/dia-civil';
 
 // Chave do heartbeat na tabela cron_execucoes. /health/cron lê pela mesma
 // constante (exportada) para os dois lados nunca divergirem.
@@ -72,10 +73,10 @@ export class NotificacoesService implements OnApplicationBootstrap {
   }
 
   async verificarPrazosCompliance() {
-    const agora = new Date();
-    const hoje = new Date(
-      Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()),
-    );
+    // Dia civil de Brasília, não o dia UTC. O cron agendado roda às 8h daqui
+    // (11h UTC, mesmo dia), mas o cron também roda no boot do container, e
+    // deploy à noite cai depois da virada do UTC. Ver common/utils/dia-civil.
+    const hoje = inicioDoDiaCivil();
     const em15Dias = new Date(hoje.getTime() + 15 * 24 * 60 * 60 * 1000);
 
     const [criadasProjetos, criadasEtapas] = await Promise.all([
@@ -107,10 +108,7 @@ export class NotificacoesService implements OnApplicationBootstrap {
     }
 
     const dados = projetos.map((projeto) => {
-      const dias = Math.round(
-        (projeto.dataLimiteCompliance!.getTime() - hoje.getTime()) /
-          (24 * 60 * 60 * 1000),
-      );
+      const dias = diasEntre(hoje, projeto.dataLimiteCompliance!);
       return {
         tipo: 'COMPLIANCE_PRAZO',
         mensagem: `Projeto ${projeto.titulo} da empresa ${projeto.empresa.nome} vence em ${dias} dias`,
@@ -146,9 +144,7 @@ export class NotificacoesService implements OnApplicationBootstrap {
     }
 
     const dados = etapas.map((etapa) => {
-      const dias = Math.round(
-        (etapa.prazo!.getTime() - hoje.getTime()) / (24 * 60 * 60 * 1000),
-      );
+      const dias = diasEntre(hoje, etapa.prazo!);
       return {
         tipo: 'COMPLIANCE_ETAPA',
         mensagem: `Etapa ${etapa.nome} do projeto ${etapa.projeto.titulo} (empresa ${etapa.projeto.empresa.nome}) vence em ${dias} dias`,
