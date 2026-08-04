@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
+import { marcarAlertaLido } from '../../../lib/alertas';
 import { usePermissao } from '../../../hooks/useSessao';
-import { DashboardResumo, Notificacao } from '../../../types';
+import { useAlertas } from '../../../hooks/useAlertas';
+import { DashboardResumo } from '../../../types';
 import {
   ESTAGIOS_PROJETO,
   ESTAGIO_PROJETO_LABEL,
@@ -30,9 +32,12 @@ function num(valor: number | undefined): number {
 export default function DashboardPage() {
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [alertas, setAlertas] = useState<Notificacao[] | null>(null);
   const [marcando, setMarcando] = useState<string | null>(null);
   const podeVerAlertas = usePermissao('NOTIFICACOES_READ');
+  // Mesma store que alimenta o sino do cabeçalho. Dar baixa aqui muda o badge
+  // lá em cima na hora, e o contrário também: são a mesma informação, e duas
+  // cópias independentes acabariam se contradizendo na tela.
+  const alertas = useAlertas();
 
   useEffect(() => {
     api
@@ -41,30 +46,12 @@ export default function DashboardPage() {
       .catch((error: Error) => setErro(error.message));
   }, []);
 
-  useEffect(() => {
-    if (!podeVerAlertas) return;
-    api
-      .get<Notificacao[]>('/notificacoes?lida=false')
-      .then(setAlertas)
-      .catch(() => setAlertas([]));
-  }, [podeVerAlertas]);
-
-  // Some da lista e desconta do card na hora, sem recarregar o resumo inteiro:
-  // o número e a lista são a mesma informação e não podem discordar na tela.
   async function marcarLida(id: string) {
     setMarcando(id);
     try {
-      await api.patch(`/notificacoes/${id}/lida`);
-      setAlertas((atuais) => (atuais ?? []).filter((a) => a.id !== id));
-      setResumo((atual) =>
-        atual ? { ...atual, alertasNaoLidos: Math.max(0, num(atual.alertasNaoLidos) - 1) } : atual,
-      );
+      await marcarAlertaLido(id);
     } catch {
-      // Falhou: recarrega a lista do servidor em vez de mentir na tela.
-      api
-        .get<Notificacao[]>('/notificacoes?lida=false')
-        .then(setAlertas)
-        .catch(() => {});
+      // A store desfaz sozinha o que tinha tirado da lista. Nada a fazer aqui.
     } finally {
       setMarcando(null);
     }
@@ -131,13 +118,16 @@ export default function DashboardPage() {
         {podeVerAlertas && (
           <KpiCard
             label="Alertas não lidos"
-            valor={num(resumo.alertasNaoLidos)}
+            // A lista carregada manda no número; o valor do resumo só cobre o
+            // instante antes dela chegar. Assim o card não fica anunciando um
+            // alerta que a pessoa acabou de marcar como lido logo abaixo.
+            valor={alertas?.length ?? num(resumo.alertasNaoLidos)}
             // Leva ao painel logo abaixo, onde os alertas estão escritos e é
             // possível dar baixa. Antes apontava para /projetos, que não mostra
             // alerta nenhum.
             href="#alertas"
             nota="Compliance"
-            alerta={num(resumo.alertasNaoLidos) > 0}
+            alerta={(alertas?.length ?? num(resumo.alertasNaoLidos)) > 0}
           />
         )}
         <KpiCard

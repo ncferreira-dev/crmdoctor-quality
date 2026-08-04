@@ -1,10 +1,11 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { limparSessao } from '../../lib/auth';
+import { limparAlertas } from '../../lib/alertas';
 import { usePermissao, useSessaoUsuario } from '../../hooks/useSessao';
 import { Permissao } from '../../types';
 import {
@@ -80,6 +81,9 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
 
   function sair() {
     limparSessao();
+    // Os alertas vivem em memória, fora do localStorage: sem limpar aqui, quem
+    // entrasse em seguida na mesma aba veria os alertas da sessão anterior.
+    limparAlertas();
     router.push('/login');
   }
 
@@ -165,35 +169,21 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
   );
 }
 
+interface SidebarProps {
+  // A gaveta do celular é controlada de fora porque quem a abre é o botão do
+  // cabeçalho, que vive em outra coluna do layout.
+  aberta: boolean;
+  onFechar: () => void;
+}
+
 // Desktop: coluna fixa. Mobile: gaveta — 224px fixos numa tela de 375px
 // comeriam 60% do espaço útil.
-export function Sidebar() {
-  const [aberta, setAberta] = useState(false);
-
+export function Sidebar({ aberta, onFechar }: SidebarProps) {
   return (
     <>
       <aside className="hidden h-screen w-60 shrink-0 flex-col bg-night lg:flex">
         <ConteudoMenu />
       </aside>
-
-      <button
-        type="button"
-        onClick={() => setAberta(true)}
-        aria-label="Abrir menu"
-        className="fixed left-3 top-3 z-40 rounded-md bg-night p-2 text-white lg:hidden"
-      >
-        <svg
-          className="h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
 
       {/* Sem AnimatePresence, pelo mesmo motivo documentado em ui/Modal.tsx: a
           saída animava até o fim e o nó ficava no DOM com opacity 0 e
@@ -204,7 +194,7 @@ export function Sidebar() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.15 }}
-          onClick={() => setAberta(false)}
+          onClick={onFechar}
           className="fixed inset-0 z-50 bg-night/50 lg:hidden"
         >
           <motion.aside
@@ -214,7 +204,7 @@ export function Sidebar() {
             onClick={(e) => e.stopPropagation()}
             className="h-full w-64 bg-night"
           >
-            <ConteudoMenu aoNavegar={() => setAberta(false)} />
+            <ConteudoMenu aoNavegar={onFechar} />
           </motion.aside>
         </motion.div>
       )}
