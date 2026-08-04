@@ -376,3 +376,42 @@ aqui.
 **Varredura.** Procurei o mesmo padrão no resto da API
 (`getUTCDate`, `setHours`, `Date.UTC`): o cron era o único lugar. O front já
 tinha sido corrigido ontem com `formatarDataCivil`.
+
+## Item 17: o corte silencioso no registro 101
+
+**Por que era pior do que parece.** Onze lugares da interface pediam
+`?limit=100` e usavam o que voltasse. E 100 não era um número escolhido: é o
+teto do `@Max(100)` no `PaginacaoDto` da API, ou seja, pedir mais devolve 400.
+Passando de 100 registros, o resto sumia **sem nenhum sinal**: o select
+simplesmente não tinha a opção, e a pessoa não tinha como saber que a opção
+existia. Com uma empresa faltando na lista, a visita é agendada na empresa
+errada ou não é agendada.
+
+**O conserto.** `api.getTodos<T>(rota)` em `web/src/lib/api.ts` percorre a
+paginação da API até o fim, com as páginas seguintes em paralelo. Os onze
+lugares passaram a usar isso. Não sobrou nenhum `limit=100` no código.
+
+Tem trava: acima de 20 páginas (2000 registros) ele para e **avisa no console**
+que aquela tela precisa de busca no servidor. O ponto é não repetir o defeito de
+cortar calado.
+
+**Como conferi, com 150 registros de verdade.** A `web/` não tem executor de
+teste instalado (o `package.json` só tem dev, build, start e lint), e instalar
+biblioteca está fora do meu envelope, então o teste foi feito no navegador
+contra o banco local:
+
+1. Inseri 150 competências `TESTE-PAGINACAO 001..150` no `crm_dq_local`.
+2. Abri `/competencias`. A tela renderizou **as 150**, incluindo a 101 e a 150.
+   Antes teria mostrado 100 e parado.
+3. A aba de rede mostra as duas chamadas: `?page=1&limit=100` e
+   `?page=2&limit=100`.
+4. Apaguei as 150. O banco local voltou às 5 competências originais.
+
+**O que fica para depois:** as telas de lista (Projetos, Tarefas, Competências)
+continuam sem paginação na interface. Hoje elas carregam tudo, o que é correto e
+lento; com milhares de registros vão precisar de busca no servidor de verdade. O
+aviso no console é o gatilho para isso.
+
+**Anotação que virou achado:** a `web/` não tem nenhum teste. Toda a rede de
+segurança automatizada do projeto está na API. Instalar Vitest é decisão tua,
+por causa da regra de não instalar biblioteca sem avisar.

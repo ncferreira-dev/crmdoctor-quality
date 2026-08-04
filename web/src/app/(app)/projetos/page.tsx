@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
-import { EstagioProjeto, Projeto, ResultadoPaginado } from '../../../types';
+import { EstagioProjeto, Projeto } from '../../../types';
 import {
   ESTAGIOS_PROJETO,
   ESTAGIO_PROJETO_LABEL,
@@ -37,8 +37,8 @@ export default function ProjetosPage() {
 
   function carregar() {
     api
-      .get<ResultadoPaginado<Projeto>>('/projetos?limit=100')
-      .then((r) => setProjetos(r.data))
+      .getTodos<Projeto>('/projetos')
+      .then(setProjetos)
       .catch((e: Error) => setErro(e.message));
   }
 

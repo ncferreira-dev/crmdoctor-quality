@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
-import { ResultadoPaginado, StatusTarefa, Tarefa, Usuario } from '../../../types';
+import { StatusTarefa, Tarefa, Usuario } from '../../../types';
 import { STATUS_TAREFA_LABEL } from '../../../lib/formato';
 
 const STATUS_TAREFA = Object.keys(STATUS_TAREFA_LABEL) as StatusTarefa[];
@@ -39,8 +39,8 @@ export default function MembrosPage() {
       .then(setMembros)
       .catch((e: Error) => setErro(e.message));
     api
-      .get<ResultadoPaginado<Tarefa>>('/tarefas?limit=100')
-      .then((r) => setTarefas(r.data))
+      .getTodos<Tarefa>('/tarefas')
+      .then(setTarefas)
       .catch(() => setTarefas([]));
   }
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
 import { diasAteOPrazo } from '../../../lib/formato';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
-import { ResultadoPaginado, StatusTarefa, Tarefa } from '../../../types';
+import { StatusTarefa, Tarefa } from '../../../types';
 import { Button } from '../../../components/ui/Button';
 import { ItemTarefa } from '../../../components/tarefas/ItemTarefa';
 import { TarefaFormModal } from '../../../components/membros/TarefaFormModal';
@@ -69,11 +69,11 @@ export default function TarefasPage() {
     if (!usuario || !podeVer) return;
     // Na visão "minhas" o filtro vai na API, não no cliente: sem isso a página
     // baixaria a lista da empresa inteira para jogar quase tudo fora.
-    const filtro = escopo === 'minhas' ? `responsavelId=${usuario.id}&` : '';
+    const filtro = escopo === 'minhas' ? `?responsavelId=${usuario.id}` : '';
     api
-      .get<ResultadoPaginado<Tarefa>>(`/tarefas?${filtro}limit=100`)
-      .then((r) => {
-        setTarefas(r.data);
+      .getTodos<Tarefa>(`/tarefas${filtro}`)
+      .then((lista) => {
+        setTarefas(lista);
         setErro(null);
       })
       .catch((e: Error) => setErro(e.message));

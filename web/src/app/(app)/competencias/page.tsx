@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
-import { Competencia, ResultadoPaginado } from '../../../types';
+import { Competencia } from '../../../types';
 import { Button } from '../../../components/ui/Button';
 import { CompetenciaFormModal } from '../../../components/competencias/CompetenciaFormModal';
 
@@ -18,8 +18,8 @@ export default function CompetenciasPage() {
 
   function carregar() {
     api
-      .get<ResultadoPaginado<Competencia>>('/competencias?limit=100')
-      .then((r) => setCompetencias(r.data))
+      .getTodos<Competencia>('/competencias')
+      .then(setCompetencias)
       .catch((e: Error) => setErro(e.message));
   }
 

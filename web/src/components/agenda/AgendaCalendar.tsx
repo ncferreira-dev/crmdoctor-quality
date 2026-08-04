@@ -7,7 +7,6 @@ import {
   ConsultorDaVisita,
   EmpresaCliente,
   Projeto,
-  ResultadoPaginado,
   StatusVisita,
   Visita,
 } from '../../types';
@@ -86,8 +85,8 @@ export function AgendaCalendar() {
     // até os novos chegarem (~200ms). Evita o piscar do esqueleto a cada
     // navegação — e mantém o setState fora do corpo síncrono do effect.
     api
-      .get<ResultadoPaginado<Visita>>(`/visitas?de=${de}&ate=${ate}&limit=100`)
-      .then((r) => setVisitas(r.data))
+      .getTodos<Visita>(`/visitas?de=${de}&ate=${ate}`)
+      .then(setVisitas)
       .catch((e: Error) => setErro(e.message));
   }
 
@@ -101,12 +100,12 @@ export function AgendaCalendar() {
       .get<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>('/visitas/consultores')
       .then(setConsultores)
       .catch(() => {});
-    api.get<ResultadoPaginado<EmpresaCliente>>('/empresas?limit=100').then((r) => setEmpresas(r.data)).catch(() => {});
+    api.getTodos<EmpresaCliente>('/empresas').then(setEmpresas).catch(() => {});
     // A mesma lista serve para duas coisas: o seletor de projeto do formulário
     // e as marcas de prazo no calendário. Carregada uma vez, não a cada mês.
     api
-      .get<ResultadoPaginado<Projeto>>('/projetos?limit=100')
-      .then((r) => setProjetos(r.data))
+      .getTodos<Projeto>('/projetos')
+      .then(setProjetos)
       .catch(() => {});
   }, []);
 

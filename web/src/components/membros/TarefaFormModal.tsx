@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { Projeto, ResultadoPaginado, Usuario } from '../../types';
+import { Projeto, Usuario } from '../../types';
 import {
   ErrosForm,
   focarPrimeiroErro,
@@ -43,9 +43,9 @@ export function TarefaFormModal({
     // setState só dentro do callback assíncrono: chamar direto no corpo do
     // effect dispara render em cascata (react-hooks/set-state-in-effect).
     api
-      .get<ResultadoPaginado<Projeto>>('/projetos?limit=100')
-      .then((r) => {
-        setProjetos(r.data);
+      .getTodos<Projeto>('/projetos')
+      .then((lista) => {
+        setProjetos(lista);
         setErro(null);
       })
       .catch(() => setProjetos([]));

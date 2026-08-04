@@ -1,3 +1,5 @@
+import { ResultadoPaginado } from '../types';
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function getToken(): string | null {
@@ -50,8 +52,46 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// Teto do @Max(100) no PaginacaoDto da API: pedir mais que 100 devolve 400.
+const MAXIMO_POR_PAGINA = 100;
+
+// Trava de segurança. 20 páginas são 2000 registros; acima disso a tela não
+// deveria estar carregando tudo de uma vez, e sim buscando no servidor. O corte
+// é registrado no console em vez de acontecer calado, que era o defeito antigo.
+const MAXIMO_DE_PAGINAS = 20;
+
+// Antes disto, toda lista da interface pedia `?limit=100` e usava o que viesse.
+// No registro 101 o restante sumia sem aviso: o select simplesmente não tinha a
+// opção, e não havia como a pessoa perceber. Aqui a paginação da API é
+// percorrida até o fim.
+async function getTodos<T>(path: string): Promise<T[]> {
+  const separador = path.includes('?') ? '&' : '?';
+  const url = (page: number) =>
+    `${path}${separador}page=${page}&limit=${MAXIMO_POR_PAGINA}`;
+
+  const primeira = await request<ResultadoPaginado<T>>(url(1));
+  if (primeira.totalPages <= 1) return primeira.data;
+
+  const ultima = Math.min(primeira.totalPages, MAXIMO_DE_PAGINAS);
+  if (primeira.totalPages > MAXIMO_DE_PAGINAS) {
+    console.warn(
+      `${path}: ${primeira.total} registros, carregando só os ${ultima * MAXIMO_POR_PAGINA} primeiros. Esta tela precisa de busca no servidor.`,
+    );
+  }
+
+  const restantes = await Promise.all(
+    Array.from({ length: ultima - 1 }, (_, i) =>
+      request<ResultadoPaginado<T>>(url(i + 2)),
+    ),
+  );
+  return restantes.reduce((tudo, r) => tudo.concat(r.data), primeira.data);
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path, { method: 'GET' }),
+  // Devolve a lista inteira, não a primeira página. Use em qualquer lugar que
+  // precise de todas as opções (select, filtro, calendário do mês).
+  getTodos,
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: unknown) =>

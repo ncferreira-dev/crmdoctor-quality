@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { EmpresaCliente, Projeto, ResultadoPaginado } from '../../types';
+import { EmpresaCliente, Projeto } from '../../types';
 import {
   ErrosForm,
   focarPrimeiroErro,
@@ -45,8 +45,8 @@ export function ProjetoFormModal({
   useEffect(() => {
     if (!aberto || empresaFixaId) return;
     api
-      .get<ResultadoPaginado<EmpresaCliente>>('/empresas?limit=100')
-      .then((r) => setEmpresas(r.data))
+      .getTodos<EmpresaCliente>('/empresas')
+      .then(setEmpresas)
       .catch(() => setEmpresas([]));
   }, [aberto, empresaFixaId]);
 

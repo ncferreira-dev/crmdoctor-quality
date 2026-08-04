@@ -7,7 +7,6 @@ import {
   ConsultorDaVisita,
   EmpresaCliente,
   Projeto,
-  ResultadoPaginado,
   StatusVisita,
   Visita,
 } from '../../types';
@@ -142,8 +141,8 @@ export function VisitaFormModal({
   useEffect(() => {
     if (!aberto) return;
     api
-      .get<ResultadoPaginado<EmpresaCliente>>('/empresas?limit=100')
-      .then((r) => setEmpresas(r.data))
+      .getTodos<EmpresaCliente>('/empresas')
+      .then(setEmpresas)
       .catch(() => setEmpresas([]));
     api
       .get<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>('/visitas/consultores')

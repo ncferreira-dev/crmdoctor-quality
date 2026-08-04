@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { Cargo, Competencia, ResultadoPaginado, Usuario } from '../../types';
+import { Cargo, Competencia, Usuario } from '../../types';
 import {
   ErrosForm,
   focarPrimeiroErro,
@@ -47,8 +47,8 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
       })
       .catch(() => setCargos([]));
     api
-      .get<ResultadoPaginado<Competencia>>('/competencias?limit=100')
-      .then((r) => setCompetencias(r.data))
+      .getTodos<Competencia>('/competencias')
+      .then(setCompetencias)
       .catch(() => setCompetencias([]));
   }, [aberto]);
 
