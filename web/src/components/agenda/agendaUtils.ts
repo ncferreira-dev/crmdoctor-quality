@@ -88,3 +88,25 @@ export function intervaloDaVisao(
 }
 
 export const DIAS_SEMANA_CURTO = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+const MESES = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
+
+// "5 de agosto de 2026", para rótulo de leitor de tela. Montado na mão em vez
+// de toLocaleDateString porque o texto é gerado no servidor e no navegador: se
+// os dois tiverem locales diferentes, o React acusa erro de hidratação.
+export function dataPorExtenso(data: Date): string {
+  return `${data.getDate()} de ${MESES[data.getMonth()]} de ${data.getFullYear()}`;
+}
