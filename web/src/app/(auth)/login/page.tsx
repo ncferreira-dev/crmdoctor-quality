@@ -85,7 +85,7 @@ export default function LoginPage() {
             role="status"
             className="mt-5 rounded-md bg-surface px-3 py-2 text-center text-xs leading-relaxed text-ink/60"
           >
-            Sua sessão expirou. Entre de novo e você volta direto para onde estava.
+            Sua sessão expirou. Faça login novamente para continuar de onde parou.
           </p>
         )}
 
