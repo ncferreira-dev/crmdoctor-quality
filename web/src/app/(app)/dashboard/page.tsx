@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-import { DashboardResumo } from '../../../types';
+import { usePermissao } from '../../../hooks/useSessao';
+import { DashboardResumo, Notificacao } from '../../../types';
 import {
   ESTAGIOS_PROJETO,
   ESTAGIO_PROJETO_LABEL,
-  formatarData,
+  formatarDataCivil,
 } from '../../../lib/formato';
 import { KpiCard } from '../../../components/dashboard/KpiCard';
 import { BarraRanking } from '../../../components/dashboard/BarraRanking';
-import { SeloPrazo } from '../../../components/projetos/SeloPrazo';
+import { PainelAlertas } from '../../../components/dashboard/PainelAlertas';
 
 function moeda(valor: number | undefined): string {
   return (valor ?? 0).toLocaleString('pt-BR', {
@@ -29,6 +30,9 @@ function num(valor: number | undefined): number {
 export default function DashboardPage() {
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [alertas, setAlertas] = useState<Notificacao[] | null>(null);
+  const [marcando, setMarcando] = useState<string | null>(null);
+  const podeVerAlertas = usePermissao('NOTIFICACOES_READ');
 
   useEffect(() => {
     api
@@ -36,6 +40,35 @@ export default function DashboardPage() {
       .then(setResumo)
       .catch((error: Error) => setErro(error.message));
   }, []);
+
+  useEffect(() => {
+    if (!podeVerAlertas) return;
+    api
+      .get<Notificacao[]>('/notificacoes?lida=false')
+      .then(setAlertas)
+      .catch(() => setAlertas([]));
+  }, [podeVerAlertas]);
+
+  // Some da lista e desconta do card na hora, sem recarregar o resumo inteiro:
+  // o número e a lista são a mesma informação e não podem discordar na tela.
+  async function marcarLida(id: string) {
+    setMarcando(id);
+    try {
+      await api.patch(`/notificacoes/${id}/lida`);
+      setAlertas((atuais) => (atuais ?? []).filter((a) => a.id !== id));
+      setResumo((atual) =>
+        atual ? { ...atual, alertasNaoLidos: Math.max(0, num(atual.alertasNaoLidos) - 1) } : atual,
+      );
+    } catch {
+      // Falhou: recarrega a lista do servidor em vez de mentir na tela.
+      api
+        .get<Notificacao[]>('/notificacoes?lida=false')
+        .then(setAlertas)
+        .catch(() => {});
+    } finally {
+      setMarcando(null);
+    }
+  }
 
   if (erro) {
     return <p className="text-sm text-ink/60">Não foi possível carregar o dashboard: {erro}</p>;
@@ -95,13 +128,18 @@ export default function DashboardPage() {
           nota="Próximos 7 dias"
           alerta={num(resumo.etapasVencendo7Dias) > 0}
         />
-        <KpiCard
-          label="Alertas não lidos"
-          valor={num(resumo.alertasNaoLidos)}
-          href="/projetos"
-          nota="Compliance"
-          alerta={num(resumo.alertasNaoLidos) > 0}
-        />
+        {podeVerAlertas && (
+          <KpiCard
+            label="Alertas não lidos"
+            valor={num(resumo.alertasNaoLidos)}
+            // Leva ao painel logo abaixo, onde os alertas estão escritos e é
+            // possível dar baixa. Antes apontava para /projetos, que não mostra
+            // alerta nenhum.
+            href="#alertas"
+            nota="Compliance"
+            alerta={num(resumo.alertasNaoLidos) > 0}
+          />
+        )}
         <KpiCard
           label="Projetos sem prazo"
           valor={num(resumo.projetosSemPrazo)}
@@ -123,6 +161,10 @@ export default function DashboardPage() {
           nota="Próximos 7 dias"
         />
       </div>
+
+      {podeVerAlertas && (
+        <PainelAlertas alertas={alertas} onMarcarLida={marcarLida} marcando={marcando} />
+      )}
 
       {/* Rankings: onde estão os projetos e como está a carga do time */}
       <div className="grid gap-3 lg:grid-cols-2">
@@ -183,7 +225,7 @@ export default function DashboardPage() {
                     </div>
                     {marco.prazo && (
                       <span className="dado shrink-0 text-[11px] text-ink/55">
-                        {formatarData(marco.prazo)}
+                        {formatarDataCivil(marco.prazo)}
                       </span>
                     )}
                   </Link>
