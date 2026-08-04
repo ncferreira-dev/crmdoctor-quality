@@ -19,9 +19,9 @@ import { PermissionsGuard } from '../common/guards/permissions.guard';
         secret: configService.get<string>('JWT_SECRET'),
         // 7 dias: CRM interno de uso diário. Com 8h a sessão vencia no meio do
         // expediente seguinte e derrubava a pessoa sem aviso. O contrapeso de
-        // segurança segue de pé: as permissões são relidas do banco a cada
-        // request, então desativar a conta corta o acesso na hora mesmo com
-        // token ainda válido.
+        // segurança é o JwtStrategy.validate(): cargo, permissões e status
+        // saem do banco a cada request, então desativar a conta, mudar o cargo
+        // ou resetar o acesso corta na hora, mesmo com o token ainda no prazo.
         signOptions: { expiresIn: '7d' },
       }),
     }),

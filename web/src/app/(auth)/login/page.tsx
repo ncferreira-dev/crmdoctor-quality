@@ -36,8 +36,18 @@ export default function LoginPage() {
   // Só aceitamos caminho interno (começa com "/" e não "//"): sem essa checagem
   // o parâmetro viraria um open redirect para site de terceiro.
   const query = useQueryString();
-  const deBruto = new URLSearchParams(query).get('de');
+  const parametros = new URLSearchParams(query);
+  const deBruto = parametros.get('de');
   const destino = deBruto && deBruto.startsWith('/') && !deBruto.startsWith('//') ? deBruto : null;
+  // ?senhaAlterada=1 — quem acabou de trocar a própria senha no perfil. A troca
+  // encerra as sessões abertas, inclusive a dele, então ele chega aqui sem ter
+  // sido expulso por nada: dizer "sua sessão expirou" seria mentira e susto.
+  const senhaAlterada = parametros.get('senhaAlterada') === '1';
+  const aviso = senhaAlterada
+    ? 'Senha alterada. Entre de novo com a senha nova.'
+    : destino
+      ? 'Sua sessão expirou. Faça login novamente para continuar de onde parou.'
+      : null;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -80,16 +90,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {destino && (
+        {aviso && (
           <p
             role="status"
             className="mt-5 rounded-md bg-surface px-3 py-2 text-center text-xs leading-relaxed text-ink/60"
           >
-            Sua sessão expirou. Faça login novamente para continuar de onde parou.
+            {aviso}
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className={`${destino ? 'mt-4' : 'mt-7'} flex flex-col gap-4`}>
+        <form onSubmit={handleSubmit} className={`${aviso ? 'mt-4' : 'mt-7'} flex flex-col gap-4`}>
           <Input
             id={`${id}-email`}
             label="E-mail"

@@ -3,8 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
-import { AuthUser } from '../common/types/auth-user';
-import { Permissao } from '../common/constants/permissoes';
+import { JwtPayload } from './strategies/jwt.strategy';
 
 @Injectable()
 export class AuthService {
@@ -37,13 +36,12 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const payload: AuthUser = {
-      sub: user.id,
-      nome: user.nome,
-      email: user.email,
-      cargoNivel: user.cargo.nivel,
-      permissoes: user.cargo.permissoes as Permissao[],
-    };
+    // Só o id vai assinado. Nome, cargo e permissões saem do banco em
+    // JwtStrategy.validate() a cada request: se fossem gravados aqui, mudança
+    // de cargo ou desativação só valeriam no próximo login, até 7 dias depois.
+    // O token também deixa de carregar e-mail e lista de permissões da pessoa,
+    // que ficam guardados no navegador dela.
+    const payload: JwtPayload = { sub: user.id };
 
     const accessToken = await this.jwtService.signAsync(payload);
     // Mesmo formato que UsersService.semSegredos devolve, pra o front ter um

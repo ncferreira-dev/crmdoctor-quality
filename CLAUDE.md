@@ -8,7 +8,8 @@
 
 ## Convenções
 - Nomes de domínio em português (Lead, EmpresaCliente, Projeto, Interacao, Ticket, Consultor, Visita, Notificacao, Cargo). Código em camelCase.
-- Permissão nunca vai no payload do JWT. Sempre lida do banco (Cargo.permissoes) no validate() da JwtStrategy, a cada request.
+- Permissão nunca vai no payload do JWT. O token assina só `{ sub }`; cargo, permissões e status saem do banco no validate() da JwtStrategy, a cada request. É o que faz desativar membro, trocar cargo e resetar acesso valerem na hora, e não no próximo login (o token dura 7 dias).
+- Sessão inválida é 401, não 403: conta inexistente, desativada, com convite pendente ou com token anterior à senha atual. O front trata 401 limpando a sessão e mandando para o login.
 - Acesso via @RequirePermissao('modulo:acao') + PermissionsGuard. Sem permissão = 403. Cargo sem permissão = não vê nada.
 - Hierarquia usa só Cargo.nivel: só gerencia quem tem nivel menor. Nunca comparar por nome de cargo.
 - Todo input da API usa DTO com class-validator. Nunca receber body sem validação.

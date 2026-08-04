@@ -2,7 +2,7 @@
 
 import { FormEvent, useId, useState } from 'react';
 import { api } from '../../../lib/api';
-import { atualizarUsuarioSessao } from '../../../lib/auth';
+import { atualizarUsuarioSessao, limparSessao } from '../../../lib/auth';
 import { useSessaoUsuario } from '../../../hooks/useSessao';
 import { Usuario } from '../../../types';
 import { Input } from '../../../components/ui/Input';
@@ -63,6 +63,14 @@ export default function PerfilPage() {
       });
       setOk(true);
       form.reset();
+      // Trocar a senha encerra toda sessão aberta com a senha antiga, inclusive
+      // esta aba. Em vez de deixar a pessoa esbarrar num 401 na próxima ação e
+      // ler "sessão expirada", saímos daqui de propósito, com o aviso certo. A
+      // pausa é só pra ela ver a confirmação antes da tela trocar.
+      setTimeout(() => {
+        limparSessao();
+        window.location.assign('/login?senhaAlterada=1');
+      }, 1500);
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível alterar a senha');
     } finally {
@@ -163,7 +171,10 @@ export default function PerfilPage() {
               required
             />
 
-            <p className="text-[11px] text-ink/45">Mínimo de 8 caracteres.</p>
+            <p className="text-[11px] leading-relaxed text-ink/45">
+              Mínimo de 8 caracteres. Ao trocar, toda sessão aberta com a senha antiga é encerrada,
+              inclusive a desta aba: você entra de novo em seguida.
+            </p>
 
             {erro && (
               <p role="alert" className="text-sm text-accent">
@@ -172,7 +183,7 @@ export default function PerfilPage() {
             )}
             {ok && (
               <p role="status" className="text-sm text-brand">
-                Senha alterada. Ela já vale no próximo login.
+                Senha alterada. Levando você ao login para entrar com ela.
               </p>
             )}
 
