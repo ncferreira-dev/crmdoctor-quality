@@ -18,6 +18,7 @@ import {
   IconeMembros,
   IconeProjetos,
   IconeSair,
+  IconeTarefas,
 } from '../ui/icons';
 
 interface ItemNav {
@@ -37,6 +38,7 @@ const NAV: ItemNav[] = [
   { href: '/empresas', label: 'Empresas', icone: <IconeEmpresas /> },
   { href: '/projetos', label: 'Projetos', icone: <IconeProjetos /> },
   { href: '/agenda', label: 'Agenda', icone: <IconeAgenda /> },
+  { href: '/tarefas', label: 'Minhas tarefas', icone: <IconeTarefas />, permissao: 'TAREFAS_READ' },
   { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true, permissao: 'USUARIOS_READ' },
   { href: '/competencias', label: 'Competências', icone: <IconeCompetencias />, permissao: 'COMPETENCIAS_READ' },
   { href: '/cargos', label: 'Cargos', icone: <IconeCargos />, permissao: 'CARGOS_MANAGE' },
@@ -76,6 +78,7 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
     CARGOS_MANAGE: usePermissao('CARGOS_MANAGE'),
     USUARIOS_READ: usePermissao('USUARIOS_READ'),
     COMPETENCIAS_READ: usePermissao('COMPETENCIAS_READ'),
+    TAREFAS_READ: usePermissao('TAREFAS_READ'),
   };
   const itensVisiveis = NAV.filter((item) => !item.permissao || concedida[item.permissao]);
 

@@ -12,11 +12,21 @@ interface TarefaFormModalProps {
   aberto: boolean;
   // Membro que vai receber a tarefa.
   membro: Usuario | null;
+  // Título alternativo para quando o membro é o próprio usuário logado:
+  // "Nova tarefa para Renata Coordenação" soa como atribuição a outra pessoa
+  // quando quem lê é a Renata.
+  tituloProprio?: string;
   onFechar: () => void;
   onMudou: () => void;
 }
 
-export function TarefaFormModal({ aberto, membro, onFechar, onMudou }: TarefaFormModalProps) {
+export function TarefaFormModal({
+  aberto,
+  membro,
+  tituloProprio,
+  onFechar,
+  onMudou,
+}: TarefaFormModalProps) {
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -62,7 +72,7 @@ export function TarefaFormModal({ aberto, membro, onFechar, onMudou }: TarefaFor
   return (
     <Modal
       aberto={aberto}
-      titulo={membro ? `Nova tarefa para ${membro.nome}` : 'Nova tarefa'}
+      titulo={tituloProprio ?? (membro ? `Nova tarefa para ${membro.nome}` : 'Nova tarefa')}
       onFechar={onFechar}
     >
       <form onSubmit={enviar} className="flex flex-col gap-3">

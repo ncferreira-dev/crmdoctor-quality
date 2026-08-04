@@ -273,7 +273,11 @@ export default function MembrosPage() {
                                 concluída o selo de atraso é ruído, o prazo já
                                 não cobra nada de ninguém. */}
                             {!concluida && tarefa.prazo && <SeloPrazo prazo={tarefa.prazo} />}
-                            {podeGerenciar ? (
+                            {/* Mexer em tarefa depende de TAREFAS_WRITE, não de
+                                gerenciar membros: com podeGerenciar aqui, o
+                                Coordenador enxergava a própria tarefa no card e
+                                não conseguia mudar o status dela. */}
+                            {podeEnviarTarefa ? (
                               <select
                                 value={tarefa.status}
                                 onChange={(e) =>

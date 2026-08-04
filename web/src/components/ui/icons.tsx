@@ -95,6 +95,16 @@ export function IconeAgenda({ className = 'h-full w-full' }: IconProps) {
   );
 }
 
+export function IconeTarefas({ className = 'h-full w-full' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m3 8 2 2 3.5-3.5" />
+      <path d="m3 17 2 2 3.5-3.5" />
+      <path d="M13 9h8M13 18h8" />
+    </svg>
+  );
+}
+
 export function IconeMembros({ className = 'h-full w-full' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
