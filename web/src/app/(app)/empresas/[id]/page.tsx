@@ -165,7 +165,7 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Tickets */}
-      <TicketsSection empresaId={id} />
+      <TicketsSection empresaId={id} onMudou={carregarEmpresa} />
 
       <EmpresaFormModal
         aberto={editando}

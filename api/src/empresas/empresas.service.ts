@@ -5,6 +5,7 @@ import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 import { FindEmpresasQueryDto } from './dto/find-empresas-query.dto';
 import { paginar } from '../common/utils/paginar';
+import { whereEmAberto } from '../tickets/tickets.utils';
 
 @Injectable()
 export class EmpresasService {
@@ -46,8 +47,9 @@ export class EmpresasService {
     const [projetosCount, ticketsAbertosCount, proximaVisita] =
       await Promise.all([
         this.prisma.projeto.count({ where: { empresaId: id } }),
+        // Mesma definição de "em aberto" que o dashboard usa. Ver whereEmAberto.
         this.prisma.ticket.count({
-          where: { empresaId: id, status: { not: 'RESOLVIDO' } },
+          where: { empresaId: id, ...whereEmAberto() },
         }),
         this.prisma.visita.findFirst({
           where: {

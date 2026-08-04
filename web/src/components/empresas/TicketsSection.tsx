@@ -13,7 +13,17 @@ import { Modal } from '../ui/Modal';
 
 const STATUS = Object.keys(STATUS_TICKET_LABEL) as StatusTicket[];
 
-export function TicketsSection({ empresaId }: { empresaId: string }) {
+interface TicketsSectionProps {
+  empresaId: string;
+  // Avisa a página quando um ticket muda. O card "Tickets abertos" lá em cima
+  // vem do servidor, num pedido separado desta lista: sem este aviso ele ficava
+  // congelado no número da abertura da tela. Reabrir um ticket resolvido dava
+  // exatamente a cena que denunciou o defeito, card em 0 com um ticket "Aberto"
+  // logo abaixo.
+  onMudou?: () => void;
+}
+
+export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
@@ -45,6 +55,7 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
       });
       setModalAberto(false);
       carregar();
+      onMudou?.();
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível criar o ticket');
     } finally {
@@ -62,6 +73,7 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
     try {
       const atualizado = await api.patch<Ticket>(`/tickets/${ticket.id}/responder`);
       setTickets((atual) => atual?.map((t) => (t.id === ticket.id ? atualizado : t)) ?? null);
+      onMudou?.();
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível registrar a resposta');
     }
@@ -73,6 +85,7 @@ export function TicketsSection({ empresaId }: { empresaId: string }) {
     setTickets((atual) => atual?.map((t) => (t.id === ticket.id ? { ...t, status } : t)) ?? null);
     try {
       await api.patch(`/tickets/${ticket.id}/status`, { status });
+      onMudou?.();
     } catch (e) {
       setTickets(anterior);
       setErro(e instanceof Error ? e.message : 'Não foi possível mudar o status');

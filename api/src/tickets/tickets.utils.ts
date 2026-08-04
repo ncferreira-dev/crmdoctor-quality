@@ -27,6 +27,21 @@ export function comCamposCalculados<
   return { ...ticket, prazoLimite, emAtraso };
 }
 
+// O que conta como ticket em aberto, em um lugar só.
+//
+// Existia escrito à mão em dois services (dashboard e empresas). Duas cópias da
+// mesma regra é como o card "Tickets abertos" e a lista da empresa passaram a
+// discordar na tela, e é como voltariam a discordar no dia em que alguém
+// acrescentasse um status novo ao enum e atualizasse só um dos dois.
+//
+// "Em aberto" é definido por exclusão de propósito: status novo nasce contando
+// como aberto, que é o padrão seguro num sistema de compliance. Esquecer de
+// incluir um status faz o número subir; esquecer de excluir faz um chamado
+// sumir do radar.
+export function whereEmAberto(): Prisma.TicketWhereInput {
+  return { status: { not: 'RESOLVIDO' } };
+}
+
 // Reaproveitado pelo dashboard. Sem SQL raw: o prazo varia por linha conforme
 // a prioridade, então montamos uma cláusula OR com um limite fixo por prioridade.
 export function whereEmAtraso(

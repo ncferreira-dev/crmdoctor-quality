@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { whereEmAtraso } from '../tickets/tickets.utils';
+import { whereEmAberto, whereEmAtraso } from '../tickets/tickets.utils';
 
 @Injectable()
 export class DashboardService {
@@ -46,7 +46,7 @@ export class DashboardService {
       this.prisma.projeto.count({
         where: { dataLimiteCompliance: null, estagio: { not: 'CONCLUIDO' } },
       }),
-      this.prisma.ticket.count({ where: { status: { not: 'RESOLVIDO' } } }),
+      this.prisma.ticket.count({ where: whereEmAberto() }),
       this.prisma.visita.count({
         where: {
           inicio: { gte: agora, lte: em7Dias },
