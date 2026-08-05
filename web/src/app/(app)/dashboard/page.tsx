@@ -17,7 +17,10 @@ import { KpiCard } from '../../../components/dashboard/KpiCard';
 import { BarraRanking } from '../../../components/dashboard/BarraRanking';
 import { PainelAlertas } from '../../../components/dashboard/PainelAlertas';
 
-function moeda(valor: number | undefined): string {
+// null significa "este cargo não vê dinheiro", e é diferente de zero. Zero
+// afirmaria que não há contrato ativo.
+function moeda(valor: number | null | undefined): string {
+  if (valor === null) return 'Restrito';
   return (valor ?? 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -35,6 +38,7 @@ export default function DashboardPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [marcando, setMarcando] = useState<string | null>(null);
   const podeVerAlertas = usePermissao('NOTIFICACOES_READ');
+  const podeVerValor = usePermissao('FINANCEIRO_READ');
   // Mesma store que alimenta o sino do cabeçalho. Dar baixa aqui muda o badge
   // lá em cima na hora, e o contrário também: são a mesma informação, e duas
   // cópias independentes acabariam se contradizendo na tela.
@@ -116,12 +120,17 @@ export default function DashboardPage() {
           href="/projetos"
           nota={`${num(resumo.concluidosNoMes)} este mês`}
         />
-        <KpiCard
-          label="Valor em andamento"
-          valor={moeda(resumo.valorEmExecucao)}
-          href="/projetos"
-          nota="Projetos não concluídos"
-        />
+        {/* Card de dinheiro some para quem não tem FINANCEIRO_READ, em vez de
+            mostrar "Restrito": um card cinza escrito Restrito só anuncia que
+            existe informação escondida, e isso não ajuda ninguém a trabalhar. */}
+        {podeVerValor && (
+          <KpiCard
+            label="Valor em andamento"
+            valor={moeda(resumo.valorEmExecucao)}
+            href="/projetos"
+            nota="Projetos não concluídos"
+          />
+        )}
         <KpiCard
           label="Marcos vencendo"
           valor={num(resumo.etapasVencendo7Dias)}
@@ -179,7 +188,9 @@ export default function DashboardPage() {
             id: c.empresaId,
             rotulo: c.empresa,
             valor: c.projetos,
-            detalhe: `${c.projetos} · ${moeda(c.valor)}`,
+            detalhe: podeVerValor
+              ? `${c.projetos} · ${moeda(c.valor)}`
+              : `${c.projetos} ${c.projetos === 1 ? 'projeto' : 'projetos'}`,
             href: `/empresas/${c.empresaId}`,
           }))}
         />

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { usePermissao } from '../../hooks/useSessao';
 import { EmpresaCliente, Projeto, Usuario } from '../../types';
 import {
   ErrosForm,
@@ -32,6 +33,7 @@ export function ProjetoFormModal({
   onMudou,
 }: ProjetoFormModalProps) {
   const editando = Boolean(projeto);
+  const podeVerValor = usePermissao('FINANCEIRO_READ');
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
   const [pessoas, setPessoas] = useState<Pick<Usuario, 'id' | 'nome'>[]>([]);
   // Set e não array: a marcação é por pertencer ou não, e Set diz isso melhor
@@ -111,7 +113,9 @@ export function ProjetoFormModal({
       // A API espera ISO 8601; o input dá só a data, então fixamos meio-dia UTC
       // para a data não "voltar um dia" ao ser convertida no fuso local.
       dataLimiteCompliance: dataLimite ? `${dataLimite}T12:00:00.000Z` : undefined,
-      valor: valorBruto ? Number(valorBruto) : undefined,
+      // undefined quando não pode ver: assim o PATCH não toca no campo, em vez
+      // de mandar vazio e apagar o valor do contrato sem querer.
+      valor: podeVerValor && valorBruto ? Number(valorBruto) : undefined,
       equipeIds: [...equipe],
       ...(editando ? {} : { empresaId: empresaFixaId ?? String(form.get('empresaId')) }),
     };
@@ -177,6 +181,9 @@ export function ProjetoFormModal({
 
         <Input id="descricao" name="descricao" label="Descrição" defaultValue={projeto?.descricao ?? ''} />
 
+        {/* Sem FINANCEIRO_READ o campo de valor nem existe no formulário. Se
+            existisse vazio, salvar apagaria o valor que já estava lá, porque a
+            API recebe o campo em branco e grava em branco. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <CampoData
             id="dataLimiteCompliance"
@@ -184,15 +191,17 @@ export function ProjetoFormModal({
             label="Prazo de compliance"
             defaultValue={projeto?.dataLimiteCompliance}
           />
-          <Input
-            id="valor"
-            name="valor"
-            label="Valor (R$)"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={projeto?.valor ?? ''}
-          />
+          {podeVerValor && (
+            <Input
+              id="valor"
+              name="valor"
+              label="Valor (R$)"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={projeto?.valor ?? ''}
+            />
+          )}
         </div>
 
         <p className="text-[11px] text-ink/45">

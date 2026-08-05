@@ -40,6 +40,9 @@ export const PERMISSOES = [
   'COMPETENCIAS_WRITE',
   'TAREFAS_READ',
   'TAREFAS_WRITE',
+  // Ver valor de contrato. A API não devolve o número para quem não tem, então
+  // esconder aqui é só o acabamento, não a trava.
+  'FINANCEIRO_READ',
 ] as const;
 
 export type Permissao = (typeof PERMISSOES)[number];
@@ -234,12 +237,15 @@ export interface DashboardResumo {
   alertasNaoLidos: number;
   ticketsEmAtraso: number;
   etapasVencendo7Dias: number;
-  valorEmExecucao: number;
+  // null quando o cargo não tem FINANCEIRO_READ. Nulo e zero são coisas
+  // diferentes: zero afirma que não há contrato ativo, null diz que a pessoa
+  // não recebe afirmação nenhuma sobre dinheiro.
+  valorEmExecucao: number | null;
   concentracao: {
     empresaId: string;
     empresa: string;
     projetos: number;
-    valor: number;
+    valor: number | null;
   }[];
   cargaConsultores: { usuarioId: string; nome: string; marcosAbertos: number }[];
   marcosDaSemana: {

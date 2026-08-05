@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { whereEmAberto, whereEmAtraso } from '../tickets/tickets.utils';
+import { AuthUser } from '../common/types/auth-user';
 
 @Injectable()
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
-  async resumo() {
+  async resumo(user?: AuthUser) {
     const agora = new Date();
     const em7Dias = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000);
     const inicioDoMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
@@ -70,6 +71,9 @@ export class DashboardService {
       this.marcosVencendo(agora, em7Dias),
     ]);
 
+    const podeVerDinheiro =
+      user?.permissoes?.includes('FINANCEIRO_READ') ?? false;
+
     return {
       projetosPorEstagio: projetosPorEstagio.map((p) => ({
         estagio: p.estagio,
@@ -84,8 +88,17 @@ export class DashboardService {
       alertasNaoLidos,
       ticketsEmAtraso,
       etapasVencendo7Dias,
-      valorEmExecucao: Number(valorEmExecucao._sum.valor ?? 0),
-      concentracao,
+      // null e não 0: zero é uma afirmação ("não há contrato ativo"), e quem
+      // não pode ver dinheiro não deve receber afirmação nenhuma sobre ele.
+      valorEmExecucao: podeVerDinheiro
+        ? Number(valorEmExecucao._sum.valor ?? 0)
+        : null,
+      concentracao: podeVerDinheiro
+        ? concentracao
+        : concentracao.map(({ valor: _valor, ...resto }) => ({
+            ...resto,
+            valor: null,
+          })),
       cargaConsultores,
       marcosDaSemana,
     };

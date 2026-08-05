@@ -25,6 +25,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
   const [erro, setErro] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
   const podeEditar = usePermissao('PROJETOS_WRITE');
+  const podeVerValor = usePermissao('FINANCEIRO_READ');
 
   function carregar() {
     api
@@ -121,10 +122,15 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
             )}
           </div>
         </div>
-        <div className="ml-auto text-right">
-          <p className="text-xs font-light uppercase tracking-wide text-ink/60">Valor</p>
-          <p className="dado mt-2 text-lg font-semibold leading-none text-ink">{valor}</p>
-        </div>
+        {/* Valor só para quem tem FINANCEIRO_READ. A API já não manda o número
+            para os demais; isto aqui é o acabamento, para não sobrar um bloco
+            vazio escrito "Valor" na tela de quem não pode ver. */}
+        {podeVerValor && (
+          <div className="ml-auto text-right">
+            <p className="text-xs font-light uppercase tracking-wide text-ink/60">Valor</p>
+            <p className="dado mt-2 text-lg font-semibold leading-none text-ink">{valor}</p>
+          </div>
+        )}
       </div>
 
       {/* Estágio do projeto como trilha clicável. A descrição embaixo não é

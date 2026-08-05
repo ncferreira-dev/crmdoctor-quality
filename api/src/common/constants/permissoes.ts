@@ -23,6 +23,13 @@ export const PERMISSOES = [
   'COMPETENCIAS_WRITE',
   'TAREFAS_READ',
   'TAREFAS_WRITE',
+  // Dinheiro. Separada de PROJETOS_READ de propósito: quem toca o projeto
+  // precisa ver prazo, marco e equipe para trabalhar, e não precisa saber
+  // quanto o contrato custou. Sem esta permissão a API **não devolve** o valor,
+  // em vez de o front escondê-lo: esconder na tela é maquiagem, porque o número
+  // continuaria viajando na resposta e apareceria para quem abrisse o
+  // inspecionar do navegador.
+  'FINANCEIRO_READ',
 ] as const;
 
 export type Permissao = (typeof PERMISSOES)[number];

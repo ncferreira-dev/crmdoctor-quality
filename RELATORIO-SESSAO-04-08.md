@@ -1110,3 +1110,46 @@ recortar por projeto esconderia trabalho da própria pessoa.
 - **Descrição do projeto ganhou botão de editar**, e o bloco passou a aparecer
   mesmo vazio para quem pode editar. Antes ele sumia quando não havia texto, e
   com ele sumia o caminho para escrever o primeiro.
+
+## Valor de contrato passa a ser restrito
+
+Pedido: valor de projeto só para o Nícolas e o Fabrício, nem o Coordenador vê.
+
+**Feito na API, não na tela, e a diferença aqui é tudo.** Esconder no front
+seria maquiagem: o número continuaria viajando na resposta e apareceria para
+quem abrisse o inspecionar do navegador, que é justamente quem não deveria ver.
+A API agora **não devolve** o valor para quem não tem a permissão.
+
+**Nasceu `FINANCEIRO_READ`.** Separada de `PROJETOS_READ` de propósito: quem
+toca o projeto precisa de prazo, marco e equipe para trabalhar, e não precisa
+saber quanto o contrato custou.
+
+O que fica restrito:
+
+| Onde | Sem a permissão |
+|---|---|
+| `GET /projetos` e `/projetos/:id` | `valor` volta `null` |
+| Card "Valor em andamento" do dashboard | Não aparece |
+| Concentração por empresa | Mostra a contagem de projetos, sem dinheiro |
+| Campo Valor no formulário | Não existe, e o `PATCH` não manda o campo |
+
+**`null` e não zero, e não a chave omitida.** Zero afirmaria que não há contrato
+ativo, e omitir faria "sem valor cadastrado" e "não posso ver" virarem a mesma
+coisa. Null diz a verdade: esta pessoa não recebe afirmação nenhuma sobre
+dinheiro.
+
+**Detalhe que evita perda de dado:** sem a permissão o campo de valor some do
+formulário e o `PATCH` deixa de mandar `valor`. Se o campo existisse vazio,
+salvar um projeto apagaria o valor do contrato sem ninguém pedir.
+
+`findOne` ganhou um irmão privado, `garantirQueExiste`, usado pelas escritas: ali
+o usuário não está pedindo para LER o projeto, e passar pelo filtro de valor
+seria errado.
+
+Cinco testes novos, 75 no total, incluindo o caso sem usuário nenhum, em que o
+padrão é o mais fechado.
+
+**Depende do Nícolas depois do deploy:** ninguém tem `FINANCEIRO_READ` ainda, e
+permissão nova nasce desmarcada. Enquanto ele não marcar em Cargos para
+Desenvolvedor e CEO, **nem ele vê valor**. É um passo de 30 segundos e está
+escrito na conversa.

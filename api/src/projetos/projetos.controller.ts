@@ -14,21 +14,26 @@ import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { UpdateEstagioProjetoDto } from './dto/update-estagio-projeto.dto';
 import { FindProjetosQueryDto } from './dto/find-projetos-query.dto';
 import { RequirePermissao } from '../common/decorators/require-permissao.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthUser } from '../common/types/auth-user';
 
 @Controller('projetos')
 export class ProjetosController {
   constructor(private projetosService: ProjetosService) {}
 
+  // O usuário chega aqui porque o valor do contrato só sai na resposta para
+  // quem tem FINANCEIRO_READ. Filtrar no front seria maquiagem: o número
+  // continuaria trafegando e apareceria para quem abrisse o inspecionar.
   @RequirePermissao('PROJETOS_READ')
   @Get()
-  findAll(@Query() query: FindProjetosQueryDto) {
-    return this.projetosService.findAll(query);
+  findAll(@Query() query: FindProjetosQueryDto, @CurrentUser() user: AuthUser) {
+    return this.projetosService.findAll(query, user);
   }
 
   @RequirePermissao('PROJETOS_READ')
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.projetosService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.projetosService.findOne(id, user);
   }
 
   @RequirePermissao('PROJETOS_WRITE')
