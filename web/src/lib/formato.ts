@@ -8,10 +8,13 @@ import {
   TipoInteracao,
 } from '../types';
 
+// O valor guardado no banco continua EXECUCAO: trocar o enum exigiria migration
+// destrutiva por causa de um rótulo, e rótulo é coisa de tela. Aqui é o único
+// lugar que decide como o estágio se chama para quem lê.
 export const ESTAGIO_PROJETO_LABEL: Record<EstagioProjeto, string> = {
   DIAGNOSTICO: 'Diagnóstico',
   PROPOSTA: 'Proposta',
-  EXECUCAO: 'Execução',
+  EXECUCAO: 'Em andamento',
   CONCLUIDO: 'Concluído',
 };
 
@@ -37,7 +40,7 @@ export const ESTAGIOS_PROJETO: EstagioProjeto[] = [
 export const ESTAGIO_PROJETO_DESCRICAO: Record<EstagioProjeto, string> = {
   DIAGNOSTICO: 'Levantando o que a empresa já tem e o que falta. Ainda sem escopo fechado.',
   PROPOSTA: 'Escopo e valor apresentados. Esperando o cliente aprovar para começar.',
-  EXECUCAO: 'Aprovado e em andamento. É a fase em que os marcos de compliance correm.',
+  EXECUCAO: 'Aprovado e rodando. É a fase em que os marcos de compliance correm.',
   CONCLUIDO: 'Entregue. O projeto para de gerar alerta de prazo e sai da conta de prazos em risco.',
 };
 

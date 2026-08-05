@@ -137,6 +137,8 @@ export interface Projeto {
   atualizadoEm: string;
   interacoes?: Interacao[];
   etapas?: EtapaProjeto[];
+  // Quem toca o projeto. A partir de duas pessoas, a interface chama de equipe.
+  equipe?: { id: string; nome: string; email: string; especialidade: string | null }[];
 }
 
 export interface Interacao {

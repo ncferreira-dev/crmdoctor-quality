@@ -105,7 +105,7 @@ export default function DashboardPage() {
           2 colunas no mobile, 4 a partir do desktop. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
-          label="Projetos em execução"
+          label="Projetos em andamento"
           valor={num(resumo.projetosEmExecucao)}
           href="/projetos"
           nota={`${totalProjetos} no total`}
@@ -117,7 +117,7 @@ export default function DashboardPage() {
           nota={`${num(resumo.concluidosNoMes)} este mês`}
         />
         <KpiCard
-          label="Valor em execução"
+          label="Valor em andamento"
           valor={moeda(resumo.valorEmExecucao)}
           href="/projetos"
           nota="Projetos não concluídos"

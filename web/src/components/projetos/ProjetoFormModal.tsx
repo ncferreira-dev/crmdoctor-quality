@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { EmpresaCliente, Projeto } from '../../types';
+import { EmpresaCliente, Projeto, Usuario } from '../../types';
 import {
   ErrosForm,
   focarPrimeiroErro,
@@ -33,6 +33,17 @@ export function ProjetoFormModal({
 }: ProjetoFormModalProps) {
   const editando = Boolean(projeto);
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
+  const [pessoas, setPessoas] = useState<Pick<Usuario, 'id' | 'nome'>[]>([]);
+  // Set e não array: a marcação é por pertencer ou não, e Set diz isso melhor
+  // do que indexOf espalhado pelo componente.
+  // Semente vem da prop no primeiro render, e não de um effect: a regra
+  // react-hooks/set-state-in-effect proíbe sincronizar estado com prop assim.
+  // Quem garante que a semente é a do projeto certo é o `key` no ponto de uso,
+  // que remonta o modal ao trocar de projeto. Mesmo desenho do formulário da
+  // agenda.
+  const [equipe, setEquipe] = useState<Set<string>>(
+    () => new Set((projeto?.equipe ?? []).map((p) => p.id)),
+  );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [erros, setErros] = useState<ErrosForm>({});
@@ -44,6 +55,35 @@ export function ProjetoFormModal({
       .then(setEmpresas)
       .catch(() => setEmpresas([]));
   }, [aberto, empresaFixaId]);
+
+  useEffect(() => {
+    if (!aberto) return;
+    // A mesma rota que a agenda usa para o seletor de consultor: devolve id e
+    // nome de quem está ativo, e o gate dela é VISITAS_READ de propósito, para
+    // montar equipe sem precisar enxergar o cadastro de membros inteiro.
+    api
+      .get<Pick<Usuario, 'id' | 'nome'>[]>('/visitas/consultores')
+      .then(setPessoas)
+      .catch(() => setPessoas([]));
+  }, [aberto]);
+
+  function alternarPessoa(id: string) {
+    setEquipe((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
+  }
+
+  // O texto muda com o tamanho porque a palavra "equipe" só faz sentido a
+  // partir de duas pessoas. Uma pessoa sozinha é responsável, não equipe.
+  const resumoDaEquipe =
+    equipe.size === 0
+      ? 'ninguém ainda'
+      : equipe.size === 1
+        ? 'responsável'
+        : `equipe de ${equipe.size}`;
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -72,6 +112,7 @@ export function ProjetoFormModal({
       // para a data não "voltar um dia" ao ser convertida no fuso local.
       dataLimiteCompliance: dataLimite ? `${dataLimite}T12:00:00.000Z` : undefined,
       valor: valorBruto ? Number(valorBruto) : undefined,
+      equipeIds: [...equipe],
       ...(editando ? {} : { empresaId: empresaFixaId ?? String(form.get('empresaId')) }),
     };
 
@@ -157,6 +198,36 @@ export function ProjetoFormModal({
         <p className="text-[11px] text-ink/45">
           O prazo alimenta o alerta automático de compliance, disparado quando faltarem 15 dias.
         </p>
+
+        {/* Equipe do projeto. Não existe entidade "Equipe" no sistema: a equipe
+            é quem está neste projeto, e muda a cada contrato. Uma pessoa é o
+            responsável; da segunda em diante, a tela passa a chamar de equipe. */}
+        {pessoas.length > 0 && (
+          <div className="flex flex-col gap-1.5 rounded-md border border-ink/10 px-3 py-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs font-light uppercase tracking-wide text-ink/60">
+                Quem toca este projeto
+              </span>
+              <span className="dado text-[11px] text-ink/45">{resumoDaEquipe}</span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {pessoas.map((pessoa) => (
+                <label
+                  key={pessoa.id}
+                  className="flex cursor-pointer items-center gap-2 text-sm text-ink/80"
+                >
+                  <input
+                    type="checkbox"
+                    checked={equipe.has(pessoa.id)}
+                    onChange={() => alternarPessoa(pessoa.id)}
+                    className="size-4 accent-brand"
+                  />
+                  {pessoa.nome}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         {erro && (
           <p role="alert" className="text-xs text-accent">

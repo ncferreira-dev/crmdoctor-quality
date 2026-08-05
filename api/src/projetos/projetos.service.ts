@@ -6,9 +6,28 @@ import { UpdateEstagioProjetoDto } from './dto/update-estagio-projeto.dto';
 import { FindProjetosQueryDto } from './dto/find-projetos-query.dto';
 import { paginar } from '../common/utils/paginar';
 
+// Nunca `include: { equipe: true }` cru: User carrega senhaHash e codigoConvite,
+// e foi exatamente assim que o código de convite vazou em /users uma vez. Quatro
+// campos, escolhidos à mão.
+const EQUIPE_ENXUTA = {
+  select: { id: true, nome: true, email: true, especialidade: true },
+} as const;
+
 @Injectable()
 export class ProjetosService {
   constructor(private prisma: PrismaService) {}
+
+  // Separa equipeIds do resto: ele não é coluna da tabela projetos, é relação, e
+  // o Prisma pede a forma { set: [...] }. `undefined` significa "não mexi na
+  // equipe" e array vazio significa "esvaziei", que são coisas diferentes.
+  private separarEquipe<T extends { equipeIds?: string[] }>(dto: T) {
+    const { equipeIds, ...campos } = dto;
+    const equipe =
+      equipeIds === undefined
+        ? undefined
+        : { set: equipeIds.map((id) => ({ id })) };
+    return { campos, equipe };
+  }
 
   findAll(query: FindProjetosQueryDto) {
     const where = { empresaId: query.empresaId, estagio: query.estagio };
@@ -21,7 +40,7 @@ export class ProjetosService {
           where,
           // A listagem mostra de qual empresa é cada projeto; sem o include a
           // tela teria que fazer N chamadas para resolver os nomes.
-          include: { empresa: true },
+          include: { empresa: true, equipe: EQUIPE_ENXUTA },
           orderBy: { criadoEm: 'desc' },
           skip,
           take,
@@ -37,6 +56,7 @@ export class ProjetosService {
         empresa: true,
         interacoes: true,
         etapas: { orderBy: { ordem: 'asc' } },
+        equipe: EQUIPE_ENXUTA,
       },
     });
     if (!projeto) {
@@ -46,26 +66,32 @@ export class ProjetosService {
   }
 
   create(dto: CreateProjetoDto) {
+    const { campos, equipe } = this.separarEquipe(dto);
     return this.prisma.projeto.create({
       data: {
-        ...dto,
-        dataLimiteCompliance: dto.dataLimiteCompliance
-          ? new Date(dto.dataLimiteCompliance)
+        ...campos,
+        dataLimiteCompliance: campos.dataLimiteCompliance
+          ? new Date(campos.dataLimiteCompliance)
           : undefined,
+        ...(equipe ? { equipe: { connect: equipe.set } } : {}),
       },
+      include: { equipe: EQUIPE_ENXUTA },
     });
   }
 
   async update(id: string, dto: UpdateProjetoDto) {
     await this.findOne(id);
+    const { campos, equipe } = this.separarEquipe(dto);
     return this.prisma.projeto.update({
       where: { id },
       data: {
-        ...dto,
-        dataLimiteCompliance: dto.dataLimiteCompliance
-          ? new Date(dto.dataLimiteCompliance)
+        ...campos,
+        dataLimiteCompliance: campos.dataLimiteCompliance
+          ? new Date(campos.dataLimiteCompliance)
           : undefined,
+        ...(equipe ? { equipe } : {}),
       },
+      include: { equipe: EQUIPE_ENXUTA },
     });
   }
 

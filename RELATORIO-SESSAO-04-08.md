@@ -1062,3 +1062,51 @@ tem que ser recusado em vez de virar nome vazio.
 **Os dois nomes já gravados não dá para eu corrigir:** minha conta de trabalho é
 Coordenador, que vê membros mas não gerencia. É edição de 30 segundos pelo
 Nícolas na tela de Membros.
+
+## Equipe do projeto
+
+Pedido: no projeto, poder escolher mais de uma pessoa, e a partir de duas isso
+vira equipe. Nas tarefas, "Da equipe" poder recortar por frente.
+
+**Modelagem: não existe entidade Equipe.** A equipe é quem está no projeto, e
+muda a cada contrato. Uma tabela de ligação entre `Projeto` e `User`, relação
+nomeada `EquipeDoProjeto` para o nome no banco dizer o que a ligação significa,
+em vez do `_ProjetoToUser` que o Prisma geraria sozinho.
+
+**Migration `20260805170000_equipe_do_projeto`, aditiva.** Cria tabela e índices,
+não altera nem apaga nada. Contagem antes de escrever, na produção: 6 projetos,
+7 usuários. Escrita com `IF NOT EXISTS` para ser segura de repetir, pelo mesmo
+motivo de sempre: migration que não pode rodar duas vezes vira downtime.
+
+**API:** `equipeIds` no DTO, e o service separa a relação dos campos porque o
+Prisma pede `{ set: [...] }`. `undefined` significa "não mexi na equipe" e array
+vazio significa "esvaziei", que são coisas diferentes. A equipe volta com
+`select` explícito de quatro campos, nunca `include` cru em `User`.
+
+Medido contra a API local: gravar 3 pessoas persiste, reler devolve as 3,
+esvaziar funciona, `PATCH` sem `equipeIds` **não** mexe na equipe, e a resposta
+não traz `senhaHash`.
+
+**Tela:** o formulário de projeto ganhou a lista de pessoas com marcação, e o
+resumo muda com o tamanho ("ninguém ainda", "responsável", "equipe de 3"),
+porque a palavra equipe só faz sentido a partir de duas. A semente vem do estado
+inicial mais `key` no ponto de uso, e não de effect: a regra
+`react-hooks/set-state-in-effect` proíbe o segundo caminho, e o `key` é o padrão
+já usado no formulário da agenda.
+
+Na tela do projeto a equipe aparece em bloco próprio, com o título mudando entre
+"Responsável" e "Equipe".
+
+**Tarefas:** no modo "Da equipe" nasceu um seletor de frente, com "Todas as
+frentes" como padrão. O filtro vai para a API (`projetoId`), não para o cliente.
+Em "Minhas" ele não aparece: ali a pergunta é o que EU tenho para fazer, e
+recortar por projeto esconderia trabalho da própria pessoa.
+
+## Dois ajustes de linguagem e um de acesso
+
+- **"Execução" virou "Em andamento"** em toda a interface, incluindo os cards do
+  dashboard. O valor no banco continua `EXECUCAO`: trocar o enum exigiria
+  migration destrutiva por causa de um rótulo, e rótulo é coisa de tela.
+- **Descrição do projeto ganhou botão de editar**, e o bloco passou a aparecer
+  mesmo vazio para quem pode editar. Antes ele sumia quando não havia texto, e
+  com ele sumia o caminho para escrever o primeiro.

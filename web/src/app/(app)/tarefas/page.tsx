@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
 import { diasAteOPrazo } from '../../../lib/formato';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
-import { StatusTarefa, Tarefa } from '../../../types';
+import { Projeto, StatusTarefa, Tarefa } from '../../../types';
 import { Button } from '../../../components/ui/Button';
+import { Select } from '../../../components/ui/Select';
 import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { ItemTarefa } from '../../../components/tarefas/ItemTarefa';
 import { TarefaFormModal } from '../../../components/membros/TarefaFormModal';
@@ -60,6 +61,11 @@ export default function TarefasPage() {
 
   const [tarefas, setTarefas] = useState<Tarefa[] | null>(null);
   const [escopo, setEscopo] = useState<Escopo>('minhas');
+  // Projeto escolhido no modo "Da equipe". Vazio = todas as frentes juntas.
+  // Existe porque cada projeto tem a sua equipe, e "tarefas da equipe" sem
+  // dizer de qual frente vira uma lista que não responde pergunta nenhuma.
+  const [projetoFiltro, setProjetoFiltro] = useState('');
+  const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
 
@@ -68,9 +74,13 @@ export default function TarefasPage() {
     // exibiria "Permissão necessária: TAREFAS_READ", que é jargão de backend.
     // O menu já esconde este item, mas dá para chegar aqui por link salvo.
     if (!usuario || !podeVer) return;
-    // Na visão "minhas" o filtro vai na API, não no cliente: sem isso a página
-    // baixaria a lista da empresa inteira para jogar quase tudo fora.
-    const filtro = escopo === 'minhas' ? `?responsavelId=${usuario.id}` : '';
+    // Os dois filtros vão para a API, não para o cliente: baixar a lista da
+    // empresa inteira para jogar quase tudo fora é desperdício que cresce com o
+    // uso. O projeto só entra no modo equipe; em "Minhas" ele não faz sentido.
+    const partes: string[] = [];
+    if (escopo === 'minhas') partes.push(`responsavelId=${usuario.id}`);
+    else if (projetoFiltro) partes.push(`projetoId=${projetoFiltro}`);
+    const filtro = partes.length ? `?${partes.join('&')}` : '';
     api
       .getTodos<Tarefa>(`/tarefas${filtro}`)
       .then((lista) => {
@@ -78,11 +88,19 @@ export default function TarefasPage() {
         setErro(null);
       })
       .catch((e: Error) => setErro(e.message));
-  }, [escopo, usuario, podeVer]);
+  }, [escopo, projetoFiltro, usuario, podeVer]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  useEffect(() => {
+    if (!podeVerEquipe) return;
+    api
+      .getTodos<Projeto>('/projetos')
+      .then(setProjetos)
+      .catch(() => setProjetos([]));
+  }, [podeVerEquipe]);
 
   async function mudarStatus(tarefa: Tarefa, status: StatusTarefa) {
     const anterior = tarefas;
@@ -154,6 +172,25 @@ export default function TarefasPage() {
                 </button>
               ))}
             </div>
+          )}
+          {/* O seletor só existe no modo equipe: em "Minhas" a pergunta é o
+              que EU tenho para fazer, e recortar por projeto ali só esconde
+              trabalho da própria pessoa. */}
+          {podeVerEquipe && escopo === 'equipe' && projetos.length > 0 && (
+            <Select
+              id="filtro-projeto"
+              aria-label="Filtrar por projeto"
+              tamanho="compacto"
+              value={projetoFiltro}
+              onChange={(e) => setProjetoFiltro(e.target.value)}
+            >
+              <option value="">Todas as frentes</option>
+              {projetos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.titulo}
+                </option>
+              ))}
+            </Select>
           )}
           {podeMexer && <Button onClick={() => setModalAberto(true)}>Nova tarefa</Button>}
         </div>

@@ -166,6 +166,9 @@ export default function ProjetosPage() {
       )}
 
       <ProjetoFormModal
+        // Remonta ao trocar de projeto: sem isto a equipe marcada seria a do
+        // projeto aberto antes.
+        key={modal.projeto?.id ?? 'novo'}
         aberto={modal.aberto}
         projeto={modal.projeto}
         onFechar={() => setModal({ aberto: false, projeto: null })}

@@ -172,10 +172,60 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {projeto.descricao && (
+      {/* Descrição sempre visível para quem edita, mesmo vazia: antes o bloco
+          sumia quando não havia texto, e com ele sumia o caminho para escrever
+          o primeiro. Quem só lê continua não vendo bloco vazio. */}
+      {(projeto.descricao || podeEditar) && (
         <div className="rounded-card border border-ink/10 bg-white p-5 shadow-card">
-          <p className="mb-2 text-xs font-light uppercase tracking-wide text-ink/60">Descrição</p>
-          <p className="text-sm leading-relaxed text-ink/80">{projeto.descricao}</p>
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <p className="text-xs font-light uppercase tracking-wide text-ink/60">Descrição</p>
+            {podeEditar && (
+              <button
+                type="button"
+                onClick={() => setEditando(true)}
+                className="text-xs text-ink/50 underline-offset-2 transition-colors hover:text-brand hover:underline"
+              >
+                {projeto.descricao ? 'Editar' : 'Escrever'}
+              </button>
+            )}
+          </div>
+          {projeto.descricao ? (
+            <p className="whitespace-pre-line text-sm leading-relaxed text-ink/80">
+              {projeto.descricao}
+            </p>
+          ) : (
+            <p className="text-sm text-ink/40">
+              Sem descrição. Escreva o que este projeto entrega, para quem pegar depois entender
+              sem perguntar.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Quem toca o projeto. Uma pessoa é responsável; duas ou mais são a
+          equipe, e o título muda junto para a palavra não mentir. */}
+      {(projeto.equipe?.length ?? 0) > 0 && (
+        <div className="rounded-card border border-ink/10 bg-white p-5 shadow-card">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <p className="text-xs font-light uppercase tracking-wide text-ink/60">
+              {(projeto.equipe?.length ?? 0) > 1 ? 'Equipe' : 'Responsável'}
+            </p>
+            <span className="dado text-xs text-ink/45">
+              {projeto.equipe?.length}{' '}
+              {(projeto.equipe?.length ?? 0) > 1 ? 'pessoas' : 'pessoa'}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {projeto.equipe?.map((pessoa) => (
+              <span
+                key={pessoa.id}
+                className="rounded-full bg-surface px-3 py-1 text-sm text-ink/75"
+                title={pessoa.especialidade ?? undefined}
+              >
+                {pessoa.nome}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -186,6 +236,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
       <Timeline projetoId={id} vazio="Nenhum contato registrado neste projeto ainda." />
 
       <ProjetoFormModal
+        key={projeto.id}
         aberto={editando}
         projeto={projeto}
         onFechar={() => setEditando(false)}

@@ -122,6 +122,7 @@ model User {
   tarefas           Tarefa[]
   visitas           Visita[]
   competencias      Competencia[]
+  projetosNaEquipe  Projeto[]      @relation("EquipeDoProjeto")
   criadoEm          DateTime       @default(now())
 
   @@map("users")
@@ -212,11 +213,21 @@ model Projeto {
   etapas               EtapaProjeto[]
   tarefas              Tarefa[]
   visitas              Visita[]
-  criadoEm             DateTime       @default(now())
-  atualizadoEm         DateTime       @updatedAt
-  excluidoEm           DateTime?
-  criadoPorId          String?
-  atualizadoPorId      String?
+
+  // Quem toca este projeto. A "equipe" do sistema é isto: não existe entidade
+  // Equipe solta, porque na consultoria a equipe SE define pelo projeto e muda
+  // a cada contrato. Uma pessoa é o responsável; duas ou mais são a equipe.
+  //
+  // Relação nomeada de propósito: o Prisma nomearia a tabela de ligação a
+  // partir dos dois models (_ProjetoToUser), e um nome desses não diz o que a
+  // ligação significa quando alguém abrir o banco daqui a um ano.
+  equipe User[] @relation("EquipeDoProjeto")
+
+  criadoEm        DateTime  @default(now())
+  atualizadoEm    DateTime  @updatedAt
+  excluidoEm      DateTime?
+  criadoPorId     String?
+  atualizadoPorId String?
 
   @@index([estagio])
   @@index([dataLimiteCompliance])
@@ -263,12 +274,12 @@ model Ticket {
 }
 
 model Competencia {
-  id              String   @id @default(uuid())
-  nome            String   @unique
+  id              String    @id @default(uuid())
+  nome            String    @unique
   descricao       String?
   usuarios        User[]
-  criadoEm        DateTime @default(now())
-  atualizadoEm    DateTime @updatedAt
+  criadoEm        DateTime  @default(now())
+  atualizadoEm    DateTime  @updatedAt
   excluidoEm      DateTime?
   criadoPorId     String?
   atualizadoPorId String?
@@ -299,29 +310,29 @@ model EtapaProjeto {
 }
 
 model Visita {
-  id              String         @id @default(uuid())
+  id          String         @id @default(uuid())
   // consultorId aponta para User (cargo Consultor, ou qualquer cargo com
   // VISITAS_WRITE) — Consultor deixou de ser uma entidade separada porque o
   // consultor passou a logar no sistema.
-  consultorId     String
-  consultor       User           @relation(fields: [consultorId], references: [id])
-  empresaId       String
-  empresa         EmpresaCliente @relation(fields: [empresaId], references: [id])
+  consultorId String
+  consultor   User           @relation(fields: [consultorId], references: [id])
+  empresaId   String
+  empresa     EmpresaCliente @relation(fields: [empresaId], references: [id])
 
   // Opcional de propósito: a consultoria vende projeto de compliance e a visita
   // costuma ser execução de um marco dele, mas nem toda visita pertence a um
   // projeto (reunião comercial, diagnóstico inicial). Obrigar quebraria as
   // visitas que já existem e mentiria sobre as que nunca terão projeto.
   projetoId       String?
-  projeto         Projeto?       @relation(fields: [projetoId], references: [id])
-  inicio          DateTime       @db.Timestamptz(3)
-  fim             DateTime       @db.Timestamptz(3)
+  projeto         Projeto?     @relation(fields: [projetoId], references: [id])
+  inicio          DateTime     @db.Timestamptz(3)
+  fim             DateTime     @db.Timestamptz(3)
   tipoServico     String
-  status          StatusVisita   @default(AGENDADA)
+  status          StatusVisita @default(AGENDADA)
   documentoUrl    String?
   observacoes     String?
-  criadoEm        DateTime       @default(now())
-  atualizadoEm    DateTime       @updatedAt
+  criadoEm        DateTime     @default(now())
+  atualizadoEm    DateTime     @updatedAt
   excluidoEm      DateTime?
   criadoPorId     String?
   atualizadoPorId String?
