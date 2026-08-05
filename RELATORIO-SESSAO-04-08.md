@@ -996,3 +996,31 @@ verbo, **mais conferência manual rota a rota**. Eu tinha publicado
 desde sempre. **Número de varredura sem conferência na mão não vale como fato.**
 
 Contagem correta em 05/08: **70 rotas, 58 com tela, 12 sem**.
+
+## Edição de ticket, a única sugestão que sobreviveu à conferência
+
+`PATCH /tickets/:id` existia desde o começo do projeto e nunca teve tela. Na
+prática: dava para abrir um chamado e nunca mais corrigir nada nele, nem um erro
+de digitação no título, nem subir a prioridade quando o cliente cobrava.
+
+Cada ticket ganhou um botão **Editar**, que abre o mesmo modal da criação com os
+dados preenchidos. Um estado só (`modal: { ticket } | null`) para os dois casos,
+porque dois booleanos separados deixariam existir "criando e editando ao mesmo
+tempo". O `key` no formulário remonta ao trocar de ticket, senão o `defaultValue`
+guarda o valor do anterior, que é a armadilha já documentada na agenda.
+
+**O corpo manda só título, descrição e prioridade.** Status e primeira resposta
+têm rotas próprias, e mandá-los aqui seria pedido descartado em silêncio: é
+exatamente a armadilha do `whitelist` que esta mesma rota expôs.
+
+Conferido no navegador contra a API local:
+
+| Teste | Resultado |
+|---|---|
+| Abrir Editar | Vem com título, descrição e prioridade do ticket |
+| Salvar | Grava no banco e aparece na hora |
+| Status e primeira resposta | **Preservados.** Editar o texto não mexe no andamento |
+| Abrir Novo depois de editar | Vem vazio, não herda o anterior |
+| Salvar sem título | Recusa, e o foco vai para o campo |
+
+O ticket de demonstração local foi restaurado ao valor original depois do teste.

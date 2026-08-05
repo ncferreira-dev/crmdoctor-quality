@@ -10,6 +10,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
+import { ErrosForm, focarPrimeiroErro, temErro, validarObrigatorios } from '../../lib/formulario';
 
 const STATUS = Object.keys(STATUS_TICKET_LABEL) as StatusTicket[];
 
@@ -74,8 +75,12 @@ interface TicketsSectionProps {
 export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [modalAberto, setModalAberto] = useState(false);
+  // null = fechado; { ticket: null } = criando; { ticket } = editando.
+  // Um estado só para os dois casos: dois booleanos separados deixariam existir
+  // o estado impossível "criando e editando ao mesmo tempo".
+  const [modal, setModal] = useState<{ ticket: Ticket | null } | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [erros, setErros] = useState<ErrosForm>({});
   const podeEditar = usePermissao('TICKETS_WRITE');
 
   function carregar() {
@@ -90,22 +95,47 @@ export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
 
-  async function criar(evento: FormEvent<HTMLFormElement>) {
+  // Cria ou edita, conforme o modal tenha ticket ou não. A rota de edição
+  // (PATCH /tickets/:id) existia desde o começo e nunca teve tela: dava para
+  // abrir um chamado e nunca corrigir um erro de digitação no título, nem
+  // subir a prioridade quando o cliente cobrava.
+  //
+  // O corpo manda só título, descrição e prioridade. Status e primeira resposta
+  // têm rotas próprias, e mandá-los aqui seria pedido silenciosamente ignorado:
+  // o ValidationPipe roda com whitelist e descarta campo fora do DTO sem avisar.
+  async function salvar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const form = new FormData(evento.currentTarget);
+
+    const achados = validarObrigatorios(form, { titulo: 'Escreva um título para o chamado' });
+    setErros(achados);
+    if (temErro(achados)) {
+      focarPrimeiroErro(achados);
+      return;
+    }
+
+    const emEdicao = modal?.ticket ?? null;
+    const corpo = {
+      titulo: String(form.get('titulo')).trim(),
+      descricao: String(form.get('descricao')).trim() || undefined,
+      prioridade: Number(form.get('prioridade')),
+    };
+
     setSalvando(true);
+    setErro(null);
     try {
-      await api.post('/tickets', {
-        titulo: String(form.get('titulo')),
-        descricao: String(form.get('descricao')) || undefined,
-        prioridade: Number(form.get('prioridade')),
-        empresaId,
-      });
-      setModalAberto(false);
+      if (emEdicao) {
+        await api.patch(`/tickets/${emEdicao.id}`, corpo);
+      } else {
+        await api.post('/tickets', { ...corpo, empresaId });
+      }
+      setModal(null);
+      setErros({});
       carregar();
       onMudou?.();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Não foi possível criar o ticket');
+      const acao = emEdicao ? 'salvar as mudanças do' : 'criar o';
+      setErro(e instanceof Error ? e.message : `Não foi possível ${acao} ticket`);
     } finally {
       setSalvando(false);
     }
@@ -145,7 +175,7 @@ export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
       <div className="mb-4 flex items-center justify-between">
         <span className="text-xs font-light uppercase tracking-wide text-ink/60">Tickets</span>
         {podeEditar && (
-          <Button variante="secondary" onClick={() => setModalAberto(true)}>
+          <Button variante="secondary" onClick={() => setModal({ ticket: null })}>
             Novo ticket
           </Button>
         )}
@@ -181,6 +211,15 @@ export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
                 <LinhaDoTempo ticket={ticket} />
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                {podeEditar && (
+                  <Button
+                    variante="ghost"
+                    onClick={() => setModal({ ticket })}
+                    aria-label={`Editar ${ticket.titulo}`}
+                  >
+                    Editar
+                  </Button>
+                )}
                 {podeEditar && !ticket.primeiraRespostaEm && (
                   <Button variante="secondary" onClick={() => registrarResposta(ticket)}>
                     Registrar resposta
@@ -208,21 +247,51 @@ export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
         </div>
       )}
 
-      <Modal aberto={modalAberto} titulo="Novo ticket" onFechar={() => setModalAberto(false)}>
-        <form onSubmit={criar} className="flex flex-col gap-3">
-          <Input id="titulo" name="titulo" label="Título" required />
-          <Input id="descricao" name="descricao" label="Descrição" />
-          <Select id="prioridade" name="prioridade" label="Prioridade" defaultValue="2">
+      <Modal
+        aberto={modal !== null}
+        titulo={modal?.ticket ? 'Editar ticket' : 'Novo ticket'}
+        onFechar={() => setModal(null)}
+      >
+        {/* key remonta o formulário ao trocar de ticket: sem isso o
+            defaultValue do React guarda o valor do ticket anterior, que é a
+            mesma armadilha já documentada no formulário da agenda. */}
+        <form
+          key={modal?.ticket?.id ?? 'novo'}
+          onSubmit={salvar}
+          noValidate
+          className="flex flex-col gap-3"
+        >
+          <Input
+            id="titulo"
+            name="titulo"
+            label="Título"
+            erro={erros.titulo}
+            defaultValue={modal?.ticket?.titulo ?? ''}
+            autoFocus
+          />
+          <Input
+            id="descricao"
+            name="descricao"
+            label="Descrição"
+            defaultValue={modal?.ticket?.descricao ?? ''}
+          />
+          <Select
+            id="prioridade"
+            name="prioridade"
+            label="Prioridade"
+            defaultValue={String(modal?.ticket?.prioridade ?? 2)}
+            ajuda="A prioridade define o prazo de resposta do chamado."
+          >
             <option value="1">Alta</option>
             <option value="2">Média</option>
             <option value="3">Baixa</option>
           </Select>
           <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variante="ghost" onClick={() => setModalAberto(false)}>
+            <Button type="button" variante="ghost" onClick={() => setModal(null)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={salvando}>
-              {salvando ? 'Criando...' : 'Criar'}
+              {salvando ? 'Salvando...' : modal?.ticket ? 'Salvar' : 'Criar'}
             </Button>
           </div>
         </form>
