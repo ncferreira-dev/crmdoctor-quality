@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -8,17 +9,28 @@ import {
   IsUUID,
 } from 'class-validator';
 
+// Espaço no começo ou no fim de um nome não é dado, é digitação. Sem isto,
+// "Giovanna " entra no banco com o espaço e aparece assim em toda tela que
+// mostra o nome, inclusive no filtro de consultor da agenda e na carga do
+// dashboard. Aconteceu de verdade em 05/08/2026. Aparar é trabalho da API, e
+// não do formulário: o formulário é um cliente, e cliente não é para confiar.
+const aparar = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
+
 // Cadastro de membro: quem cadastra NÃO define a senha de outra pessoa. O
 // sistema gera um código de primeiro acesso e o próprio membro escolhe a senha
 // ao resgatá-lo.
 export class CreateUserDto {
+  @Transform(aparar)
   @IsString()
   @IsNotEmpty()
   nome: string;
 
+  @Transform(aparar)
   @IsEmail()
   email: string;
 
+  @Transform(aparar)
   @IsOptional()
   @IsString()
   telefone?: string;
@@ -32,6 +44,7 @@ export class CreateUserDto {
 
   // Só faz sentido para quem atua como consultor, mas fica livre para
   // qualquer cargo: não é a hierarquia que decide isso, é o formulário.
+  @Transform(aparar)
   @IsOptional()
   @IsString()
   especialidade?: string;

@@ -1042,3 +1042,23 @@ para o Fabrício (100) saem CEO e Desenvolvedor.
 
 Conferido no navegador logado como CEO: Administrador e CEO desabilitados,
 Coordenador, Analista e Consultor disponíveis.
+
+## Nome de membro entrando com espaço, e onde isso apareceu
+
+Dois membros criados em produção em 05/08 ficaram com espaço no fim do nome
+("Giovanna "). O espaço vazou para toda tela que mostra nome: o filtro de
+consultor da agenda listava "Erica , Giovanna ", e a carga por responsável no
+dashboard também.
+
+**Consertado no DTO da API, não no formulário.** `@Transform` aparando `nome`,
+`email`, `telefone` e `especialidade` em `CreateUserDto` (e, por `PartialType`,
+no update também). Formulário é cliente, e cliente não é para confiar: aparar no
+DTO cobre qualquer origem. E-mail é o caso mais perigoso, porque espaço no fim
+faz o login não achar a conta depois.
+
+Cinco testes novos, 70 no total, incluindo o caso de nome só com espaços, que
+tem que ser recusado em vez de virar nome vazio.
+
+**Os dois nomes já gravados não dá para eu corrigir:** minha conta de trabalho é
+Coordenador, que vê membros mas não gerencia. É edição de 30 segundos pelo
+Nícolas na tela de Membros.
