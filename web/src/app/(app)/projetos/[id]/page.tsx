@@ -16,6 +16,7 @@ import { Button } from '../../../../components/ui/Button';
 import { EstadoErro } from '../../../../components/ui/EstadoErro';
 import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
 import { EtapasSection } from '../../../../components/projetos/EtapasSection';
+import { Timeline } from '../../../../components/interacoes/Timeline';
 import { ProjetoFormModal } from '../../../../components/projetos/ProjetoFormModal';
 
 export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -179,6 +180,10 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
       )}
 
       <EtapasSection projetoId={id} etapas={projeto.etapas ?? []} onMudou={carregar} />
+
+      {/* Histórico deste projeto, separado do da empresa: quando o prazo
+          aperta, a conversa que interessa é a do projeto. */}
+      <Timeline projetoId={id} vazio="Nenhum contato registrado neste projeto ainda." />
 
       <ProjetoFormModal
         aberto={editando}

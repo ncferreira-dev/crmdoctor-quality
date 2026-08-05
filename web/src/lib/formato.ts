@@ -5,6 +5,7 @@ import {
   StatusTarefa,
   StatusTicket,
   StatusVisita,
+  TipoInteracao,
 } from '../types';
 
 export const ESTAGIO_PROJETO_LABEL: Record<EstagioProjeto, string> = {
@@ -145,6 +146,26 @@ export const SEGMENTO_LABEL: Record<Segmento, string> = {
   LABORATORIO: 'Laboratório',
   OUTRO: 'Outro',
 };
+
+// Tipo de contato na linha do tempo. A ordem aqui é a que aparece no seletor,
+// e começa pelo que mais acontece no dia a dia da consultoria.
+export const TIPO_INTERACAO_LABEL: Record<TipoInteracao, string> = {
+  LIGACAO: 'Ligação',
+  EMAIL: 'E-mail',
+  WHATSAPP: 'WhatsApp',
+  REUNIAO: 'Reunião',
+  VISITA: 'Visita',
+  OUTRO: 'Outro',
+};
+
+export const TIPOS_INTERACAO: TipoInteracao[] = [
+  'LIGACAO',
+  'EMAIL',
+  'WHATSAPP',
+  'REUNIAO',
+  'VISITA',
+  'OUTRO',
+];
 
 export const STATUS_TICKET_LABEL: Record<StatusTicket, string> = {
   ABERTO: 'Aberto',

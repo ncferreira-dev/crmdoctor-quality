@@ -14,6 +14,7 @@ import { Badge } from '../../../../components/ui/Badge';
 import { Button } from '../../../../components/ui/Button';
 import { EstadoErro } from '../../../../components/ui/EstadoErro';
 import { TicketsSection } from '../../../../components/empresas/TicketsSection';
+import { Timeline } from '../../../../components/interacoes/Timeline';
 import { EmpresaFormModal } from '../../../../components/empresas/EmpresaFormModal';
 import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
 
@@ -180,6 +181,13 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
 
       {/* Tickets */}
       <TicketsSection empresaId={id} onMudou={carregarEmpresa} />
+
+      {/* Histórico do relacionamento. Fica abaixo dos tickets de propósito: o
+          que cobra ação vem primeiro, a memória vem depois. */}
+      <Timeline
+        empresaId={id}
+        vazio="Nenhum contato registrado com esta empresa ainda."
+      />
 
       <EmpresaFormModal
         aberto={editando}

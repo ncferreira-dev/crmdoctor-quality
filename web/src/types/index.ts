@@ -148,6 +148,9 @@ export interface Interacao {
   empresaId: string | null;
   projetoId: string | null;
   criadoEm: string;
+  // Quem registrou o contato no CRM, resolvido a partir do criadoPorId da
+  // auditoria. Mesmo desenho do Ticket.
+  registradoPor: { id: string; nome: string } | null;
 }
 
 export interface Ticket {

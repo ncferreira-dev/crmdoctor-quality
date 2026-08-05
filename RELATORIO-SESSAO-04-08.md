@@ -875,3 +875,65 @@ compacto continua compacto e o número do dashboard continua grande.
 
 **A agenda já tinha sido resolvida no item 6**, e é a que mais doía: os filtros
 tomavam metade da primeira tela.
+
+---
+
+# Sessão 4 (05/08/2026, tarde)
+
+## Linha do tempo do relacionamento
+
+**Por que este item, e não outro.** Era o maior valor por hora de trabalho que
+restava sem depender de mudança no banco: as duas rotas de `/interacoes`
+existiam na API desde o começo do projeto e **nunca tiveram tela**. Nenhuma
+migration, nenhuma decisão pendente do Nícolas.
+
+**O que ele resolve.** Sem isto o CRM é um cadastro, não uma memória. A pergunta
+que aparece toda semana numa consultoria é "o que a gente já falou com essa
+empresa?", e a resposta morava na cabeça de quem atendeu ou no WhatsApp de
+alguém. Quando essa pessoa entra de férias, a empresa perde o histórico.
+
+### Na API
+
+`GET /interacoes` passou a devolver **quem registrou** cada contato, no mesmo
+desenho já usado em tickets: `criadoPorId` vem da extensão de auditoria e é só
+uma coluna de texto, então o nome sai de **uma** consulta a mais para a página
+inteira, com `select` explícito de `id` e `nome`. Nunca `include` cru em `User`.
+
+Sete testes novos, 65 no total. Eles travam o que importa: ordem do mais recente
+para o mais antigo, uma consulta só (não N+1), `select` explícito, autor que foi
+apagado do sistema não quebra a lista, e contato sem vínculo nenhum é recusado.
+
+### Na tela
+
+`web/src/components/interacoes/Timeline.tsx`, usado em dois lugares:
+
+- **Empresa**, abaixo dos tickets. O que cobra ação vem primeiro, a memória vem
+  depois.
+- **Projeto**, abaixo dos marcos.
+
+Os dois históricos são **separados de propósito**. Misturar faria o histórico da
+empresa engolir o do projeto, e é no projeto que mora a conversa que interessa
+quando o prazo aperta.
+
+Cada contato mostra tipo, data, quem registrou e o resumo, num fio vertical que
+faz a lista ser lida como história e não como tabela. Registrar é um modal com
+tipo (Ligação, E-mail, WhatsApp, Reunião, Visita, Outro), data pelo `CampoData`
+unificado e o resumo. A data grava ao meio-dia, como o resto do sistema, para o
+fuso não empurrar para o dia anterior.
+
+Quem não tem `INTERACOES_READ` não vê a seção. Quem tem leitura mas não escrita
+vê o histórico sem o botão.
+
+### Conferido no navegador, logado como CEO
+
+| O que testei | Resultado |
+|---|---|
+| Salvar sem escrever o resumo | Recusa, com "Escreva o que aconteceu neste contato", e o foco vai para o campo |
+| Registrar reunião de 01/08 | Aparece na hora: "REUNIÃO 01/08/2026 por Fabrício Teste" e o texto |
+| Data | 01/08/2026 na tela, sem o erro de um dia |
+| Contador | "1 contato" |
+| Histórico do projeto da mesma empresa | Continua vazio, não vazou o contato da empresa |
+| 390px | Não estoura a largura, nenhum alvo de toque abaixo de 32px |
+| Estado de erro | Usa o `EstadoErro` com Tentar de novo, igual ao resto |
+
+O contato de teste foi apagado do banco de demonstração depois.
