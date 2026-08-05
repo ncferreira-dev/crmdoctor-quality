@@ -606,3 +606,53 @@ Medido de novo, com `document.visibilityState === 'hidden'`, que é o pior caso:
 | Painel | 504 x 652, legível |
 | Esc fecha | sim |
 | Overlay sobrando depois de fechar | zero |
+
+## Fechamento da sessão 3
+
+**Estado ao sair.** Branch `sessao-auto-04-08`, três commits novos, nenhum push.
+API com typecheck limpo, 58 testes passando, zero erro de lint. Web com typecheck
+limpo, build de produção compilando, zero erro de lint. Modal conferido no
+navegador nas larguras de 1280px e 390px, e no pior caso de janela oculta.
+
+**Nenhuma migration foi criada nem rodada.** Os itens 9, 10 e 11 do bloco C
+dependem de migration e ficaram sem começar, então o banco de dev não foi tocado.
+
+**O que não foi feito, em ordem de valor para a próxima sessão:**
+
+| Item | Situação |
+|---|---|
+| 3, formato de data unificado | Não começado. É o de maior valor: `dd/mm/aaaa` já foi mexido antes e voltou |
+| 4, "Nova tarefa minha" | Não começado |
+| 5 e 6, filtros da agenda e agenda no celular | Não começados |
+| 7 e 8, tarefa para outros membros e campo de prazo | Não começados |
+| 9, 10 e 11, campos novos com migration aditiva | Não começados |
+| 13 a 15, fuso, celular e estados de carregamento | Não começados. O item 13 já tinha sido resolvido na sessão 2 (é o item 16 de lá), com 12 testes |
+
+Foi menos item do que a fila pedia. A troca foi consciente: o item 1 desmontou
+como reprodução e virou uma investigação que achou um defeito diferente e pior,
+e ainda me pegou publicando um conserto errado, que precisou ser refeito. Preferi
+três coisas medidas a oito escritas no escuro.
+
+**Uma dívida de interface que registro sem executar:** na tela `/projetos`, os
+botões de filtro por estágio são visualmente idênticos à trilha de estágio da
+tela de projeto, e não há nada dizendo que um filtra e o outro muda o dado. Meu
+palpite é que foi isso que você clicou. Consertar é mudar o desenho do filtro, o
+que mexe numa tela que você não pediu para mexer, então fica anotado.
+
+## Para o Nícolas ler primeiro
+
+1. **Os botões de estágio funcionam.** Testei pelo caminho do usuário e a
+   mudança persiste, sobrevive à navegação e atualiza o badge da lista.
+2. **Achei outro defeito no lugar, e ele é do sistema inteiro:** com a aba em
+   segundo plano, todo modal congelava no meio da animação, ilegível e com os
+   campos amassados. Consertado, e a regra agora é: animação nunca decide se
+   algo é visível.
+3. **Errei uma vez no meio e me corrigi:** o primeiro conserto trocou o motor da
+   animação sem resolver o defeito, e o teste seguinte mostrou isso. Está no
+   relatório com o antes e o depois.
+4. **Campos de formulário no celular** paravam em 149px de largura e agora
+   empilham. Vale para os quatro formulários do sistema.
+5. **Uma decisão sua:** a API aceita campo que não existe no DTO, responde 200 e
+   ignora em silêncio. Hoje nenhuma tela cai nisso, mas é uma fábrica de
+   "cliquei e não aconteceu nada". Ligar `forbidNonWhitelisted` resolve e passa a
+   devolver 400. Recomendo ligar, mas mexe no contrato de todas as rotas.
