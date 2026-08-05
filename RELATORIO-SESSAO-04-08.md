@@ -958,3 +958,23 @@ basta puxar um prazo para dentro da janela e rodar
 
 **Não toquei no Novalgina Linha 9** (prazo 10/08): ele é anterior a esta
 montagem e é decisão do Nícolas mover ou não.
+
+## Item 23: rotas da API sem tela, com recomendação (nada removido)
+
+Levantamento refeito em 05/08. **70 rotas na API, 54 já usadas pela interface,
+13 sem tela.** O número caiu de "cerca de 33" para 13 porque as telas de
+competências, cargos, tarefas, alertas e agora o histórico foram ligadas.
+
+Aviso de método: a primeira varredura acusou 30 rotas mortas e estava errada. O
+código chama a API em duas linhas (`api` numa, `.getTodos(...)` na outra) e a
+expressão de busca exigia tudo grudado. Contagem de rota morta que não olha o
+estilo real do código produz lista inflada e faz remover o que está em uso.
+
+| Rota | Recomendação |
+|---|---|
+| `POST /users/:id/reenviar-convite` | **Ligar.** É o buraco operacional mais concreto: quem perde o código de 8 dígitos hoje só volta pelo break-glass no terminal do container. Um botão na tela de Membros resolve |
+| `PATCH /tickets/:id` | **Ligar como edição de ticket.** Hoje dá para abrir um chamado e nunca corrigir título, descrição ou prioridade. É também a rota da armadilha do `whitelist`: ela aceita `{status}`, responde 200 e ignora |
+| `POST /leads/:id/converter` | Esperar. É o momento em que a oportunidade vira cliente, mas o módulo de leads está fora do menu por decisão de produto |
+| `DELETE /empresas/:id`, `/tarefas/:id`, `/tickets/:id` | **Não ligar sem decisão.** Em sistema de compliance, apagar quase sempre deveria ser desativar, como já foi feito com membro |
+| `GET /cargos/:id`, `/competencias/:id`, `/leads/:id`, `/tarefas/:id`, `/tickets/:id`, `/projetos/:id/etapas` | Deixar. São "buscar um" e a lista já traz o dado. Custo zero de manter |
+| `POST /notificacoes/executar-agora` | Deixar sem tela. É gatilho de operação, usado por fora quando preciso forçar o vigia de prazos |
