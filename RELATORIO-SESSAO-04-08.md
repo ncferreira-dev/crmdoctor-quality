@@ -937,3 +937,24 @@ vê o histórico sem o botão.
 | Estado de erro | Usa o `EstadoErro` com Tentar de novo, igual ao resto |
 
 O contato de teste foi apagado do banco de demonstração depois.
+
+### Prazos da demonstração adiados para a janela de setembro a novembro
+
+O Nícolas ainda não tem data da reunião com o Fabrício, então os prazos de
+06/08 a 15/10 foram espalhados entre 18/09 e 06/11, mantendo a ordem relativa:
+Validação de limpeza (18/09), Adequação de BPF (09/10), Qualificação de
+fornecedores (23/10) e Registro de saneantes (06/11). Os 8 marcos, as 4 visitas
+e as 4 tarefas foram movidos junto, preservando a distância entre eles.
+
+**Os 5 alertas antigos foram marcados como lidos**, e não apagados: eles citavam
+`dataReferencia` que não existe mais e ficariam se contradizendo com a tela. O
+`@@unique([projetoId, tipo, dataReferencia])` garante que o cron gere alertas
+novos, com as datas novas, quando a janela de 15 dias chegar.
+
+**Efeito colateral registrado, e ele é o sistema funcionando:** o sino fica vazio
+até 03/09, que é 15 dias antes do primeiro prazo. Se a reunião for antes disso,
+basta puxar um prazo para dentro da janela e rodar
+`POST /notificacoes/executar-agora`.
+
+**Não toquei no Novalgina Linha 9** (prazo 10/08): ele é anterior a esta
+montagem e é decisão do Nícolas mover ou não.
