@@ -18,15 +18,17 @@ interface ModalProps {
 //    do primeiro modal aberto.
 // 2. Entrada (corrigido em 05/08): o motor do `motion` depende de
 //    requestAnimationFrame. Com a aba em segundo plano ou a janela oculta o rAF
-//    não roda, e a animação congela no primeiro quadro: modal presoem
+//    não roda, e a animação congela no primeiro quadro: modal preso em
 //    opacity 0.35 com escala 0.98, campos amassados um sobre o outro, ou
 //    invisível de vez. Medido nesta base: com a janela oculta, a opacidade
-//    ficou parada em 0.357 indefinidamente.
+//    ficou parada em 0.357 indefinidamente. Trocar por animação CSS não
+//    resolveu sozinho, porque CSS também congela; o que resolve é não animar
+//    opacity.
 //
-// Agora a entrada é CSS (`overlay-fundo` e `overlay-painel` em globals.css) e
-// o estado final é o estado base: se a animação não rodar, o modal aparece
-// pronto em vez de sumir. A saída é imediata, que é preço baixo perto de
-// perder a tela.
+// Agora a entrada é CSS (`overlay-painel` em globals.css) e, mais importante,
+// NENHUMA animação toca `opacity`: animação parada só pode deixar o painel
+// alguns pixels deslocado, nunca invisível. O fundo aparece direto, sem
+// animação. A saída é imediata, que é preço baixo perto de perder a tela.
 export function Modal({ aberto, titulo, onFechar, children }: ModalProps) {
   // Esc fecha (QA checklist: todo overlay precisa ter saída por teclado).
   useEffect(() => {
@@ -42,7 +44,7 @@ export function Modal({ aberto, titulo, onFechar, children }: ModalProps) {
 
   return (
     <div
-      className="overlay-fundo fixed inset-0 z-50 flex items-center justify-center bg-night/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-night/50 p-4"
       onClick={onFechar}
       role="dialog"
       aria-modal="true"

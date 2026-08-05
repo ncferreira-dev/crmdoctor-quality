@@ -71,75 +71,57 @@ body {
   }
 }
 
-/* Entrada de overlay em CSS, não em JavaScript.
+/* Entrada de overlay, e a regra que vale para o sistema inteiro.
  *
- * O Modal animava com `motion`, cujo motor depende de requestAnimationFrame.
- * Quando o rAF não roda (aba em segundo plano, janela oculta, aba recém
- * restaurada, navegador economizando bateria), a animação congela no primeiro
- * quadro: o modal fica preso em opacity 0.35 e escala 0.98, ilegível e com os
- * campos amassados, ou some de vez em opacity 0. É falha silenciosa, que é
- * exatamente o que não se aceita aqui.
+ * NENHUMA animação daqui toca `opacity`, e isso não é gosto. Duas vezes esta
+ * base perdeu tela por animação: o `AnimatePresence` que não desmontava o nó
+ * (04/08) e o motor do `motion` congelando no primeiro quadro (05/08). A causa
+ * comum é a mesma: quem decide se o elemento é visível era a animação.
  *
- * A regra que evita isso: o estado FINAL é o estado base. A animação só tira
- * dali e devolve. Se ela não rodar, o modal simplesmente aparece pronto. */
-@keyframes surgir-fundo {
-  from {
-    opacity: 0;
-  }
-}
-
+ * Animação não roda quando a aba está em segundo plano, quando a janela está
+ * oculta, quando o navegador economiza bateria. Se ela segura `opacity: 0`
+ * nesses casos, o elemento fica invisível para sempre e o clique morre num
+ * overlay que ninguém vê. Foi medido: com a janela oculta, o modal ficou parado
+ * em `opacity: 0.357` com o motion, e em `opacity: 0` com CSS animando opacity.
+ *
+ * Animando só `transform`, o pior caso é o elemento aparecer alguns pixels
+ * deslocado. Some ele nunca vai sumir. É o mesmo desenho que a Sidebar já usa
+ * desde que ficou invisível uma vez.
+ */
 @keyframes surgir-painel {
   from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(8px) scale(0.985);
   }
 }
 
-.overlay-fundo {
-  animation: surgir-fundo 150ms ease-out;
+@keyframes surgir {
+  from {
+    transform: translateY(4px);
+  }
 }
 
 .overlay-painel {
   animation: surgir-painel 180ms ease-out;
 }
 
-/* Quem pediu menos movimento no sistema não recebe nenhum. */
-@media (prefers-reduced-motion: reduce) {
-  .overlay-fundo,
-  .overlay-painel {
-    animation: none;
-  }
-}
-
-/* Mesma regra do overlay, para qualquer coisa que aparece: o estado final é o
- * estado base. Só existe para a chegada ser suave, nunca para decidir se o
- * elemento é visível. Isto já custou uma sidebar invisível e um modal amassado
- * nesta base. */
-@keyframes surgir {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
 .surgir {
-  animation: surgir 220ms ease-out both;
+  animation: surgir 220ms ease-out;
 }
 
-/* Chegada em cascata sem JavaScript. O `both` acima seguraria o item no estado
- * inicial durante o atraso, por isso aqui o atraso vem com `animation-delay` e
- * o preenchimento continua sendo o estado final. */
+/* Chegada em cascata sem JavaScript. Sem `backwards`: o atraso não pode segurar
+ * o item num estado inicial, pelo mesmo motivo de tudo acima. */
 .surgir-cascata > * {
-  animation: surgir 220ms ease-out backwards;
+  animation: surgir 220ms ease-out;
 }
-.surgir-cascata > *:nth-child(1) { animation-delay: 0ms; }
 .surgir-cascata > *:nth-child(2) { animation-delay: 30ms; }
 .surgir-cascata > *:nth-child(3) { animation-delay: 60ms; }
 .surgir-cascata > *:nth-child(4) { animation-delay: 90ms; }
 .surgir-cascata > *:nth-child(5) { animation-delay: 120ms; }
 .surgir-cascata > *:nth-child(n + 6) { animation-delay: 150ms; }
 
+/* Quem pediu menos movimento no sistema não recebe nenhum. */
 @media (prefers-reduced-motion: reduce) {
+  .overlay-painel,
   .surgir,
   .surgir-cascata > * {
     animation: none;

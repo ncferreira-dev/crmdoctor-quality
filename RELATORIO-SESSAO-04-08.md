@@ -583,3 +583,26 @@ Troquei `grid-cols-2` por `grid-cols-1 sm:grid-cols-2` nos quatro lugares do
 sistema que tinham duas colunas fixas: `ProjetoFormModal`, `VisitaFormModal` e
 dois grids do `LeadFormModal`. Conferido nas duas larguras: em 390px os campos
 empilham com 310px cada, e em 1280px continuam lado a lado.
+
+### Correção do próprio item 1b, meia hora depois
+
+A primeira versão do conserto trocou `motion` por animação CSS e eu escrevi aqui
+que estava resolvido. **Estava errado, e o teste seguinte me desmentiu:** com a
+janela oculta o modal voltou a medir `opacity: 0`. Animação CSS também congela
+com a página escondida, e o `from { opacity: 0 }` segurava o painel invisível. Eu
+tinha trocado o motor, não o defeito.
+
+O que resolve de verdade é **não animar `opacity` em nada que precise estar
+visível**. As animações agora mexem só em `transform`, então animação parada só
+pode deixar o painel alguns pixels deslocado. Invisível, nunca. É o mesmo desenho
+que a Sidebar já usava desde que ficou invisível uma vez, agora escrito como
+regra em `globals.css` e valendo para todo overlay.
+
+Medido de novo, com `document.visibilityState === 'hidden'`, que é o pior caso:
+
+| Medida | Resultado |
+|---|---|
+| Opacidade do fundo e do painel | 1 e 1 |
+| Painel | 504 x 652, legível |
+| Esc fecha | sim |
+| Overlay sobrando depois de fechar | zero |
