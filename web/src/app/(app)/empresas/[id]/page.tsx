@@ -12,6 +12,7 @@ import {
 } from '../../../../lib/formato';
 import { Badge } from '../../../../components/ui/Badge';
 import { Button } from '../../../../components/ui/Button';
+import { EstadoErro } from '../../../../components/ui/EstadoErro';
 import { TicketsSection } from '../../../../components/empresas/TicketsSection';
 import { EmpresaFormModal } from '../../../../components/empresas/EmpresaFormModal';
 import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
@@ -40,7 +41,16 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
   }, [id]);
 
   if (erro) {
-    return <p className="text-sm text-ink/60">Não foi possível carregar a empresa: {erro}</p>;
+    return (
+      <EstadoErro
+        oQue="a empresa"
+        detalhe={erro}
+        onTentarDeNovo={() => {
+          setErro(null);
+          carregarEmpresa();
+        }}
+      />
+    );
   }
 
   if (!empresa) {

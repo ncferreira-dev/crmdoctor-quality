@@ -12,6 +12,7 @@ import {
 } from '../../types';
 import { STATUS_VISITA_LABEL, capitalizarPrimeira } from '../../lib/formato';
 import { Button } from '../ui/Button';
+import { EstadoErro } from '../ui/EstadoErro';
 import { Select } from '../ui/Select';
 import { ChevronLeft, ChevronRight, FiltroIcon, Plus, SearchIcon } from '../ui/icons';
 import { agruparPorDia, intervaloDaVisao } from './agendaUtils';
@@ -338,7 +339,14 @@ export function AgendaCalendar() {
 
       {/* Conteúdo */}
       {erro ? (
-        <p className="text-sm text-ink/60">Não foi possível carregar a agenda: {erro}</p>
+        <EstadoErro
+          oQue="a agenda"
+          detalhe={erro}
+          onTentarDeNovo={() => {
+            setErro(null);
+            carregar();
+          }}
+        />
       ) : !visitas ? (
         <div className="h-96 animate-pulse rounded-card bg-surface" />
       ) : view === 'mes' ? (

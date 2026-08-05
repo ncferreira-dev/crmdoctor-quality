@@ -5,6 +5,7 @@ import { api } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
 import { Competencia } from '../../../types';
 import { Button } from '../../../components/ui/Button';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { CompetenciaFormModal } from '../../../components/competencias/CompetenciaFormModal';
 
 export default function CompetenciasPage() {
@@ -54,13 +55,24 @@ export default function CompetenciasPage() {
         Membros, ao cadastrar ou editar quem faz visita técnica.
       </p>
 
-      {erro && (
+      {/* Erro de ação (excluir que falhou) com a lista já na tela: aviso curto.
+          Erro de carga é outra coisa e vira o bloco de EstadoErro abaixo. */}
+      {erro && competencias && (
         <p role="alert" className="mb-3 text-xs text-accent">
           {erro}
         </p>
       )}
 
-      {!competencias ? (
+      {erro && !competencias ? (
+        <EstadoErro
+          oQue="as competências"
+          detalhe={erro}
+          onTentarDeNovo={() => {
+            setErro(null);
+            carregar();
+          }}
+        />
+      ) : !competencias ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-16 animate-pulse rounded-card bg-white/60" />

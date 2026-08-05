@@ -12,6 +12,7 @@ import {
   ESTAGIO_PROJETO_LABEL,
   formatarDataCivil,
 } from '../../../lib/formato';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { KpiCard } from '../../../components/dashboard/KpiCard';
 import { BarraRanking } from '../../../components/dashboard/BarraRanking';
 import { PainelAlertas } from '../../../components/dashboard/PainelAlertas';
@@ -39,11 +40,15 @@ export default function DashboardPage() {
   // cópias independentes acabariam se contradizendo na tela.
   const alertas = useAlertas();
 
-  useEffect(() => {
+  function carregar() {
     api
       .get<DashboardResumo>('/dashboard/resumo')
       .then(setResumo)
       .catch((error: Error) => setErro(error.message));
+  }
+
+  useEffect(() => {
+    carregar();
   }, []);
 
   async function marcarLida(id: string) {
@@ -58,7 +63,16 @@ export default function DashboardPage() {
   }
 
   if (erro) {
-    return <p className="text-sm text-ink/60">Não foi possível carregar o dashboard: {erro}</p>;
+    return (
+      <EstadoErro
+        oQue="o dashboard"
+        detalhe={erro}
+        onTentarDeNovo={() => {
+          setErro(null);
+          carregar();
+        }}
+      />
+    );
   }
 
   if (!resumo) {

@@ -8,6 +8,7 @@ import { STATUS_TAREFA_LABEL } from '../../../lib/formato';
 
 const STATUS_TAREFA = Object.keys(STATUS_TAREFA_LABEL) as StatusTarefa[];
 import { Button } from '../../../components/ui/Button';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { SeloPrazo } from '../../../components/projetos/SeloPrazo';
@@ -149,13 +150,24 @@ export default function MembrosPage() {
         )}
       </div>
 
-      {erro && (
+      {/* Erro de ação com a lista na tela: aviso curto. Erro de carga vira o
+          bloco abaixo, com botão de tentar de novo. */}
+      {erro && membros && (
         <p role="alert" className="mb-3 text-xs text-accent">
           {erro}
         </p>
       )}
 
-      {!membros ? (
+      {erro && !membros ? (
+        <EstadoErro
+          oQue="a equipe"
+          detalhe={erro}
+          onTentarDeNovo={() => {
+            setErro(null);
+            carregar();
+          }}
+        />
+      ) : !membros ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-24 animate-pulse rounded-card bg-white/60" />

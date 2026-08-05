@@ -7,6 +7,7 @@ import { usePermissao } from '../../../hooks/useSessao';
 import { EmpresaCliente, ResultadoPaginado } from '../../../types';
 import { SEGMENTO_LABEL } from '../../../lib/formato';
 import { Button } from '../../../components/ui/Button';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { EmpresaFormModal } from '../../../components/empresas/EmpresaFormModal';
@@ -53,7 +54,14 @@ export default function EmpresasPage() {
       </div>
 
       {erro ? (
-        <p className="text-sm text-ink/60">Não foi possível carregar: {erro}</p>
+        <EstadoErro
+          oQue="as empresas"
+          detalhe={erro}
+          onTentarDeNovo={() => {
+            setErro(null);
+            carregar(busca);
+          }}
+        />
       ) : !empresas ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 5 }).map((_, i) => (

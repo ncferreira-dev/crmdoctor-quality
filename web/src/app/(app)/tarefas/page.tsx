@@ -6,6 +6,7 @@ import { diasAteOPrazo } from '../../../lib/formato';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { StatusTarefa, Tarefa } from '../../../types';
 import { Button } from '../../../components/ui/Button';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { ItemTarefa } from '../../../components/tarefas/ItemTarefa';
 import { TarefaFormModal } from '../../../components/membros/TarefaFormModal';
 
@@ -166,9 +167,18 @@ export default function TarefasPage() {
 
       {!tarefas ? (
         // Esqueleto só enquanto está mesmo carregando. Se a chamada falhou, o
-        // erro acima já explica, e manter o esqueleto pulsando faria a tela
-        // fingir que ainda está buscando algo.
-        erro ? null : (
+        // lugar de dizer isso é o bloco de erro com botão de tentar de novo, e
+        // não um esqueleto pulsando para sempre.
+        erro ? (
+          <EstadoErro
+            oQue="as suas tarefas"
+            detalhe={erro}
+            onTentarDeNovo={() => {
+              setErro(null);
+              carregar();
+            }}
+          />
+        ) : (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-14 animate-pulse rounded-card bg-white/60" />

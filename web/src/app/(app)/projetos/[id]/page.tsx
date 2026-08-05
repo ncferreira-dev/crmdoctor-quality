@@ -13,6 +13,7 @@ import {
   proximoEstagio,
 } from '../../../../lib/formato';
 import { Button } from '../../../../components/ui/Button';
+import { EstadoErro } from '../../../../components/ui/EstadoErro';
 import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
 import { EtapasSection } from '../../../../components/projetos/EtapasSection';
 import { ProjetoFormModal } from '../../../../components/projetos/ProjetoFormModal';
@@ -48,7 +49,16 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
   }
 
   if (erro && !projeto) {
-    return <p className="text-sm text-ink/60">Não foi possível carregar o projeto: {erro}</p>;
+    return (
+      <EstadoErro
+        oQue="o projeto"
+        detalhe={erro}
+        onTentarDeNovo={() => {
+          setErro(null);
+          carregar();
+        }}
+      />
+    );
   }
 
   if (!projeto) {

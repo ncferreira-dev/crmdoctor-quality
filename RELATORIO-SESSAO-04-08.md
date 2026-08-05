@@ -815,3 +815,40 @@ Conferido nas duas larguras:
 | Filtro aplicado e painel fechado | filtro continua valendo (2 visitas) e o botão mostra "Filtros 1" |
 | Limpar o filtro | contador some |
 | Em 1280px | botão escondido, busca e os três seletores sempre visíveis |
+
+## Item 15: erro de carregamento deixa de ser beco sem saída
+
+**O que estava errado.** Todas as telas tratavam erro, mas do mesmo jeito ruim:
+uma frase cinza com a mensagem crua da API (`Failed to fetch`) e nada mais. A
+única saída era a pessoa saber que recarregar a página resolve. Pior em
+Competências, Cargos e Membros: se a carga falhava, a lista ficava `null` para
+sempre e o **esqueleto pulsava eternamente**, com um errinho vermelho em cima.
+A tela mentia dizendo que ainda estava buscando.
+
+**Nasceu `web/src/components/ui/EstadoErro.tsx`**, o estado de erro único do
+sistema:
+
+- Frase humana: "Não foi possível carregar os projetos."
+- Explicação do que fazer, com texto diferente quando a causa é rede.
+- Botão **Tentar de novo**, que refaz a chamada sem sair da tela.
+- A mensagem técnica só aparece em letra miúda quando não é falha de rede.
+
+**Aplicado em nove telas:** Dashboard, Empresas, Empresa (detalhe), Projetos,
+Projeto (detalhe), Agenda, Membros, Competências, Cargos e Minhas tarefas.
+
+Onde a tela também mostra erro de **ação** (excluir que falhou), os dois foram
+separados: erro de ação continua sendo o aviso curto acima da lista, porque a
+lista está na tela e funcionando; erro de **carga** vira o bloco com botão.
+
+**Como conferi, e este teste vale registrar:** derrubei a API local e naveguei
+pelas telas.
+
+| Tela | Com a API fora |
+|---|---|
+| Projetos | "Não foi possível carregar os projetos", explicação de rede e botão |
+| Competências | Mesmo bloco, e **zero esqueleto pulsando** |
+| Minhas tarefas | Mesmo bloco, uma única mensagem, sem duplicar |
+| Jargão técnico na tela | nenhum |
+
+Depois subi a API de volta e cliquei em **Tentar de novo** sem recarregar a
+página: o erro sumiu, a tela carregou o conteúdo e a rota continuou a mesma.

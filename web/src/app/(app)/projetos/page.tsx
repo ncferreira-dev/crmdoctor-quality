@@ -11,6 +11,7 @@ import {
   urgenciaDoPrazo,
 } from '../../../lib/formato';
 import { Button } from '../../../components/ui/Button';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { Badge } from '../../../components/ui/Badge';
 import { SeloPrazo } from '../../../components/projetos/SeloPrazo';
 import { ProjetoFormModal } from '../../../components/projetos/ProjetoFormModal';
@@ -117,7 +118,14 @@ export default function ProjetosPage() {
       </div>
 
       {erro ? (
-        <p className="text-sm text-ink/60">Não foi possível carregar os projetos: {erro}</p>
+        <EstadoErro
+          oQue="os projetos"
+          detalhe={erro}
+          onTentarDeNovo={() => {
+            setErro(null);
+            carregar();
+          }}
+        />
       ) : !projetos ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 4 }).map((_, i) => (

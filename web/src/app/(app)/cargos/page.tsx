@@ -6,6 +6,7 @@ import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { GRUPOS_PERMISSAO } from '../../../lib/permissoes';
 import { Cargo, Usuario } from '../../../types';
 import { Button } from '../../../components/ui/Button';
+import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { Badge } from '../../../components/ui/Badge';
 import { CargoFormModal } from '../../../components/cargos/CargoFormModal';
 
@@ -78,13 +79,24 @@ export default function CargosPage() {
         nível igual ou acima do seu.
       </p>
 
-      {erro && (
+      {/* Erro de ação com a lista na tela: aviso curto. Erro de carga vira o
+          bloco abaixo, com botão de tentar de novo. */}
+      {erro && cargos && (
         <p role="alert" className="mb-3 text-xs text-accent">
           {erro}
         </p>
       )}
 
-      {!cargos ? (
+      {erro && !cargos ? (
+        <EstadoErro
+          oQue="os cargos"
+          detalhe={erro}
+          onTentarDeNovo={() => {
+            setErro(null);
+            carregar();
+          }}
+        />
+      ) : !cargos ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="h-28 animate-pulse rounded-card bg-white/60" />
