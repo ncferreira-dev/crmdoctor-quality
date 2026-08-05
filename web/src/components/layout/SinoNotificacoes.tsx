@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'motion/react';
 import { carregarAlertas, marcarAlertaLido } from '../../lib/alertas';
 import { formatarDataCivil } from '../../lib/formato';
 import { useAlertas } from '../../hooks/useAlertas';
@@ -103,13 +102,13 @@ export function SinoNotificacoes() {
       </button>
 
       {aberto && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.12, ease: 'easeOut' }}
+        <div
           role="dialog"
           aria-label="Alertas de compliance"
-          className="absolute right-0 top-11 z-50 w-[min(92vw,22rem)] overflow-hidden rounded-card border border-ink/10 bg-white shadow-overlay"
+          // Entrada em CSS, não em JavaScript: com a aba em segundo plano o
+          // motor do motion congela no primeiro quadro e o painel ficaria
+          // invisível. Ver o comentário do Modal.
+          className="surgir absolute right-0 top-11 z-50 w-[min(92vw,22rem)] overflow-hidden rounded-card border border-ink/10 bg-white shadow-overlay"
         >
           <div className="flex items-baseline justify-between gap-3 border-b border-ink/10 px-4 py-3">
             <p className="text-xs font-light uppercase tracking-wide text-ink/50">
@@ -162,7 +161,7 @@ export function SinoNotificacoes() {
           >
             Ver no dashboard
           </Link>
-        </motion.div>
+        </div>
       )}
     </div>
   );

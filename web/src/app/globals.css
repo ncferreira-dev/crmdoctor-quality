@@ -70,3 +70,78 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Entrada de overlay em CSS, não em JavaScript.
+ *
+ * O Modal animava com `motion`, cujo motor depende de requestAnimationFrame.
+ * Quando o rAF não roda (aba em segundo plano, janela oculta, aba recém
+ * restaurada, navegador economizando bateria), a animação congela no primeiro
+ * quadro: o modal fica preso em opacity 0.35 e escala 0.98, ilegível e com os
+ * campos amassados, ou some de vez em opacity 0. É falha silenciosa, que é
+ * exatamente o que não se aceita aqui.
+ *
+ * A regra que evita isso: o estado FINAL é o estado base. A animação só tira
+ * dali e devolve. Se ela não rodar, o modal simplesmente aparece pronto. */
+@keyframes surgir-fundo {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes surgir-painel {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.overlay-fundo {
+  animation: surgir-fundo 150ms ease-out;
+}
+
+.overlay-painel {
+  animation: surgir-painel 180ms ease-out;
+}
+
+/* Quem pediu menos movimento no sistema não recebe nenhum. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay-fundo,
+  .overlay-painel {
+    animation: none;
+  }
+}
+
+/* Mesma regra do overlay, para qualquer coisa que aparece: o estado final é o
+ * estado base. Só existe para a chegada ser suave, nunca para decidir se o
+ * elemento é visível. Isto já custou uma sidebar invisível e um modal amassado
+ * nesta base. */
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.surgir {
+  animation: surgir 220ms ease-out both;
+}
+
+/* Chegada em cascata sem JavaScript. O `both` acima seguraria o item no estado
+ * inicial durante o atraso, por isso aqui o atraso vem com `animation-delay` e
+ * o preenchimento continua sendo o estado final. */
+.surgir-cascata > * {
+  animation: surgir 220ms ease-out backwards;
+}
+.surgir-cascata > *:nth-child(1) { animation-delay: 0ms; }
+.surgir-cascata > *:nth-child(2) { animation-delay: 30ms; }
+.surgir-cascata > *:nth-child(3) { animation-delay: 60ms; }
+.surgir-cascata > *:nth-child(4) { animation-delay: 90ms; }
+.surgir-cascata > *:nth-child(5) { animation-delay: 120ms; }
+.surgir-cascata > *:nth-child(n + 6) { animation-delay: 150ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .surgir,
+  .surgir-cascata > * {
+    animation: none;
+  }
+}

@@ -1,7 +1,6 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
-import { motion } from 'motion/react';
 
 interface ModalProps {
   aberto: boolean;
@@ -10,14 +9,24 @@ interface ModalProps {
   children: ReactNode;
 }
 
-// SEM AnimatePresence de propósito. Com ele (motion 12.43 + React 19.2 + Next
-// 16), a animação de saída rodava até o fim e o nó NUNCA saía do DOM: sobrava
-// um backdrop fixed inset-0 z-50 com opacity 0 e pointer-events auto por cima
-// da tela inteira. Visualmente o modal sumia, mas todo clique seguinte morria
-// no overlay invisível, e a única saída era recarregar a página. Como este é o
-// Modal de todas as telas, isso travava o sistema inteiro depois do primeiro
-// modal aberto. A entrada continua animada; a saída é imediata, que é um preço
-// baixo perto de perder a tela.
+// SEM `motion` nenhum, nem na entrada nem na saída, e isso é decisão de
+// engenharia, não de gosto. Dois defeitos diferentes já saíram daqui:
+//
+// 1. Saída (corrigido em 04/08): com AnimatePresence, o nó nunca saía do DOM.
+//    Sobrava um `fixed inset-0 z-50` invisível engolindo todo clique da tela,
+//    e como este Modal é o de todas as telas, o sistema inteiro travava depois
+//    do primeiro modal aberto.
+// 2. Entrada (corrigido em 05/08): o motor do `motion` depende de
+//    requestAnimationFrame. Com a aba em segundo plano ou a janela oculta o rAF
+//    não roda, e a animação congela no primeiro quadro: modal presoem
+//    opacity 0.35 com escala 0.98, campos amassados um sobre o outro, ou
+//    invisível de vez. Medido nesta base: com a janela oculta, a opacidade
+//    ficou parada em 0.357 indefinidamente.
+//
+// Agora a entrada é CSS (`overlay-fundo` e `overlay-painel` em globals.css) e
+// o estado final é o estado base: se a animação não rodar, o modal aparece
+// pronto em vez de sumir. A saída é imediata, que é preço baixo perto de
+// perder a tela.
 export function Modal({ aberto, titulo, onFechar, children }: ModalProps) {
   // Esc fecha (QA checklist: todo overlay precisa ter saída por teclado).
   useEffect(() => {
@@ -32,23 +41,17 @@ export function Modal({ aberto, titulo, onFechar, children }: ModalProps) {
   if (!aberto) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-night/50 p-4"
+    <div
+      className="overlay-fundo fixed inset-0 z-50 flex items-center justify-center bg-night/50 p-4"
       onClick={onFechar}
       role="dialog"
       aria-modal="true"
       aria-label={titulo}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
+      <div
         // Clique dentro não fecha; só no backdrop.
         onClick={(evento) => evento.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card bg-white p-6 shadow-overlay"
+        className="overlay-painel max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card bg-white p-6 shadow-overlay"
       >
         <div className="mb-5 flex items-start justify-between gap-4">
           <h2 className="font-black leading-none tracking-tight text-ink">{titulo}</h2>
@@ -72,7 +75,7 @@ export function Modal({ aberto, titulo, onFechar, children }: ModalProps) {
           </button>
         </div>
         {children}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
