@@ -972,9 +972,27 @@ estilo real do código produz lista inflada e faz remover o que está em uso.
 
 | Rota | Recomendação |
 |---|---|
-| `POST /users/:id/reenviar-convite` | **Ligar.** É o buraco operacional mais concreto: quem perde o código de 8 dígitos hoje só volta pelo break-glass no terminal do container. Um botão na tela de Membros resolve |
+| `POST /users/:id/reenviar-convite` | ~~Ligar~~. **CORRIGIDO: já está ligada** em `membros/page.tsx`. Foi falso positivo da varredura, ver o aviso abaixo |
 | `PATCH /tickets/:id` | **Ligar como edição de ticket.** Hoje dá para abrir um chamado e nunca corrigir título, descrição ou prioridade. É também a rota da armadilha do `whitelist`: ela aceita `{status}`, responde 200 e ignora |
 | `POST /leads/:id/converter` | Esperar. É o momento em que a oportunidade vira cliente, mas o módulo de leads está fora do menu por decisão de produto |
 | `DELETE /empresas/:id`, `/tarefas/:id`, `/tickets/:id` | **Não ligar sem decisão.** Em sistema de compliance, apagar quase sempre deveria ser desativar, como já foi feito com membro |
 | `GET /cargos/:id`, `/competencias/:id`, `/leads/:id`, `/tarefas/:id`, `/tickets/:id`, `/projetos/:id/etapas` | Deixar. São "buscar um" e a lista já traz o dado. Custo zero de manter |
 | `POST /notificacoes/executar-agora` | Deixar sem tela. É gatilho de operação, usado por fora quando preciso forçar o vigia de prazos |
+
+**Correção da própria varredura, no mesmo dia.** A primeira versão desta lista
+acusou 30 rotas mortas, a segunda 13, a terceira 2, e a boa é **12**. Três erros
+diferentes, e vale registrar os três porque quem repetir a conta vai cair neles:
+
+1. Alternância de regex é ordenada: `get|getTodos` faz `get` casar primeiro e
+   sobrar `Todos`, matando toda chamada `api.getTodos`.
+2. Neste código `api` e `.getTodos(...)` ficam em **linhas diferentes**, então
+   padrão que exige tudo grudado não acha nada.
+3. Comparar só o caminho, ignorando o verbo, dá o erro contrário: `DELETE
+   /empresas/:id` passa por usada porque existe um `GET` no mesmo caminho.
+
+O que fechou a conta foi um padrão tolerante a genérico e quebra de linha, com
+verbo, **mais conferência manual rota a rota**. Eu tinha publicado
+`reenviar-convite` como o buraco mais urgente do sistema e ela já estava pronta
+desde sempre. **Número de varredura sem conferência na mão não vale como fato.**
+
+Contagem correta em 05/08: **70 rotas, 58 com tela, 12 sem**.
