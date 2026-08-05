@@ -763,3 +763,55 @@ de hoje. Com isso ele parou de gerar alerta de compliance, e o dashboard mostra
 zero alerta em aberto. Se aquilo foi um teste de clique e não uma conclusão de
 verdade, o projeto precisa voltar para o estágio anterior, senão o prazo de
 10/08 passa sem ninguém ser avisado.
+
+## Item 5: os filtros da agenda filtravam, menos o que mais importa
+
+**Metade do item não reproduziu.** Testei os quatro controles na visão Lista,
+cada um sozinho e combinados, e todos já funcionavam: sem filtro 3 visitas;
+por empresa TransLog, 1 e só dela; por consultor Marcos, 1; consultor mais
+status Cancelada, nenhuma e o estado vazio na tela; busca "hospital", 1;
+busca "zzzz", nenhuma e estado vazio.
+
+**A outra metade reproduziu, e era o que dava a sensação de filtro quebrado.**
+Na visão Mês, os filtros nunca valeram para as marcas de **prazo de
+compliance**. Medido: filtrando por TransLog, as visitas caíam de 7 para 2 e as
+**três** marcas de prazo continuavam na tela, duas delas de outras empresas. Do
+lado de quem usa, isso é "filtrei e continua aparecendo coisa de quem eu tirei".
+
+**Conserto.** O prazo passou a respeitar os filtros que ele tem como responder:
+
+| Filtro | O que acontece com as marcas de prazo |
+|---|---|
+| Empresa | Só ficam os prazos daquela empresa |
+| Busca | Procura também no título do projeto e no nome da empresa |
+| Consultor | Somem. Ninguém é responsável por uma data vencer |
+| Status | Somem. Prazo não fica "confirmado" nem "cancelado" |
+
+Conferido depois: sem filtro, 7 visitas e 3 prazos; por TransLog, 2 visitas e
+1 prazo, o dela; por consultor, 3 visitas e nenhum prazo; buscando "dermocosm",
+nenhuma visita e o prazo do projeto que casa com o texto.
+
+O campo de busca virou **"Buscar eventos"**, como pedido, e agora o nome está
+correto por um motivo a mais: a busca alcança as duas coisas que a agenda
+mostra, visita e prazo.
+
+## Item 6: a agenda no celular começava pelos filtros
+
+Em 390px a busca mais os três seletores empilhavam em quatro linhas inteiras e
+empurravam o calendário para baixo. Medido: o calendário começava a 462px do
+topo, ou seja, mais da metade da tela ia embora antes do primeiro dia aparecer.
+
+Agora, **só no celular**, os filtros ficam atrás de um botão **Filtros**, com um
+contador de quantos estão ativos para nenhum recorte ficar escondido e
+esquecido. No desktop nada mudou: o botão não existe e os filtros seguem sempre
+à vista.
+
+Conferido nas duas larguras:
+
+| Medida | Resultado |
+|---|---|
+| Topo do calendário em 390px, painel fechado | 273px, contra 462px antes |
+| Painel começa fechado | sim |
+| Filtro aplicado e painel fechado | filtro continua valendo (2 visitas) e o botão mostra "Filtros 1" |
+| Limpar o filtro | contador some |
+| Em 1280px | botão escondido, busca e os três seletores sempre visíveis |

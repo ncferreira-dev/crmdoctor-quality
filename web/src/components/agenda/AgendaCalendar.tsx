@@ -13,7 +13,7 @@ import {
 import { STATUS_VISITA_LABEL, capitalizarPrimeira } from '../../lib/formato';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
-import { ChevronLeft, ChevronRight, Plus, SearchIcon } from '../ui/icons';
+import { ChevronLeft, ChevronRight, FiltroIcon, Plus, SearchIcon } from '../ui/icons';
 import { agruparPorDia, intervaloDaVisao } from './agendaUtils';
 import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
@@ -72,6 +72,8 @@ export function AgendaCalendar() {
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
   const [busca, setBusca] = useState('');
+  // Fechado por padrão no celular. No desktop o `sm:flex` ignora este estado.
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
   const [modal, setModal] = useState<{ aberto: boolean; visita: Visita | null; inicio?: string }>({
     aberto: false,
@@ -113,16 +115,41 @@ export function AgendaCalendar() {
   // "comparece" a um prazo, ele só vence. Por isso vai num mapa separado, com
   // desenho separado, em vez de virar mais um bloco na grade.
   const prazosPorDia = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
     const mapa = new Map<string, Projeto[]>();
+
+    // Os filtros valem para o prazo também, senão a agenda continua mostrando
+    // compromisso de empresa que a pessoa acabou de tirar da tela, e o filtro
+    // passa a parecer quebrado. Foi medido: filtrando por uma empresa, as
+    // visitas caíam de 7 para 2 e as três marcas de prazo continuavam lá,
+    // inclusive de outras duas empresas.
+    //
+    // Consultor e status são filtros que um prazo não tem como responder:
+    // ninguém é responsável por uma data vencer, e prazo não fica "confirmado"
+    // nem "cancelado". Quando um deles está ativo, a pessoa pediu uma lista de
+    // visitas, então o prazo sai de cena em vez de fingir que se encaixa.
+    if (filtroConsultor || filtroStatus) return mapa;
+
     for (const projeto of projetos) {
       if (!projeto.dataLimiteCompliance || projeto.estagio === 'CONCLUIDO') continue;
+      if (filtroEmpresa && projeto.empresaId !== filtroEmpresa) continue;
+      if (termo) {
+        const alvo = `${projeto.titulo} ${projeto.empresa?.nome ?? ''}`.toLowerCase();
+        if (!alvo.includes(termo)) continue;
+      }
       // Data civil (@db.Date): fatiar a string evita o fuso jogar o prazo para
       // o dia anterior, que é o bug que a tela já teve com esses campos.
       const chave = projeto.dataLimiteCompliance.slice(0, 10);
       mapa.set(chave, [...(mapa.get(chave) ?? []), projeto]);
     }
     return mapa;
-  }, [projetos]);
+  }, [projetos, filtroEmpresa, filtroConsultor, filtroStatus, busca]);
+
+  // O contador existe para o filtro não ficar escondido e esquecido: com o
+  // painel fechado, nada na tela diria que a agenda está mostrando um recorte.
+  const filtrosAtivos = [filtroConsultor, filtroEmpresa, filtroStatus, busca.trim()].filter(
+    Boolean,
+  ).length;
 
   const visitasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -225,8 +252,32 @@ export function AgendaCalendar() {
         </div>
       </div>
 
-      {/* Busca + filtros */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      {/* Busca + filtros.
+          No celular eles ficam atrás do botão "Filtros": empilhados, a busca
+          mais os três seletores tomavam quatro linhas inteiras e empurravam o
+          calendário para fora da primeira tela, e o calendário é o motivo de a
+          pessoa ter aberto a agenda. No desktop sobra largura, então continuam
+          sempre à vista e o botão nem aparece. */}
+      <button
+        type="button"
+        onClick={() => setFiltrosAbertos((v) => !v)}
+        aria-expanded={filtrosAbertos}
+        aria-controls="filtros-agenda"
+        className="flex items-center gap-2 self-start rounded-md border border-ink/15 px-3 py-2 text-sm text-ink/70 transition-colors hover:border-brand/40 sm:hidden"
+      >
+        <FiltroIcon />
+        Filtros
+        {filtrosAtivos > 0 && (
+          <span className="dado inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[11px] leading-none text-white">
+            {filtrosAtivos}
+          </span>
+        )}
+      </button>
+
+      <div
+        id="filtros-agenda"
+        className={`${filtrosAbertos ? 'flex' : 'hidden'} flex-col gap-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center`}
+      >
         <div className="relative sm:max-w-xs sm:flex-1">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40">
             <SearchIcon />
@@ -234,7 +285,10 @@ export function AgendaCalendar() {
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar visitas"
+            // "eventos" e não "visitas" porque a busca agora alcança as duas
+            // coisas que a agenda mostra: a visita e o prazo de compliance.
+            placeholder="Buscar eventos"
+            aria-label="Buscar eventos na agenda"
             className="w-full rounded-md border border-ink/15 py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink/40 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
