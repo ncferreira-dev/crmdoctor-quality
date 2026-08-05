@@ -1,0 +1,46 @@
+{
+ "empresas": [
+  "66bd81b6-07b4-4d5a-b8ba-9c8f034215c6",
+  "d170d7eb-b514-4616-90fe-c398a4e7e9fd"
+ ],
+ "projetos": [
+  "92c4cac8-d831-4f35-a9bf-71e1f5004e9c",
+  "a0e3a5da-ac2b-4282-8a21-8885586f57e4",
+  "48310639-d01e-4009-a018-77321960896c",
+  "df455d38-e7f6-4774-9ab2-8b9ebfb34e8b"
+ ],
+ "etapas": [
+  "11a9c2d4-f9eb-407c-86e1-7bc2b5d81fe5",
+  "c76ec178-30e4-4019-b2a9-e4a1aec45d7a",
+  "90455aaf-073b-4867-be4d-1b73bc14bfbe",
+  "0c86aa5a-9258-463a-bbde-206a0bddd71a",
+  "025a268b-a46d-4288-8e91-d39cf50b2d94",
+  "655bac70-03dc-4fa8-bebf-db5c64960c5d",
+  "03564f2c-84dc-48b0-b996-6c74ddb0933a",
+  "b7d5e7b9-2e36-4af8-ae08-4f85a3e33b9e"
+ ],
+ "tickets": [
+  "35ed4227-9c15-4de1-977c-58fa87374ab8",
+  "391a7617-9795-4f9d-9ae8-def683287fd8",
+  "3352a2ef-5a1d-4df6-947b-7fb9ef2b8a14"
+ ],
+ "visitas": [
+  "fe3702cf-1ea1-4868-bd1e-e3309a4404da",
+  "20b68059-5b7d-488c-a131-189e1ff3c32e",
+  "43958a36-abc8-4252-85da-690b7f7b0381",
+  "51851f3a-7c2c-410d-a190-9b4a2ab28a75"
+ ],
+ "interacoes": [
+  "c2f96655-9d45-4ec4-b35c-31ba8eb8864c",
+  "24290207-7495-4b91-ab6f-736ab52e3983",
+  "2daa67ae-93f5-40e4-a43c-01ed829c8f52",
+  "92bfae48-6423-488a-a3c2-2ec686e11276",
+  "e548fb6f-175a-47d6-a8fc-2e82b8be2fda"
+ ],
+ "tarefas": [
+  "ac8681b3-22ed-451e-9e88-0c5b13e4a241",
+  "9b713fa8-bf61-434f-9f28-11b75a7b8867",
+  "71a695f1-8190-46a5-a9b4-06ad3094eae3",
+  "f1da7188-a29c-469a-a131-10a2b9eb3225"
+ ]
+}
