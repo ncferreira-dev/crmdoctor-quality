@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Projeto, Visita } from '../../types';
+import { Projeto, Tarefa, Visita } from '../../types';
 import { chaveDia, dataPorExtenso, diasDaGradeDoMes, DIAS_SEMANA_CURTO } from './agendaUtils';
 import { VisitaChip } from './VisitaChip';
 
@@ -10,6 +10,10 @@ interface MonthViewProps {
   visitasPorDia: Map<string, Visita[]>;
   // Prazo de compliance que cai no dia. Chave no mesmo formato de chaveDia.
   prazosPorDia: Map<string, Projeto[]>;
+  // Tarefa com prazo naquele dia. Terceira coisa que a agenda mostra, e por
+  // isso terceiro desenho: visita é hora marcada, prazo é data que chega
+  // sozinha, tarefa é trabalho que alguém precisa fazer até ali.
+  tarefasPorDia: Map<string, Tarefa[]>;
   onSelecionarVisita: (visita: Visita) => void;
   onSelecionarDia: (dia: Date) => void;
 }
@@ -20,6 +24,7 @@ export function MonthView({
   refDate,
   visitasPorDia,
   prazosPorDia,
+  tarefasPorDia,
   onSelecionarVisita,
   onSelecionarDia,
 }: MonthViewProps) {
@@ -42,6 +47,7 @@ export function MonthView({
           const ehHoje = chave === hoje;
           const visitas = visitasPorDia.get(chave) ?? [];
           const prazos = prazosPorDia.get(chave) ?? [];
+          const tarefas = tarefasPorDia.get(chave) ?? [];
 
           return (
             // A célula é um div, e não um button, porque os chips de visita
@@ -76,6 +82,27 @@ export function MonthView({
                   <span className="px-1 text-[10px] text-ink/50">+{visitas.length - MAX_POR_CELULA} mais</span>
                 )}
               </div>
+
+              {/* Tarefa com prazo no dia. Some quando concluída: agenda que
+                  mostra o que já foi feito vira ruído. */}
+              {tarefas.length > 0 && (
+                <div className="relative flex flex-col gap-0.5 pt-0.5">
+                  {tarefas.slice(0, 2).map((tarefa) => (
+                    <span
+                      key={tarefa.id}
+                      title={`${tarefa.titulo}${tarefa.responsavel ? ` · ${tarefa.responsavel.nome}` : ''}`}
+                      className="truncate rounded-sm border-l-2 border-ink/30 bg-surface px-1 py-0.5 text-[10px] leading-tight text-ink/70"
+                    >
+                      {tarefa.titulo}
+                    </span>
+                  ))}
+                  {tarefas.length > 2 && (
+                    <span className="px-1 text-[10px] text-ink/50">
+                      +{tarefas.length - 2} tarefa(s)
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Prazo de projeto. Desenho deliberadamente diferente do bloco de
                   visita: sem hora, sem preenchimento, só uma faixa com barra à

@@ -8,6 +8,7 @@ import {
   EmpresaCliente,
   Projeto,
   StatusVisita,
+  Tarefa,
   Visita,
 } from '../../types';
 import { STATUS_VISITA_LABEL, capitalizarPrimeira } from '../../lib/formato';
@@ -69,6 +70,7 @@ export function AgendaCalendar() {
   const [consultores, setConsultores] = useState<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>([]);
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [filtroConsultor, setFiltroConsultor] = useState('');
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -110,6 +112,14 @@ export function AgendaCalendar() {
       .getTodos<Projeto>('/projetos')
       .then(setProjetos)
       .catch(() => {});
+    // Tarefa entra na agenda porque é trabalho com data, e sem ela o calendário
+    // de uma consultoria fica quase vazio: visita é o que acontece em campo, e
+    // a maior parte do trabalho não é em campo. Falha em silêncio de propósito:
+    // quem não tem TAREFAS_READ recebe 403 e a agenda segue mostrando o resto.
+    api
+      .getTodos<Tarefa>('/tarefas')
+      .then(setTarefas)
+      .catch(() => setTarefas([]));
   }, []);
 
   // Prazo de compliance por dia. É informação diferente de visita: ninguém
@@ -145,6 +155,30 @@ export function AgendaCalendar() {
     }
     return mapa;
   }, [projetos, filtroEmpresa, filtroConsultor, filtroStatus, busca]);
+
+  const tarefasPorDia = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    const mapa = new Map<string, Tarefa[]>();
+
+    // Tarefa não tem empresa nem status de visita, então os filtros que ela não
+    // sabe responder a tiram de cena, pelo mesmo critério já usado no prazo.
+    // Consultor ela responde: é o responsável.
+    if (filtroEmpresa || filtroStatus) return mapa;
+
+    for (const tarefa of tarefas) {
+      if (!tarefa.prazo || tarefa.status === 'CONCLUIDA') continue;
+      if (filtroConsultor && tarefa.responsavelId !== filtroConsultor) continue;
+      if (termo) {
+        const alvo = `${tarefa.titulo} ${tarefa.responsavel?.nome ?? ''}`.toLowerCase();
+        if (!alvo.includes(termo)) continue;
+      }
+      // Campo @db.Date: fatiar a string evita o fuso empurrar para o dia
+      // anterior, mesmo motivo do prazo de compliance.
+      const chave = tarefa.prazo.slice(0, 10);
+      mapa.set(chave, [...(mapa.get(chave) ?? []), tarefa]);
+    }
+    return mapa;
+  }, [tarefas, filtroEmpresa, filtroStatus, filtroConsultor, busca]);
 
   // O contador existe para o filtro não ficar escondido e esquecido: com o
   // painel fechado, nada na tela diria que a agenda está mostrando um recorte.
@@ -354,6 +388,7 @@ export function AgendaCalendar() {
           refDate={refDate}
           visitasPorDia={visitasPorDia}
           prazosPorDia={prazosPorDia}
+          tarefasPorDia={tarefasPorDia}
           onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
           onSelecionarDia={abrirNovo}
         />
