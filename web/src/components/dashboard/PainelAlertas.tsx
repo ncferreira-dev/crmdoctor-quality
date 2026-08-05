@@ -70,7 +70,7 @@ export function PainelAlertas({ alertas, onMarcarLida, marcando }: PainelAlertas
                   type="button"
                   onClick={() => onMarcarLida(alerta.id)}
                   disabled={marcando === alerta.id}
-                  className="rounded-md border border-ink/15 px-2.5 py-1 text-xs text-ink/70 transition-colors hover:bg-surface hover:text-ink disabled:opacity-50"
+                  className="min-h-9 shrink-0 rounded-md border border-ink/15 px-2.5 py-1 text-xs text-ink/70 transition-colors hover:bg-surface hover:text-ink disabled:opacity-50"
                 >
                   {marcando === alerta.id ? 'Marcando...' : 'Marcar como lida'}
                 </button>

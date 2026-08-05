@@ -17,7 +17,10 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 const TAMANHO = {
   normal: 'px-3 py-2 text-sm',
-  compacto: 'px-2 py-1 text-xs',
+  // min-h-9 (36px) não é enfeite: medido em 390px, o compacto ficava com 27px de
+  // altura, que é alvo de toque pequeno para quem usa o sistema em campo, com o
+  // celular na mão. Continua mais baixo que o normal, que é o motivo de existir.
+  compacto: 'min-h-9 px-2 py-1 text-xs',
 };
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(

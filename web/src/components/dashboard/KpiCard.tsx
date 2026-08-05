@@ -21,7 +21,10 @@ export function KpiCard({ label, valor, href, nota, alerta = false }: KpiCardPro
     >
       <p className="text-[11px] font-light uppercase tracking-wide text-ink/55">{label}</p>
       <p
-        className={`dado mt-2 text-2xl font-semibold leading-none sm:text-3xl ${
+        // text-xl no celular: em 390px, "R$ 167.500" no text-2xl já cortava
+        // dentro do cartão, e valor de contrato cortado pela metade é pior que
+        // valor um ponto menor.
+        className={`dado mt-2 truncate text-xl font-semibold leading-none sm:text-3xl ${
           alerta ? 'text-accent' : 'text-ink'
         }`}
       >

@@ -852,3 +852,26 @@ pelas telas.
 
 Depois subi a API de volta e cliquei em **Tentar de novo** sem recarregar a
 página: o erro sumiu, a tela carregou o conteúdo e a rota continuou a mesma.
+
+## Item 14: passada no celular, em 390px
+
+Medi cada tela principal em 390px procurando três coisas: conteúdo estourando a
+largura, alvo de toque pequeno demais e texto cortado.
+
+**O que estava certo:** nenhuma tela estoura a largura. Empresas, Projetos,
+Competências e Cargos passaram limpas.
+
+**O que consertei:**
+
+| Onde | Estava | Ficou |
+|---|---|---|
+| Seletor de status de tarefa, na tela de Membros | 27px de altura, quatro deles na tela | 36px, e continua mais baixo que um campo de formulário |
+| Botão "Marcar como lida", no painel de alertas | 26px de altura | 36px |
+| Valor em execução, no dashboard | "R$ 167.500" cortava dentro do cartão | Um ponto menor só no celular, e nunca corta |
+
+O tamanho mínimo de 36px não é gosto: quem usa este sistema usa em campo, com o
+celular na mão, e alvo de 26px erra o toque. No desktop nada mudou, o seletor
+compacto continua compacto e o número do dashboard continua grande.
+
+**A agenda já tinha sido resolvida no item 6**, e é a que mais doía: os filtros
+tomavam metade da primeira tela.
