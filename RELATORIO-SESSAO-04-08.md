@@ -1024,3 +1024,21 @@ Conferido no navegador contra a API local:
 | Salvar sem título | Recusa, e o foco vai para o campo |
 
 O ticket de demonstração local foi restaurado ao valor original depois do teste.
+
+## Cargo fora do alcance deixa de ser oferecido no cadastro de membro
+
+Pedido do Nícolas: ao criar membro, Desenvolvedor e CEO deviam ficar cinza.
+
+**Implementado com a regra certa, que é relativa e não uma lista fixa.** A
+hierarquia deste sistema é por `Cargo.nivel`, e a API já recusava criar alguém
+de nível igual ou maior que o de quem está logado. O defeito era só de
+interface: a tela oferecia a opção e o erro só aparecia depois do formulário
+inteiro preenchido.
+
+Agora o `<option>` vem `disabled` quando `cargo.nivel >= meuNivel`, com o texto
+"(do seu nível para cima)". Fixar "Desenvolvedor e CEO" na mão daria lista
+errada para metade das pessoas: para o Nícolas (110) só o próprio cargo sai, e
+para o Fabrício (100) saem CEO e Desenvolvedor.
+
+Conferido no navegador logado como CEO: Administrador e CEO desabilitados,
+Coordenador, Analista e Consultor disponíveis.

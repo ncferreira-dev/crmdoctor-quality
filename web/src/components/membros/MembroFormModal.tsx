@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { useSessaoUsuario } from '../../hooks/useSessao';
 import { Cargo, Competencia, Usuario } from '../../types';
 import {
   ErrosForm,
@@ -24,6 +25,8 @@ interface MembroFormModalProps {
 export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFormModalProps) {
   const editando = Boolean(membro);
   const [cargos, setCargos] = useState<Cargo[]>([]);
+  // Nível de quem está logado, para não oferecer cargo que a API vai recusar.
+  const meuNivel = useSessaoUsuario()?.cargo.nivel ?? null;
   const [competencias, setCompetencias] = useState<Competencia[]>([]);
   const [competenciasSelecionadas, setCompetenciasSelecionadas] = useState<Set<string>>(
     () => new Set(membro?.competencias?.map((c) => c.id) ?? []),
@@ -175,11 +178,21 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
           erro={erros.cargoId}
         >
           <option value="">Selecione o cargo</option>
-          {cargos.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
-          ))}
+          {cargos.map((c) => {
+            // A hierarquia é por nível, e a API recusa criar ou editar alguém
+            // com cargo de nível igual ou maior que o de quem está logado. Sem
+            // desabilitar aqui, a tela oferece uma opção que só vai falhar
+            // depois de preencher o formulário inteiro. A regra é relativa:
+            // para o Nícolas (110) só o próprio cargo some, para o Fabrício
+            // (100) somem CEO e Desenvolvedor.
+            const foraDoAlcance = meuNivel !== null && c.nivel >= meuNivel;
+            return (
+              <option key={c.id} value={c.id} disabled={foraDoAlcance}>
+                {c.nome}
+                {foraDoAlcance ? ' (do seu nível para cima)' : ''}
+              </option>
+            );
+          })}
         </Select>
 
         <div className="flex flex-col gap-2 rounded-md border border-ink/10 px-3 py-2.5">
