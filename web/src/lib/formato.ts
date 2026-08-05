@@ -23,6 +23,31 @@ export const ESTAGIOS_PROJETO: EstagioProjeto[] = [
   'CONCLUIDO',
 ];
 
+// O que cada estágio quer dizer, escrito na tela.
+//
+// Até 05/08/2026 os quatro eram só nomes: o sistema tratava os três primeiros
+// de forma idêntica e ninguém sabia dizer o que significavam. Quatro palavras
+// sem definição não são um campo, são decoração, e decoração num CRM de
+// compliance vira dado preenchido no chute.
+//
+// Só CONCLUIDO tem consequência de verdade, e ela está escrita abaixo de
+// propósito: é a única que desliga o alerta de prazo. Um projeto marcado como
+// concluído para de cobrar, e isso não pode ser surpresa.
+export const ESTAGIO_PROJETO_DESCRICAO: Record<EstagioProjeto, string> = {
+  DIAGNOSTICO: 'Levantando o que a empresa já tem e o que falta. Ainda sem escopo fechado.',
+  PROPOSTA: 'Escopo e valor apresentados. Esperando o cliente aprovar para começar.',
+  EXECUCAO: 'Aprovado e em andamento. É a fase em que os marcos de compliance correm.',
+  CONCLUIDO: 'Entregue. O projeto para de gerar alerta de prazo e sai da conta de prazos em risco.',
+};
+
+// O próximo passo do funil, ou null se já chegou ao fim. Existe para a tela
+// oferecer "Avançar para X" em vez de exigir que a pessoa adivinhe qual das
+// quatro palavras clicar.
+export function proximoEstagio(atual: EstagioProjeto): EstagioProjeto | null {
+  const i = ESTAGIOS_PROJETO.indexOf(atual);
+  return i >= 0 && i < ESTAGIOS_PROJETO.length - 1 ? ESTAGIOS_PROJETO[i + 1] : null;
+}
+
 export const STATUS_TAREFA_LABEL: Record<StatusTarefa, string> = {
   PENDENTE: 'Pendente',
   EM_ANDAMENTO: 'Em andamento',

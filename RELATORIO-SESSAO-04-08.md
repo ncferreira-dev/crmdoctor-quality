@@ -713,3 +713,53 @@ tarefa é dela mesma.
 Varri os outros nove títulos de modal do sistema. Todos usam frase inteira em
 cada ramo ("Editar projeto" / "Novo projeto"), nenhum monta texto por pedaço. O
 único composto é "Nova tarefa para Fulano", que é proposital e lê bem.
+
+## Decisão sobre os estágios do projeto: manter os quatro, e fazer com que signifiquem algo
+
+Pedido: decidir se os quatro estágios devem ganhar função ou ser removidos.
+
+**Não remover, e o motivo não é apego.** Remover valor de enum é migration
+destrutiva num banco em produção, o que aciona a regra zero e depende do
+Nícolas, e o ganho funcional seria zero: o sistema continuaria funcionando
+igual. Fase de projeto é informação de gestão barata e padrão numa consultoria
+que toca vários contratos ao mesmo tempo, e o dashboard já conta projetos por
+estágio.
+
+**O que estava errado não era existirem, era mentirem.** Três defeitos:
+
+1. **Ninguém sabia o que cada um queria dizer.** Quatro palavras sem definição
+   em lugar nenhum, nem no guia mestre, nem no código. Campo sem significado
+   vira campo preenchido no chute.
+2. **Só "Concluído" tem consequência, e ela era invisível.** Marcar concluído
+   desliga o alerta de prazo (o cron pula projeto concluído), tira o selo de
+   prazo das listas e sai da conta de prazos em risco. Nada na tela dizia isso.
+   Desligar a cobrança sem avisar é exatamente a falha silenciosa que esta base
+   já pagou caro para aprender a evitar.
+3. **O filtro da lista era visualmente idêntico ao controle.** Mesmas quatro
+   palavras, mesmo desenho, um filtra e o outro muda o dado.
+
+**O que fiz, sem migration nenhuma:**
+
+- `ESTAGIO_PROJETO_DESCRICAO` em `lib/formato.ts`: cada estágio ganhou uma frase
+  que aparece na tela do projeto, mudando conforme o estágio atual. A de
+  Concluído diz, com todas as letras, que o projeto para de gerar alerta.
+- Contador "1 de 4" ao lado do título, para a trilha se ler como progresso.
+- Botão **"Avançar para X"**, que move para o próximo estágio sem a pessoa ter
+  que adivinhar qual das quatro palavras clicar. Some quando chega em Concluído.
+- Na lista, o filtro ganhou o rótulo **"FILTRAR POR"** na frente, para parar de
+  se passar pelo controle.
+
+**Conferido no navegador:** avancei os três passos seguidos, e a cada clique a
+API gravou (`PROPOSTA`, `EXECUCAO`, `CONCLUIDO`), o contador andou (2, 3, 4 de
+4), a descrição trocou junto e o botão sumiu ao chegar no fim. Depois devolvi o
+projeto de demonstração ao estágio original.
+
+**As definições que escrevi são proposta minha**, não vieram de lugar nenhum
+porque não existiam. Trocar o texto é uma linha por estágio, sem migration.
+
+**Achado em produção, e ele é sério.** O único projeto que existe lá,
+`Novalgina Linha 9`, com prazo em 10/08, foi marcado como **CONCLUÍDO** às 08h59
+de hoje. Com isso ele parou de gerar alerta de compliance, e o dashboard mostra
+zero alerta em aberto. Se aquilo foi um teste de clique e não uma conclusão de
+verdade, o projeto precisa voltar para o estágio anterior, senão o prazo de
+10/08 passa sem ninguém ser avisado.

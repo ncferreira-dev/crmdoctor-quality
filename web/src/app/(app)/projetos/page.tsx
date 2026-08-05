@@ -84,8 +84,15 @@ export default function ProjetosPage() {
         )}
       </div>
 
-      {/* Filtro por estágio */}
+      {/* Filtro por estágio.
+          O rótulo "Filtrar por" não é enfeite: estes botões são idênticos aos da
+          trilha de estágio da tela do projeto, e sem nada dizendo o contrário a
+          pessoa clica aqui esperando MUDAR o estágio de algo. Aqui só escolhe o
+          que a lista mostra. */}
       <div className="mb-4 flex flex-wrap items-center gap-1">
+        <span className="mr-2 text-xs font-light uppercase tracking-wide text-ink/45">
+          Filtrar por
+        </span>
         <button
           type="button"
           onClick={() => setFiltroEstagio('')}

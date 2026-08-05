@@ -7,8 +7,10 @@ import { usePermissao } from '../../../../hooks/useSessao';
 import { EstagioProjeto, Projeto } from '../../../../types';
 import {
   ESTAGIOS_PROJETO,
+  ESTAGIO_PROJETO_DESCRICAO,
   ESTAGIO_PROJETO_LABEL,
   formatarDataCivil,
+  proximoEstagio,
 } from '../../../../lib/formato';
 import { Button } from '../../../../components/ui/Button';
 import { SeloPrazo } from '../../../../components/projetos/SeloPrazo';
@@ -53,6 +55,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
     return <div className="h-40 animate-pulse rounded-card bg-white/60" />;
   }
 
+  const proximo = proximoEstagio(projeto.estagio);
   const valor = projeto.valor
     ? Number(projeto.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     : 'Sem valor definido';
@@ -113,9 +116,16 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Estágio do projeto como trilha clicável */}
+      {/* Estágio do projeto como trilha clicável. A descrição embaixo não é
+          enfeite: sem ela os quatro nomes não querem dizer nada, e o efeito de
+          marcar Concluído (parar de alertar) acontecia sem ninguém saber. */}
       <div className="rounded-card border border-ink/10 bg-white p-5 shadow-card">
-        <p className="mb-3 text-xs font-light uppercase tracking-wide text-ink/60">Estágio</p>
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <p className="text-xs font-light uppercase tracking-wide text-ink/60">Estágio</p>
+          <span className="dado text-xs text-ink/45">
+            {ESTAGIOS_PROJETO.indexOf(projeto.estagio) + 1} de {ESTAGIOS_PROJETO.length}
+          </span>
+        </div>
         <div className="flex flex-wrap gap-1">
           {ESTAGIOS_PROJETO.map((estagio) => {
             const atual = projeto.estagio === estagio;
@@ -139,6 +149,16 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
             );
           })}
         </div>
+
+        <p className="mt-3 text-xs leading-relaxed text-ink/55">
+          {ESTAGIO_PROJETO_DESCRICAO[projeto.estagio]}
+        </p>
+
+        {podeEditar && proximo && (
+          <Button variante="secondary" className="mt-3" onClick={() => mudarEstagio(proximo)}>
+            Avançar para {ESTAGIO_PROJETO_LABEL[proximo]}
+          </Button>
+        )}
       </div>
 
       {projeto.descricao && (
