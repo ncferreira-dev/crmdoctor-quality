@@ -114,12 +114,12 @@ export function LeadFormModal({
           placeholder="Nome da clínica ou laboratório"
         />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input id="email" name="email" label="E-mail" type="email" defaultValue={lead?.email ?? ''} />
           <Input id="telefone" name="telefone" label="Telefone" defaultValue={lead?.telefone ?? ''} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Select id="segmento" name="segmento" label="Segmento" defaultValue={lead?.segmento ?? ''}>
             <option value="">Não informado</option>
             {SEGMENTOS.map((s) => (

@@ -468,3 +468,118 @@ fechados e conferidos a deixar seis pela metade na branch.
    banco, então não houve nada a desfazer.
 5. Depende de você: dar push nesta branch, e decidir sobre o Vitest na web, que
    hoje não tem nenhum teste.
+
+---
+
+# Sessão 3 (05/08/2026, manhã)
+
+## Estado verificado ao chegar
+
+| O que | Como conferi | Resultado |
+|---|---|---|
+| `.env` local | `grep -o 'ep-[a-z0-9-]*'` | `ep-rapid-dew`, a branch de dev. Não é produção, seguro |
+| Árvore | `git status` | Limpa, sem stash, nada pela metade |
+| Branch | `git checkout sessao-auto-04-08` | Idêntica à `main`, que já foi para produção ontem |
+| API | typecheck, 58 testes, eslint sem `--fix` | Tudo verde, zero erro |
+| Web | typecheck, eslint | Verde, 2 avisos antigos de `exhaustive-deps` |
+| Produção | `/health/cron` e front | No ar, sem novidade durante a noite |
+
+Nenhuma MENTIRA encontrada no relatório da sessão 2.
+
+## O erro de método que quase me fez consertar o que não estava quebrado
+
+Vale registrar porque muda como conferir tela daqui para frente.
+
+Abri o modal Novo projeto e medi: painel com 48px de largura, campos com 26px,
+Prazo e Valor **sobrepostos**, fundo em `opacity: 0.357`. Parecia a confirmação
+exata dos itens 1, 2 e 3 da tua lista.
+
+Era artefato do meu ambiente. A Browser pane estava **oculta**, e janela oculta
+não recebe `requestAnimationFrame`. Descobri porque um laço de rAF que eu mandei
+rodar simplesmente nunca terminou, e a chamada estourou em 30 segundos. Sem rAF,
+duas coisas acontecem juntas: o motor do `motion` congela no primeiro quadro, e o
+viewport reportado encolhe. Depois de fixar o viewport em 1280x800 com
+`resize_window`, os mesmos campos mediram 226px cada, lado a lado, sem
+sobreposição nenhuma.
+
+**Regra que fica:** medir layout sem antes fixar o viewport, nesta ferramenta,
+mede o ambiente e não o produto.
+
+## Item 1: os botões de estágio NÃO estão quebrados, e o que achei no lugar
+
+**Não reproduz.** Testei no navegador, logado como CEO, pelo caminho do usuário:
+
+| Passo | Resultado |
+|---|---|
+| Clicar "Execução" | Marca muda na hora |
+| Ler o projeto na API logo depois | `EXECUCAO` gravado |
+| Clicar "Concluído" | Muda, e a API confirma `CONCLUIDO` |
+| Voltar para a lista pelo link e entrar de novo | Continua "Concluído" |
+| Badge do projeto na lista | Acompanhou, mostra "Concluído" |
+
+A rota, o DTO, a permissão e o service estão certos, e a tela faz atualização
+otimista com desfazer em caso de erro.
+
+**Duas hipóteses do que você viu.** A primeira é o congelamento de animação
+descrito acima, que também acontece em navegador comum quando a aba está em
+segundo plano: o modal e os overlays ficam presos no primeiro quadro. A segunda
+é a tela `/projetos`, onde existe uma fileira de botões **Diagnóstico, Proposta,
+Execução, Concluído com exatamente o mesmo desenho** da trilha de estágio, mas
+que são **filtro**, não mudança de estágio. Clicar ali de fato não muda estágio
+nenhum, e nada na tela avisa que aquilo é outra coisa. Registro como dívida de
+interface, não como defeito de código.
+
+### Auditoria dos controles que mudam estado
+
+Cada um exercitado contra a API local e relido depois:
+
+| Controle | HTTP | Persistiu |
+|---|---|---|
+| Estágio do projeto | 200 | sim, e sobrevive à navegação de ida e volta |
+| Status do ticket (`PATCH /tickets/:id/status`) | 200 | sim |
+| Status da visita | 200 | sim |
+| Conclusão de tarefa | 200 | sim |
+| Marcar alerta como lido | 200 | sim |
+
+**Armadilha achada de passagem, e ela é séria.** O `ValidationPipe` global roda
+com `whitelist: true` e **sem** `forbidNonWhitelisted`. Campo que não existe no
+DTO é descartado em silêncio, com resposta 200. Medido: `PATCH /tickets/:id` com
+`{ status: 'RESOLVIDO' }` responde **200 e não muda nada**, porque
+`UpdateTicketDto` não tem `status` (o certo é `/tickets/:id/status`, que é o que
+a tela usa). Hoje nenhuma tela cai nessa armadilha, mas ela é uma fábrica de
+"cliquei e não aconteceu nada". Não liguei `forbidNonWhitelisted` porque isso
+muda o contrato de todas as rotas de uma vez e passaria a devolver 400 para
+qualquer front que mande um campo a mais. **É decisão tua**, e recomendo ligar.
+
+## Item 1b: o defeito real que estava embaixo, e esse eu consertei
+
+O `Modal` animava a entrada com `motion`, cujo motor depende de
+`requestAnimationFrame`. Quando o rAF não roda (aba em segundo plano, janela
+oculta, navegador economizando bateria), a animação congela no primeiro quadro e
+o modal fica **preso em `opacity: 0.357` com escala 0.98**, ilegível, com os
+campos amassados. Medido nesta base, parado indefinidamente nesse valor.
+
+É o mesmo bug de família do que derrubou a tela em 04/08 pelo `AnimatePresence`,
+agora pelo outro lado: lá o nó não saía, aqui ele não chega.
+
+**Conserto:** a entrada virou CSS (`overlay-fundo`, `overlay-painel` e `surgir`
+em `globals.css`), com uma regra que passa a valer para o sistema inteiro: **o
+estado final é o estado base, e a animação só tira dali e devolve.** Se a
+animação não rodar, o elemento aparece pronto em vez de sumir. O painel do sino
+de notificações tinha o mesmo `initial={{ opacity: 0 }}` e recebeu o mesmo
+tratamento. A Sidebar já era imune por desenho (anima só `x`, nunca `opacity`), e
+está documentado lá desde a sessão anterior.
+
+Conferido depois do conserto, com a janela ainda oculta: fundo e painel em
+`opacity: 1`, modal legível.
+
+## Item 2: sobreposição não existe no desktop, mas o aperto no celular era real
+
+Em 1280px, Prazo de compliance e Valor medem 226px cada, lado a lado, sem
+sobreposição. Em 390px mediam **149px cada**, que é menos do que um campo de data
+nativo precisa para mostrar `dd/mm/aaaa` mais o ícone de calendário.
+
+Troquei `grid-cols-2` por `grid-cols-1 sm:grid-cols-2` nos quatro lugares do
+sistema que tinham duas colunas fixas: `ProjetoFormModal`, `VisitaFormModal` e
+dois grids do `LeadFormModal`. Conferido nas duas larguras: em 390px os campos
+empilham com 310px cada, e em 1280px continuam lado a lado.
