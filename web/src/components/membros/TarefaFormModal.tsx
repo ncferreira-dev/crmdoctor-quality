@@ -11,6 +11,7 @@ import {
 } from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
+import { CampoData } from '../ui/CampoData';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 
@@ -111,7 +112,7 @@ export function TarefaFormModal({
               </option>
             ))}
           </Select>
-          <Input id="prazo" name="prazo" label="Prazo" type="date" />
+          <CampoData id="prazo" name="prazo" label="Prazo" />
         </div>
 
         {erro && (

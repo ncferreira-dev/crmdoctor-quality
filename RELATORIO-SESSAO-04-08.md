@@ -656,3 +656,60 @@ que mexe numa tela que você não pediu para mexer, então fica anotado.
    ignora em silêncio. Hoje nenhuma tela cai nisso, mas é uma fábrica de
    "cliquei e não aconteceu nada". Ligar `forbidNonWhitelisted` resolve e passa a
    devolver 400. Recomendo ligar, mas mexe no contrato de todas as rotas.
+
+## Item 3: a data unificada, e por que ela "voltava"
+
+**A raiz.** O `19 de ago. de 2026` nunca esteve no nosso código. Vinha do campo
+nativo `<input type="date">`, que é desenhado pelo **navegador**, e cada um
+escolhe o formato conforme o idioma do sistema operacional. Num Mac em português
+ele escreve por extenso enquanto o resto do CRM escreve 19/08/2026. O texto vive
+dentro do shadow DOM do navegador, então não existe CSS nem propriedade nossa que
+mude aquilo. É por isso que "já foi arrumado e voltou": não havia o que arrumar
+do nosso lado, e qualquer conserto anterior só podia ter sido em outro lugar.
+
+**A saída.** Escrever o campo, em vez de pedir ao navegador. Nasceu
+`web/src/components/ui/CampoData.tsx`, o campo de data único do sistema:
+
+- Campo de texto com máscara `dd/mm/aaaa`, idêntico em qualquer navegador.
+- Digitação só de números funciona: `20122026` vira `20/12/2026` sozinho.
+- Botão de calendário ao lado abre o seletor nativo (`showPicker`, com `focus`
+  como reserva onde ele não existe), que continua sendo o melhor jeito no
+  celular.
+- Um campo oculto com o mesmo `name` carrega `aaaa-mm-dd`, então **nenhum
+  formulário precisou mudar** como lê os dados.
+- Data impossível é recusada: `31/02/2026` não vira nada e a tela avisa. Sem
+  isso o `Date` do JavaScript "conserta" para 03/03 em silêncio, e data que se
+  conserta sozinha é pior que data recusada.
+- A conversão lê a data da string, sem fuso, pela mesma razão do
+  `formatarDataCivil`: campo `@db.Date` não tem hora, e passar por
+  America/Sao_Paulo joga para o dia anterior.
+
+**Aplicado em todos os campos de data do sistema:** prazo de compliance do
+projeto, prazo do marco e prazo da tarefa. Não sobrou nenhum `type="date"` na
+base fora do próprio componente.
+
+**Conferido no navegador, logado como CEO:**
+
+| O que testei | Resultado |
+|---|---|
+| Abrir Editar projeto | Campo mostra `18/09/2026`, formulário carrega `2026-09-18` |
+| Digitar `20122026` | Vira `20/12/2026`, envia `2026-12-20` |
+| Digitar `31022026` | Fica na tela, envia vazio, e avisa "Data inválida" |
+| Apagar tudo | Campo e valor enviados ficam vazios |
+| Salvar `20/12/2026` | API grava `2026-12-20`, tela mostra `20/12/2026`, sem erro de um dia |
+| Modal de marco e de tarefa | Mesmo campo, mesmo comportamento |
+| 390px de largura | Campo com 305px, botão de calendário de 24x24 dentro dele, página não estoura |
+
+**O que ficou de fora:** o modal de visita usa `datetime-local` (data mais
+hora), que é outro componente e não entrou aqui. Fica anotado como o próximo
+passo natural deste item.
+
+## Item 4: "Nova tarefa minha"
+
+Era um título literal, não concatenação: `tituloProprio="Nova tarefa minha"` na
+tela de tarefas. Virou "Nova tarefa", que é o que a pessoa espera ler quando a
+tarefa é dela mesma.
+
+Varri os outros nove títulos de modal do sistema. Todos usam frase inteira em
+cada ramo ("Editar projeto" / "Novo projeto"), nenhum monta texto por pedaço. O
+único composto é "Nova tarefa para Fulano", que é proposital e lê bem.

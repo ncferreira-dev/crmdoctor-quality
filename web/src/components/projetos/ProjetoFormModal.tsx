@@ -11,6 +11,7 @@ import {
 } from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
+import { CampoData } from '../ui/CampoData';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 
@@ -21,12 +22,6 @@ interface ProjetoFormModalProps {
   empresaFixaId?: string;
   onFechar: () => void;
   onMudou: () => void;
-}
-
-// <input type="date"> espera YYYY-MM-DD; a API devolve ISO completo.
-function paraInputData(iso: string | null | undefined): string {
-  if (!iso) return '';
-  return iso.slice(0, 10);
 }
 
 export function ProjetoFormModal({
@@ -142,12 +137,11 @@ export function ProjetoFormModal({
         <Input id="descricao" name="descricao" label="Descrição" defaultValue={projeto?.descricao ?? ''} />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
+          <CampoData
             id="dataLimiteCompliance"
             name="dataLimiteCompliance"
             label="Prazo de compliance"
-            type="date"
-            defaultValue={paraInputData(projeto?.dataLimiteCompliance)}
+            defaultValue={projeto?.dataLimiteCompliance}
           />
           <Input
             id="valor"

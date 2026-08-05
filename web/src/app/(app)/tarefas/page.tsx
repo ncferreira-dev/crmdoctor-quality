@@ -230,7 +230,7 @@ export default function TarefasPage() {
       <TarefaFormModal
         aberto={modalAberto}
         membro={usuario}
-        tituloProprio="Nova tarefa minha"
+        tituloProprio="Nova tarefa"
         onFechar={() => setModalAberto(false)}
         onMudou={() => {
           setModalAberto(false);

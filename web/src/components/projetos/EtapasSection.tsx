@@ -8,6 +8,7 @@ import { STATUS_ETAPA_LABEL } from '../../lib/formato';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
+import { CampoData } from '../ui/CampoData';
 import { Modal } from '../ui/Modal';
 import { SeloPrazo } from './SeloPrazo';
 
@@ -195,7 +196,7 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
             required
             autoFocus
           />
-          <Input id="prazo" name="prazo" label="Prazo" type="date" />
+          <CampoData id="prazo" name="prazo" label="Prazo" />
           <p className="text-[11px] text-ink/45">
             Marcos com prazo entram no alerta automático quando faltarem 15 dias.
           </p>
