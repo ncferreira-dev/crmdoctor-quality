@@ -10,10 +10,10 @@ import { Permissao } from '../types';
 export interface GrupoPermissao {
   titulo: string;
   descricao: string;
-  itens: Array<{ permissao: Permissao; label: string }>;
+  itens: ReadonlyArray<{ permissao: Permissao; label: string }>;
 }
 
-export const GRUPOS_PERMISSAO: GrupoPermissao[] = [
+export const GRUPOS_PERMISSAO = [
   {
     titulo: 'Empresas',
     descricao: 'Clientes cadastrados',
@@ -29,6 +29,11 @@ export const GRUPOS_PERMISSAO: GrupoPermissao[] = [
       { permissao: 'PROJETOS_READ', label: 'Ver' },
       { permissao: 'PROJETOS_WRITE', label: 'Criar e editar' },
     ],
+  },
+  {
+    titulo: 'Financeiro',
+    descricao: 'Valor dos contratos',
+    itens: [{ permissao: 'FINANCEIRO_READ', label: 'Ver valor de contrato' }],
   },
   {
     titulo: 'Tickets',
@@ -95,7 +100,19 @@ export const GRUPOS_PERMISSAO: GrupoPermissao[] = [
       { permissao: 'CARGOS_MANAGE', label: 'Gerenciar cargos' },
     ],
   },
-];
+] as const satisfies readonly GrupoPermissao[];
+
+// Trava de exaustividade: toda permissão da API precisa de um checkbox aqui.
+// Sem ele a permissão existe, as rotas a exigem, e não há tela nenhuma para
+// concedê-la. Foi o que aconteceu com FINANCEIRO_READ, criada em 05/08: o valor
+// de contrato ficou invisível para todo mundo, inclusive para quem pediu para
+// restringi-lo, e sem caminho de conserto pela interface.
+//
+// Se faltar alguma, o build para e o erro diz o nome dela.
+type ExigirVazio<T extends never> = T;
+export type TodaPermissaoTemCheckbox = ExigirVazio<
+  Exclude<Permissao, (typeof GRUPOS_PERMISSAO)[number]['itens'][number]['permissao']>
+>;
 
 // Quem pode escrever precisa poder ler: as rotas de listagem exigem READ, então
 // um cargo só com WRITE conseguiria criar um registro e não conseguiria vê-lo
