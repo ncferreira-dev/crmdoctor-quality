@@ -10,12 +10,16 @@
 // normal. Este script existe só para não deixar você preenchendo formulário na
 // mão no primeiro dia.
 //
-// ATENÇÃO ao upsert: ele regrava por cima. Rodar hoje contra a produção tiraria
-// CONSULTORES_READ e CONSULTORES_WRITE do CEO, do Coordenador e do Analista.
-// Essas duas permissões deixaram de existir no código em 04/08/2026, quando o
-// módulo de consultores foi apagado, então são strings mortas sobrando no banco
-// e perdê-las é limpeza, não regressão. Se alguém ajustar cargo pela tela
-// depois disso, o ajuste se perde na próxima execução.
+// ATENÇÃO ao upsert: ele regrava por cima. O que estiver marcado na tela e não
+// estiver na lista abaixo se perde na próxima execução — foi por um triz com
+// FINANCEIRO_READ, concedida pela tela em 06/08/2026 e ausente daqui até então.
+// Antes de rodar, confira se a lista reflete o que a produção tem hoje.
+//
+// CONSULTORES_READ e CONSULTORES_WRITE saíram do código em 04/08/2026, junto
+// com o módulo de consultores, e ficaram nas linhas de cargo. Perdê-las é
+// limpeza, não regressão. Desde 06/08 a API já as descarta na leitura
+// (cargos.service.ts), então elas somem sozinhas no primeiro save de cada
+// cargo pela tela; este script apenas antecipa isso.
 
 import { PrismaClient } from '@prisma/client';
 import { Permissao } from '../src/common/constants/permissoes';
@@ -55,6 +59,11 @@ const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = 
       'USUARIOS_READ',
       'USUARIOS_MANAGE',
       'CARGOS_MANAGE',
+      // Valor de contrato. Só CEO e Desenvolvedor: o Coordenador e o Analista
+      // tocam o projeto sem precisar saber quanto ele custou. Concedida pela
+      // tela em 06/08/2026 — está aqui para o upsert não tirá-la de volta na
+      // próxima execução.
+      'FINANCEIRO_READ',
     ],
   },
   {
