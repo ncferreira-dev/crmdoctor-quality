@@ -2,13 +2,23 @@ import { InteracoesService } from './interacoes.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FindInteracoesQueryDto } from './dto/find-interacoes-query.dto';
 
+// jest.fn() nasce com tipo `any`, e ler `mock.calls[0][0]` dele é acesso
+// inseguro: o `as` que vem logo depois passaria a mentir sem ninguém perceber
+// se a chamada mudasse. Declarar o argumento como `unknown` mantém a leitura
+// tipada e obriga o cast explícito que os testes já fazem.
+const metodoPrisma = () => jest.fn<Promise<unknown>, [unknown]>();
+
 function criarMockPrisma() {
   return {
-    interacao: { findMany: jest.fn(), count: jest.fn(), create: jest.fn() },
-    user: { findMany: jest.fn() },
-    lead: { findUnique: jest.fn() },
-    empresaCliente: { findUnique: jest.fn() },
-    projeto: { findUnique: jest.fn() },
+    interacao: {
+      findMany: metodoPrisma(),
+      count: metodoPrisma(),
+      create: metodoPrisma(),
+    },
+    user: { findMany: metodoPrisma() },
+    lead: { findUnique: metodoPrisma() },
+    empresaCliente: { findUnique: metodoPrisma() },
+    projeto: { findUnique: metodoPrisma() },
   };
 }
 

@@ -4,12 +4,18 @@ import { PrismaService } from '../prisma/prisma.service';
 // Mock só dos métodos do Prisma que o cron toca. Não valida a constraint
 // @@unique do banco (isso é da migration) — mas trava a lógica de janela, a
 // contagem e o skipDuplicates (o mecanismo de idempotência no nível do serviço).
+// jest.fn() nasce com tipo `any`, e ler `mock.calls[0][0]` dele é acesso
+// inseguro: o `as` que vem logo depois passaria a mentir sem ninguém perceber
+// se a chamada mudasse. Declarar o argumento como `unknown` mantém a leitura
+// tipada e obriga o cast explícito que os testes já fazem.
+const metodoPrisma = () => jest.fn<Promise<unknown>, [unknown]>();
+
 function criarMockPrisma() {
   return {
-    projeto: { findMany: jest.fn() },
-    etapaProjeto: { findMany: jest.fn() },
-    notificacao: { createMany: jest.fn() },
-    cronExecucao: { upsert: jest.fn() },
+    projeto: { findMany: metodoPrisma() },
+    etapaProjeto: { findMany: metodoPrisma() },
+    notificacao: { createMany: metodoPrisma() },
+    cronExecucao: { upsert: metodoPrisma() },
   };
 }
 

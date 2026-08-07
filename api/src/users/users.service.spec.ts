@@ -6,11 +6,17 @@ import { AuthUser } from '../common/types/auth-user';
 
 // Mock só do que estes dois fluxos tocam. O hash é real (argon2 de verdade),
 // porque é justamente a verificação da senha atual que está sob teste.
+// jest.fn() nasce com tipo `any`, e ler `mock.calls[0][0]` dele é acesso
+// inseguro: o `as` que vem logo depois passaria a mentir sem ninguém perceber
+// se a chamada mudasse. Declarar o argumento como `unknown` mantém a leitura
+// tipada e obriga o cast explícito que os testes já fazem.
+const metodoPrisma = () => jest.fn<Promise<unknown>, [unknown]>();
+
 function criarMockPrisma() {
   return {
     user: {
-      findUnique: jest.fn(),
-      update: jest.fn().mockResolvedValue({}),
+      findUnique: metodoPrisma(),
+      update: metodoPrisma().mockResolvedValue({}),
     },
   };
 }
