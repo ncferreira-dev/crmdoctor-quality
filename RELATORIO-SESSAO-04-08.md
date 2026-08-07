@@ -1153,3 +1153,160 @@ padrão é o mais fechado.
 permissão nova nasce desmarcada. Enquanto ele não marcar em Cargos para
 Desenvolvedor e CEO, **nem ele vê valor**. É um passo de 30 segundos e está
 escrito na conversa.
+
+**Correção do parágrafo acima, escrita em 06/08:** "um passo de 30 segundos"
+estava errado. O checkbox não existia na tela, e o cargo Desenvolvedor não pode
+ser editado por ninguém. Ver a seção seguinte.
+
+# Sessão 5 (06/08/2026, manhã)
+
+Três commits, todos em produção. Dois deles consertam defeitos que a sessão
+anterior criou ou não viu.
+
+## O passo de 30 segundos que não existia
+
+`FINANCEIRO_READ` nasceu em 05/08 na API (`permissoes.ts`) e no espelho de tipos
+do front (`web/src/types/index.ts`). Faltou o terceiro lugar:
+`web/src/lib/permissoes.ts`, que é a lista que a tela de Cargos efetivamente
+desenha. **Sem entrada ali, o checkbox não existe.**
+
+Efeito em produção: o valor de contrato ficou invisível para todo mundo,
+inclusive para quem mandou restringi-lo, e sem caminho de conserto pela
+interface. A restrição funcionava perfeitamente. Era só impossível conceder a
+exceção.
+
+Conferido no banco local antes do conserto: os cinco cargos com 21 permissões
+cada, nenhum com `FINANCEIRO_READ`.
+
+**O conserto** (`e648dbb`) é o grupo "Financeiro" entre Projetos e Tickets, com
+o item "Ver valor de contrato".
+
+**A trava vale mais que o conserto.** No fim do mesmo arquivo:
+
+```ts
+type ExigirVazio<T extends never> = T;
+export type TodaPermissaoTemCheckbox = ExigirVazio<
+  Exclude<Permissao, (typeof GRUPOS_PERMISSAO)[number]['itens'][number]['permissao']>
+>;
+```
+
+Permissão nova sem checkbox agora **quebra o build** e o erro diz o nome dela.
+Testado tirando `FINANCEIRO_READ` de propósito: `Type '"FINANCEIRO_READ"' does
+not satisfy the constraint 'never'`.
+
+## O defeito que estava embaixo: nenhum cargo podia ser salvo
+
+Apareceu ao tentar conceder a permissão nova. O erro apontava para
+`FINANCEIRO_READ`, que era justamente a **única string válida** da lista.
+
+`CONSULTORES_READ` e `CONSULTORES_WRITE` saíram do código em 04/08, junto com o
+módulo de consultores, e ficaram gravadas nas linhas de cargo do banco. A tela
+de Cargos monta o formulário com o que veio do `GET` e devolve a lista inteira
+no `PATCH`, **inclusive o que ela não desenha**. As duas strings mortas voltavam
+para o DTO e o `@IsIn` recusava.
+
+**Efeito: desde 04/08, editar cargo nenhum funcionava.** Dois dias, em silêncio,
+porque ninguém precisou mexer em cargo nesse intervalo.
+
+O conserto (`940889e`) põe a limpeza **na leitura**: a API deixa de anunciar o
+que ela própria já não reconhece. Na escrita o `@IsIn` continua recusando, senão
+erro de digitação vira silêncio. O primeiro save de cada cargo regrava a linha
+sem a sobra. Três testes novos.
+
+## O script que desfaria tudo na próxima execução
+
+`criar-cargos-iniciais.ts` faz upsert e regrava a lista de permissões inteira.
+`FINANCEIRO_READ` foi concedida pela tela e não estava lá: a próxima execução
+apagaria a concessão sem avisar, e o valor de contrato sumiria de novo com o
+mesmo sintoma. Corrigido em `9dd724d`, só no CEO.
+
+## O que ficou em aberto, e é o mais importante desta sessão
+
+**O Nícolas continua sem ver o valor de contrato.** Ele é Desenvolvedor, nível
+110, e `exigirNivelMenor` recusa cargo de nível igual ou maior que o seu. Não
+existe nível maior que 110, então **o botão Editar não aparece no cargo dele e a
+API recusaria de qualquer forma**. Ele conseguiu conceder ao CEO. A si mesmo,
+não.
+
+É a mesma classe de defeito já registrada uma vez: "ninguém no topo da
+hierarquia conseguia editar os próprios dados".
+
+Duas saídas, e a escolha é dele:
+
+- **A.** `UPDATE` pontual no Neon acrescentando a permissão ao cargo
+  Desenvolvedor. Uma linha, reversível, não mexe em regra nenhuma.
+- **B.** Mudar a regra para o topo poder editar o próprio cargo. Conserta a
+  classe inteira, mas mexe em RBAC e enfraquece de propósito a única trava que
+  impede alguém de se conceder permissão sozinho. Tratando-se de permissão de
+  dinheiro, não fazer de improviso.
+
+# Sessão 6 (07/08/2026, tarde)
+
+Varredura de limpeza, sem funcionalidade nova. Nada disso está commitado.
+
+## Estado verificado ao chegar
+
+- `main` sincronizada com o GitHub, árvore limpa.
+- 78 testes passando, 12 suítes.
+- Produção respondendo, cron de compliance rodou às 8h.
+- A branch `sessao-auto-04-08` já não existe, local nem remota.
+- **A documentação estava dois dias atrasada:** o contexto parou em 05/08 de
+  manhã, e a fila escrita nele listava como pendente três itens já feitos.
+
+## Lint: de 16 avisos para zero, sem trapaça
+
+**API, 14 avisos**, todos da família `no-unsafe-*`:
+
+- `permissions.guard.ts`: `context.switchToHttp().getRequest()` devolve `any`, e
+  o `request.user` que vem dele era acesso inseguro. Virou
+  `getRequest<{ user?: AuthUser }>()`.
+- Três arquivos de teste liam `mock.calls[0][0]` de um `jest.fn()`, que nasce
+  `any`. Os mocks passaram a ser declarados como
+  `jest.fn<Promise<unknown>, [unknown]>()`. Isso **preserva o `as` explícito**
+  que os testes já faziam, em vez de escondê-lo atrás de `any` — a diferença
+  importa, porque com `any` o `as` passaria a mentir sem ninguém perceber se a
+  chamada mudasse.
+
+**Front, 2 avisos** de `react-hooks/exhaustive-deps` em `empresas/[id]` e
+`projetos/[id]`. As funções de carregar viraram `useCallback` com `[id]`.
+
+**E três avisos que o lint não reportava porque estavam silenciados.**
+`Timeline`, `TicketsSection` e `AgendaCalendar` tinham
+`// eslint-disable-next-line react-hooks/exhaustive-deps`. A regra estava
+suprimida, não satisfeita. **Zero avisos por supressão é zero de mentira**, e a
+varredura só faz sentido se o número for verdadeiro. Os três viraram
+`useCallback` com dependência declarada.
+
+## Como conferi que não virou laço de requisição
+
+É o risco real de trocar função solta por `useCallback`: dependência instável
+faz o efeito rodar a cada render e o navegador entra em laço de chamadas.
+Conferido no navegador, com o ambiente local de pé:
+
+| Tela | Chamadas à API |
+|---|---|
+| `/projetos/:id` | `GET /projetos/:id` uma vez |
+| `/empresas/:id` | `GET /empresas/:id` uma vez, `GET /projetos?empresaId` uma vez |
+| `/agenda` | `GET /visitas` uma por visão; trocar de mês disparou exatamente uma nova, com o intervalo novo |
+
+`/tickets` e `/interacoes` aparecem duas vezes cada. **Não é regressão:** contei
+antes e depois da mudança e o número é o mesmo. É o modo estrito do React, que
+executa efeito duas vezes em desenvolvimento.
+
+`refDate` do `AgendaCalendar` é `useState(new Date())`, ou seja, valor estável
+entre renders. Se fosse um `new Date()` no corpo do componente, a dependência
+seria nova a cada render e o laço aconteceria. Vale conferir isso sempre que uma
+data entrar em lista de dependência.
+
+## Verificações finais
+
+- `npx eslint` limpo nos dois projetos, 0 erros e 0 avisos.
+- `tsc --noEmit` limpo no front.
+- 78 testes passando.
+- `next build` e `nest build` concluídos.
+
+## Como reverter
+
+Tudo desta sessão está em arquivos não commitados. `git checkout --` nos
+arquivos de `api/src` e `web/src` desfaz por completo. Nenhuma migration,
+nenhuma mudança de rota, nenhuma mudança de permissão.

@@ -77,14 +77,18 @@ enum StatusTarefa {
   CONCLUIDA
 }
 
-// Chaves fixas de permissão, validadas via class-validator (@IsIn) contra
-// esta lista mantida em código (src/common/constants/permissoes.ts), não é
-// enum de banco de propósito: adicionar uma permissão nova não pede migration.
-//   LEADS_READ, LEADS_WRITE, EMPRESAS_READ, EMPRESAS_WRITE, PROJETOS_READ,
-//   PROJETOS_WRITE, INTERACOES_READ, INTERACOES_WRITE, TICKETS_READ,
-//   TICKETS_WRITE, VISITAS_READ, VISITAS_WRITE, NOTIFICACOES_READ,
-//   DASHBOARD_READ, CARGOS_MANAGE, USUARIOS_READ, USUARIOS_MANAGE,
-//   COMPETENCIAS_READ, COMPETENCIAS_WRITE, TAREFAS_READ, TAREFAS_WRITE
+// Chaves fixas de permissão, validadas via class-validator (@IsIn) contra a
+// lista mantida em código (src/common/constants/permissoes.ts). Não é enum de
+// banco de propósito: adicionar uma permissão nova não pede migration.
+//
+// A lista NÃO é repetida aqui. Havia uma cópia manual neste comentário, e ela
+// envelheceu: nasceu FINANCEIRO_READ em 05/08/2026 e a cópia continuou com 21
+// nomes. Comentário que duplica dado vira mentira na primeira mudança. Para
+// saber quais permissões existem, abra o arquivo citado acima.
+//
+// Aposentar uma permissão do código não a apaga das linhas já gravadas aqui.
+// Ver cargos.service.ts: a leitura descarta o que já não é reconhecido, senão
+// a sobra volta no PATCH da tela e trava todo salvamento de cargo.
 model Cargo {
   id           String   @id @default(uuid())
   nome         String   @unique

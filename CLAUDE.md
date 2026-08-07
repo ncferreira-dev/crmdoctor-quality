@@ -14,7 +14,9 @@
 - Hierarquia usa só Cargo.nivel: só gerencia quem tem nivel menor. Nunca comparar por nome de cargo.
 - Todo input da API usa DTO com class-validator. Nunca receber body sem validação.
 - Banco só via PrismaService (módulo global). Nunca instanciar PrismaClient direto.
-- Datas: timestamptz no banco, ISO 8601 na API. Timezone: America/Sao_Paulo.
+- Datas: ISO 8601 na API. Timezone: America/Sao_Paulo. No banco quase tudo é `TIMESTAMP(3)` sem fuso (38 colunas); as únicas `TIMESTAMPTZ(3)` nossas são `visitas.inicio` e `visitas.fim`. Esta linha já disse "timestamptz no banco" e estava errada, conferido coluna por coluna em 07/08/2026.
+- Dia civil: todo cálculo de dia contra campo `@db.Date` passa por `inicioDoDiaCivil` (`common/utils/dia-civil.ts`). Relógio UTC no servidor já causou erro de um dia em prazo de compliance, e o texto fica gravado na notificação sem conserto.
+- Permissão nova entra em TRÊS lugares: `api/src/common/constants/permissoes.ts`, `web/src/types/index.ts` e `web/src/lib/permissoes.ts` (a lista que a tela de Cargos desenha). Esquecer o terceiro cria permissão que ninguém consegue conceder. Há trava de compilação cobrando isso.
 - Proibido `any`. Erros seguem o HttpExceptionFilter padrão.
 - No front, toda chamada HTTP passa por src/lib/api.ts. Tipos em src/types espelham a API.
 - Não instalar libs novas sem avisar antes.
