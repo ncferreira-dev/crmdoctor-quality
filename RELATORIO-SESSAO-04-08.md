@@ -1310,3 +1310,106 @@ data entrar em lista de dependência.
 Tudo desta sessão está em arquivos não commitados. `git checkout --` nos
 arquivos de `api/src` e `web/src` desfaz por completo. Nenhuma migration,
 nenhuma mudança de rota, nenhuma mudança de permissão.
+
+## Depois da varredura: a produção ficou legível, e o backup ficou de verdade
+
+### O acesso de leitura, e a trava que não foi perdida
+
+As duas connection strings da branch `production` já estavam em
+`api/.env.producao` desde 05/08, permissão 600, fora do git. O contexto listava
+isso como pendente. Nenhum script do `package.json` carrega esse arquivo
+sozinho, e isso é o desenho certo: a proteção que existia por acidente (o
+`.env` apontar para `vercel-dev`, então `start:dev` nunca acertar a produção)
+foi preservada de propósito, em vez de trocada por conveniência.
+
+Com isso deu para contar a produção pela primeira vez. **Retrato de 07/08/2026,
+que é contra o que qualquer migration futura deve ser conferida:**
+
+audit_logs 163, visitas 15, tarefas 11, etapas_projeto 9, users 8,
+notificacoes 8, empresas_clientes 6 (3 excluídas), projetos 6 (1 excluído),
+tickets 5 (1 excluído), interacoes 5, cargos 4, `_EquipeDoProjeto` 8 vínculos,
+leads e competencias 0.
+
+### O item aberto desde 06/08, fechado
+
+O cargo Desenvolvedor recebeu `FINANCEIRO_READ`, e passou de 23 para 24
+permissões. Conferido no banco depois de rodado.
+
+**Detalhe operacional que vale registrar:** a camada de permissões do Claude
+Code bloqueia escrita em banco de produção pelo terminal, independente de
+autorização dada na conversa. Não é para contornar. O caminho é o comando ser
+exibido antes, o Nícolas colar no SQL Editor do Neon, e eu conferir o resultado
+por leitura, que não é bloqueada.
+
+### O backup existia e estava incompleto
+
+Escrever o importador revelou um defeito no exportador. `findMany()` traz só
+campos escalares, e **relação N-N implícita não é model no DMMF**: mora numa
+tabela própria, `_<NomeDaRelacao>`, com colunas A e B.
+
+A produção tinha **8 vínculos em `_EquipeDoProjeto` e nenhum estava no
+arquivo**. Restaurar traria todo projeto de volta sem equipe, sem erro e sem
+aviso. Backup que perde dado calado é pior que backup nenhum, porque ninguém
+procura o que acha que tem.
+
+O exportador passou a reconhecê-las pelo DMMF (campo de objeto que é lista dos
+dois lados e não carrega chave estrangeira), então relação nova entra sozinha.
+241 registros viraram 249.
+
+### O importador, e por que ele tem três travas
+
+`api/prisma/importar-backup.ts`. Escrever em banco inteiro é a categoria de
+comando que já derrubou esta produção uma vez.
+
+1. `--destino` obrigatório, conferido contra a `DATABASE_URL`. Quem roda
+   declara onde acha que está escrevendo, e o script confere antes de tocar em
+   qualquer linha.
+2. Banco com dado aborta, listando o que encontrou.
+3. Sobrescrever exige `--limpar`, escrito à mão. Duas decisões, não uma.
+
+A ordem de inserção sai das chaves estrangeiras do schema, não de lista mantida
+à mão. No fim ele reconta e compara com o arquivo: se alguma tabela não bater,
+falha em vez de dizer "importado".
+
+**Conferido num banco descartável, não em teoria:** banco novo criado,
+migrations aplicadas, backup da produção restaurado, e o resultado comparado
+com a produção. Sem diferença em projetos (título, valor e composição de
+equipe) nem nas 8 contas (cargo, nível, permissões, situação e hash de senha).
+As três travas foram testadas uma a uma. O banco foi apagado no fim.
+
+Uma armadilha encontrada na conferência: comparar duas listas ordenadas por
+`ORDER BY` em bancos diferentes produz diferença falsa, porque a collation do
+Neon e a do Postgres local discordam sobre maiúscula. Ordenar fora do banco
+(`LC_ALL=C sort`) resolve.
+
+### `prisma/` entrou no lint
+
+O `npm run lint` cobria `{src,apps,libs,test}`. Ficavam de fora o break-glass, o
+seed, os criadores de cargo e usuário, o backup e a restauração: **o código
+menos vigiado do repositório era o de maior consequência, e o único que roda
+apontado para o banco real.**
+
+Eram 105 erros, todos de formatação. Conferido que é só formatação comparando
+todos os literais (strings e números) de cada arquivo antes e depois, e não por
+confiança no prettier. Isso importa em `criar-cargos-iniciais.ts`, onde a lista
+de permissões literalmente é o comportamento: um nome perdido ali reapareceria
+como cargo sem acesso na próxima execução.
+
+### A terceira mentira em documentação nesta semana
+
+Um comentário no `package.json` afirmava que o `.env` aponta para o Neon de
+produção. Aponta para `vercel-dev`. Documentação que erra qual banco um comando
+acerta é exatamente o que causou o incidente de 04/08.
+
+As três desta semana são da mesma família: texto que descreve o sistema,
+envelheceu, e ninguém conferiu. O padrão que está funcionando contra isso é
+substituir cópia por ponteiro, e cobrar por compilação quando dá.
+
+### O que ficou faltando daqui
+
+- A cópia do banco está só no Mac dele. Cópia fora da máquina segue sem lugar
+  definido, e o arquivo tem dado pessoal e hash de senha de 8 pessoas.
+- Não há rotina de backup: hoje só existe se alguém lembrar.
+- Monitor externo no `/health/cron` segue não configurado.
+- `pg_dump` de verdade não é possível nesta máquina: o cliente é o 16 e o
+  servidor do Neon é o 18.
