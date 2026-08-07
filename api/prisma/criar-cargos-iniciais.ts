@@ -29,102 +29,103 @@ const prisma = new PrismaClient();
 // Níveis com buraco entre eles de propósito: cabe cargo novo no meio depois
 // sem ter que renumerar a hierarquia inteira. O Desenvolvedor (110) fica acima
 // de todos, e o Administrador do seed (100) segue existindo por enquanto.
-const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> = [
-  {
-    nome: 'CEO',
-    // 100, não 90: é o nível que o CEO já tem em produção. Como o upsert abaixo
-    // regrava o nível, deixar 90 aqui rebaixaria o CEO a cada execução.
-    nivel: 100,
-    // Tudo. Quem responde pela empresa precisa enxergar tudo e definir quem
-    // faz o quê, inclusive mexer nos cargos abaixo do dele.
-    permissoes: [
-      'LEADS_READ',
-      'LEADS_WRITE',
-      'EMPRESAS_READ',
-      'EMPRESAS_WRITE',
-      'PROJETOS_READ',
-      'PROJETOS_WRITE',
-      'INTERACOES_READ',
-      'INTERACOES_WRITE',
-      'TICKETS_READ',
-      'TICKETS_WRITE',
-      'VISITAS_READ',
-      'VISITAS_WRITE',
-      'COMPETENCIAS_READ',
-      'COMPETENCIAS_WRITE',
-      'TAREFAS_READ',
-      'TAREFAS_WRITE',
-      'NOTIFICACOES_READ',
-      'DASHBOARD_READ',
-      'USUARIOS_READ',
-      'USUARIOS_MANAGE',
-      'CARGOS_MANAGE',
-      // Valor de contrato. Só CEO e Desenvolvedor: o Coordenador e o Analista
-      // tocam o projeto sem precisar saber quanto ele custou. Concedida pela
-      // tela em 06/08/2026 — está aqui para o upsert não tirá-la de volta na
-      // próxima execução.
-      'FINANCEIRO_READ',
-    ],
-  },
-  {
-    nome: 'Coordenador',
-    nivel: 60,
-    // Opera tudo e gerencia a equipe abaixo, mas não redesenha a estrutura de
-    // permissões: CARGOS_MANAGE fica de fora.
-    permissoes: [
-      'LEADS_READ',
-      'LEADS_WRITE',
-      'EMPRESAS_READ',
-      'EMPRESAS_WRITE',
-      'PROJETOS_READ',
-      'PROJETOS_WRITE',
-      'INTERACOES_READ',
-      'INTERACOES_WRITE',
-      'TICKETS_READ',
-      'TICKETS_WRITE',
-      'VISITAS_READ',
-      'VISITAS_WRITE',
-      'COMPETENCIAS_READ',
-      'COMPETENCIAS_WRITE',
-      'TAREFAS_READ',
-      'TAREFAS_WRITE',
-      'NOTIFICACOES_READ',
-      'DASHBOARD_READ',
-      // Coordenador vê a equipe, mas não contrata/edita/reseta: só READ.
-      'USUARIOS_READ',
-    ],
-  },
-  {
-    nome: 'Analista de validação/qualificação',
-    nivel: 30,
-    // Executa: toca projeto, ticket, tarefa, visita e registra interação.
-    // Empresas, leads e competências só de leitura — consulta o cadastro
-    // para trabalhar, não é quem mantém o cadastro.
-    permissoes: [
-      'PROJETOS_READ',
-      'PROJETOS_WRITE',
-      'TICKETS_READ',
-      'TICKETS_WRITE',
-      'TAREFAS_READ',
-      'TAREFAS_WRITE',
-      'VISITAS_READ',
-      'VISITAS_WRITE',
-      'INTERACOES_READ',
-      'INTERACOES_WRITE',
-      'EMPRESAS_READ',
-      'LEADS_READ',
-      'COMPETENCIAS_READ',
-      'NOTIFICACOES_READ',
-      'DASHBOARD_READ',
-    ],
-  },
-  // O cargo Consultor foi desenhado em 04/08/2026 e descartado pelo Nícolas no
-  // mesmo dia, antes de existir no banco. Não recrie aqui: quem faz visita em
-  // campo continua sendo um User com o cargo que a operação decidir, e o que
-  // habilita receber visita é a permissão VISITAS_WRITE, não o nome do cargo
-  // (ver a rota GET /visitas/consultores). Se um dia ele voltar, o caminho é a
-  // tela de Cargos, não este script.
-];
+const CARGOS: Array<{ nome: string; nivel: number; permissoes: Permissao[] }> =
+  [
+    {
+      nome: 'CEO',
+      // 100, não 90: é o nível que o CEO já tem em produção. Como o upsert abaixo
+      // regrava o nível, deixar 90 aqui rebaixaria o CEO a cada execução.
+      nivel: 100,
+      // Tudo. Quem responde pela empresa precisa enxergar tudo e definir quem
+      // faz o quê, inclusive mexer nos cargos abaixo do dele.
+      permissoes: [
+        'LEADS_READ',
+        'LEADS_WRITE',
+        'EMPRESAS_READ',
+        'EMPRESAS_WRITE',
+        'PROJETOS_READ',
+        'PROJETOS_WRITE',
+        'INTERACOES_READ',
+        'INTERACOES_WRITE',
+        'TICKETS_READ',
+        'TICKETS_WRITE',
+        'VISITAS_READ',
+        'VISITAS_WRITE',
+        'COMPETENCIAS_READ',
+        'COMPETENCIAS_WRITE',
+        'TAREFAS_READ',
+        'TAREFAS_WRITE',
+        'NOTIFICACOES_READ',
+        'DASHBOARD_READ',
+        'USUARIOS_READ',
+        'USUARIOS_MANAGE',
+        'CARGOS_MANAGE',
+        // Valor de contrato. Só CEO e Desenvolvedor: o Coordenador e o Analista
+        // tocam o projeto sem precisar saber quanto ele custou. Concedida pela
+        // tela em 06/08/2026 — está aqui para o upsert não tirá-la de volta na
+        // próxima execução.
+        'FINANCEIRO_READ',
+      ],
+    },
+    {
+      nome: 'Coordenador',
+      nivel: 60,
+      // Opera tudo e gerencia a equipe abaixo, mas não redesenha a estrutura de
+      // permissões: CARGOS_MANAGE fica de fora.
+      permissoes: [
+        'LEADS_READ',
+        'LEADS_WRITE',
+        'EMPRESAS_READ',
+        'EMPRESAS_WRITE',
+        'PROJETOS_READ',
+        'PROJETOS_WRITE',
+        'INTERACOES_READ',
+        'INTERACOES_WRITE',
+        'TICKETS_READ',
+        'TICKETS_WRITE',
+        'VISITAS_READ',
+        'VISITAS_WRITE',
+        'COMPETENCIAS_READ',
+        'COMPETENCIAS_WRITE',
+        'TAREFAS_READ',
+        'TAREFAS_WRITE',
+        'NOTIFICACOES_READ',
+        'DASHBOARD_READ',
+        // Coordenador vê a equipe, mas não contrata/edita/reseta: só READ.
+        'USUARIOS_READ',
+      ],
+    },
+    {
+      nome: 'Analista de validação/qualificação',
+      nivel: 30,
+      // Executa: toca projeto, ticket, tarefa, visita e registra interação.
+      // Empresas, leads e competências só de leitura — consulta o cadastro
+      // para trabalhar, não é quem mantém o cadastro.
+      permissoes: [
+        'PROJETOS_READ',
+        'PROJETOS_WRITE',
+        'TICKETS_READ',
+        'TICKETS_WRITE',
+        'TAREFAS_READ',
+        'TAREFAS_WRITE',
+        'VISITAS_READ',
+        'VISITAS_WRITE',
+        'INTERACOES_READ',
+        'INTERACOES_WRITE',
+        'EMPRESAS_READ',
+        'LEADS_READ',
+        'COMPETENCIAS_READ',
+        'NOTIFICACOES_READ',
+        'DASHBOARD_READ',
+      ],
+    },
+    // O cargo Consultor foi desenhado em 04/08/2026 e descartado pelo Nícolas no
+    // mesmo dia, antes de existir no banco. Não recrie aqui: quem faz visita em
+    // campo continua sendo um User com o cargo que a operação decidir, e o que
+    // habilita receber visita é a permissão VISITAS_WRITE, não o nome do cargo
+    // (ver a rota GET /visitas/consultores). Se um dia ele voltar, o caminho é a
+    // tela de Cargos, não este script.
+  ];
 
 async function main() {
   for (const cargo of CARGOS) {
@@ -143,7 +144,9 @@ async function main() {
   const todos = await prisma.cargo.findMany({ orderBy: { nivel: 'desc' } });
   for (const c of todos) {
     const quantos = await prisma.user.count({ where: { cargoId: c.id } });
-    console.log(`  ${String(c.nivel).padStart(3)}  ${c.nome} (${quantos} pessoa(s))`);
+    console.log(
+      `  ${String(c.nivel).padStart(3)}  ${c.nome} (${quantos} pessoa(s))`,
+    );
   }
   console.log('');
   console.log('Ajustes finos agora são pela tela de Cargos.');

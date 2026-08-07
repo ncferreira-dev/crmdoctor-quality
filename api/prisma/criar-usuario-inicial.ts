@@ -39,7 +39,11 @@ async function main() {
   const cargo = await prisma.cargo.upsert({
     where: { nome: CARGO_NOME },
     update: { nivel: CARGO_NIVEL, permissoes: [...PERMISSOES] },
-    create: { nome: CARGO_NOME, nivel: CARGO_NIVEL, permissoes: [...PERMISSOES] },
+    create: {
+      nome: CARGO_NOME,
+      nivel: CARGO_NIVEL,
+      permissoes: [...PERMISSOES],
+    },
   });
 
   // Mesma mecânica do cadastro pela tela: a conta nasce sem senha utilizável e
@@ -57,7 +61,9 @@ async function main() {
 
   console.log('');
   console.log(`Usuário criado: ${user.nome} <${user.email}>`);
-  console.log(`Cargo: ${cargo.nome} (nível ${cargo.nivel}, todas as permissões)`);
+  console.log(
+    `Cargo: ${cargo.nome} (nível ${cargo.nivel}, todas as permissões)`,
+  );
   console.log('');
   console.log(`CÓDIGO DE PRIMEIRO ACESSO: ${codigoConvite}`);
   console.log('');

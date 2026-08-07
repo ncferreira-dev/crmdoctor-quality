@@ -49,7 +49,9 @@ async function main() {
   });
 
   console.log('');
-  console.log(`Conta: ${user.nome} <${user.email}> — ${user.cargo.nome} (nível ${user.cargo.nivel})`);
+  console.log(
+    `Conta: ${user.nome} <${user.email}> — ${user.cargo.nome} (nível ${user.cargo.nivel})`,
+  );
   if (reativar && !user.ativo) {
     console.log('Conta REATIVADA.');
   }

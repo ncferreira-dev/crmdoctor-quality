@@ -19,7 +19,11 @@ const SENHA = 'teste123';
 
 // nomeCargo casa com o nome exato do cargo já existente no banco.
 const CONTAS: Array<{ nome: string; email: string; nomeCargo: string }> = [
-  { nome: 'Coordenador de Teste', email: 'coordenador@teste.com', nomeCargo: 'Coordenador' },
+  {
+    nome: 'Coordenador de Teste',
+    email: 'coordenador@teste.com',
+    nomeCargo: 'Coordenador',
+  },
   {
     nome: 'Analista de Teste',
     email: 'analista@teste.com',
@@ -31,9 +35,13 @@ async function main() {
   const senhaHash = await argon2.hash(SENHA);
 
   for (const conta of CONTAS) {
-    const cargo = await prisma.cargo.findUnique({ where: { nome: conta.nomeCargo } });
+    const cargo = await prisma.cargo.findUnique({
+      where: { nome: conta.nomeCargo },
+    });
     if (!cargo) {
-      console.log(`  PULADO: cargo "${conta.nomeCargo}" não existe. Rode criar-cargos-iniciais antes.`);
+      console.log(
+        `  PULADO: cargo "${conta.nomeCargo}" não existe. Rode criar-cargos-iniciais antes.`,
+      );
       continue;
     }
 
@@ -41,7 +49,13 @@ async function main() {
     // sem passar pelo primeiro acesso.
     await prisma.user.upsert({
       where: { email: conta.email },
-      update: { senhaHash, cargoId: cargo.id, ativo: true, codigoConvite: null, senhaDefinidaEm: new Date() },
+      update: {
+        senhaHash,
+        cargoId: cargo.id,
+        ativo: true,
+        codigoConvite: null,
+        senhaDefinidaEm: new Date(),
+      },
       create: {
         nome: conta.nome,
         email: conta.email,
@@ -55,7 +69,9 @@ async function main() {
   }
 
   console.log('');
-  console.log('Contas de teste prontas. São @teste.com — apague pela tela de Membros quando não precisar mais.');
+  console.log(
+    'Contas de teste prontas. São @teste.com — apague pela tela de Membros quando não precisar mais.',
+  );
 }
 
 main()
