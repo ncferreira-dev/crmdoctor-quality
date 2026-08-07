@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import { ResultadoPaginado, StatusTicket, Ticket } from '../../types';
@@ -83,17 +83,16 @@ export function TicketsSection({ empresaId, onMudou }: TicketsSectionProps) {
   const [erros, setErros] = useState<ErrosForm>({});
   const podeEditar = usePermissao('TICKETS_WRITE');
 
-  function carregar() {
+  const carregar = useCallback(() => {
     api
       .get<ResultadoPaginado<Ticket>>(`/tickets?empresaId=${empresaId}`)
       .then((r) => setTickets(r.data))
       .catch((e: Error) => setErro(e.message));
-  }
+  }, [empresaId]);
 
   useEffect(() => {
     carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [empresaId]);
+  }, [carregar]);
 
   // Cria ou edita, conforme o modal tenha ticket ou não. A rota de edição
   // (PATCH /tickets/:id) existia desde o começo e nunca teve tela: dava para

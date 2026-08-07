@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import {
@@ -84,7 +84,7 @@ export function AgendaCalendar() {
   });
   const podeEditar = usePermissao('VISITAS_WRITE');
 
-  function carregar() {
+  const carregar = useCallback(() => {
     const { de, ate } = intervaloDaVisao(view, refDate);
     // Sem reset para null: ao trocar de mês, os dados anteriores seguem na tela
     // até os novos chegarem (~200ms). Evita o piscar do esqueleto a cada
@@ -93,12 +93,11 @@ export function AgendaCalendar() {
       .getTodos<Visita>(`/visitas?de=${de}&ate=${ate}`)
       .then(setVisitas)
       .catch((e: Error) => setErro(e.message));
-  }
+  }, [view, refDate]);
 
   useEffect(() => {
     carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, refDate]);
+  }, [carregar]);
 
   useEffect(() => {
     api

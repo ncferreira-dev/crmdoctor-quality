@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import { Interacao } from '../../types';
@@ -63,7 +63,7 @@ export function Timeline({ empresaId, projetoId, vazio }: TimelineProps) {
 
   const query = empresaId ? `empresaId=${empresaId}` : `projetoId=${projetoId}`;
 
-  function carregar() {
+  const carregar = useCallback(() => {
     // Sem permissão nem chega a chamar: a API responderia 403 e a tela exibiria
     // "Permissão necessária: INTERACOES_READ", que é jargão de backend.
     if (!podeLer) return;
@@ -74,12 +74,11 @@ export function Timeline({ empresaId, projetoId, vazio }: TimelineProps) {
         setErro(null);
       })
       .catch((e: Error) => setErro(e.message));
-  }
+  }, [query, podeLer]);
 
   useEffect(() => {
     carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [empresaId, projetoId, podeLer]);
+  }, [carregar]);
 
   async function salvar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();

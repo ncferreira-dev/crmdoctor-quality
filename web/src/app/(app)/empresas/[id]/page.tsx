@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../../lib/api';
 import { usePermissao } from '../../../../hooks/useSessao';
@@ -26,12 +26,14 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
   const [editando, setEditando] = useState(false);
   const podeEditar = usePermissao('EMPRESAS_WRITE');
 
-  function carregarEmpresa() {
+  // useCallback com [id]: a função é dependência do efeito abaixo, e sem a
+  // memória ela seria outra a cada render, refazendo a busca sem parar.
+  const carregarEmpresa = useCallback(() => {
     api
       .get<EmpresaCliente>(`/empresas/${id}`)
       .then(setEmpresa)
       .catch((e: Error) => setErro(e.message));
-  }
+  }, [id]);
 
   useEffect(() => {
     carregarEmpresa();
@@ -39,7 +41,7 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
       .get<ResultadoPaginado<Projeto>>(`/projetos?empresaId=${id}`)
       .then((r) => setProjetos(r.data))
       .catch(() => setProjetos([]));
-  }, [id]);
+  }, [id, carregarEmpresa]);
 
   if (erro) {
     return (

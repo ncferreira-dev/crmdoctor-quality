@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../../lib/api';
 import { usePermissao } from '../../../../hooks/useSessao';
@@ -27,16 +27,18 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
   const podeEditar = usePermissao('PROJETOS_WRITE');
   const podeVerValor = usePermissao('FINANCEIRO_READ');
 
-  function carregar() {
+  // useCallback com [id]: a função é dependência do efeito abaixo, e sem a
+  // memória ela seria outra a cada render, refazendo a busca sem parar.
+  const carregar = useCallback(() => {
     api
       .get<Projeto>(`/projetos/${id}`)
       .then(setProjeto)
       .catch((e: Error) => setErro(e.message));
-  }
+  }, [id]);
 
   useEffect(() => {
     carregar();
-  }, [id]);
+  }, [carregar]);
 
   async function mudarEstagio(estagio: EstagioProjeto) {
     if (!projeto) return;
