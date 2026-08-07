@@ -25,6 +25,40 @@ function delegateDe(nomeModel: string): string {
   return nomeModel.charAt(0).toLowerCase() + nomeModel.slice(1);
 }
 
+// Relação N-N implícita NÃO é model no DMMF: ela mora numa tabela própria,
+// "_<NomeDaRelacao>", com as colunas A e B. O laço por models não a enxerga.
+//
+// Isto não é detalhe: em 07/08/2026 a produção tinha 8 vínculos em
+// _EquipeDoProjeto e nenhum deles estava no backup. Restaurar traria os
+// projetos de volta sem equipe, sem erro e sem aviso. Backup que perde dado em
+// silêncio é pior que não ter backup, porque ninguém procura o que acha que tem.
+//
+// Como reconhecer: campo de objeto que é lista e não carrega a chave
+// estrangeira (relationFromFields vazio) E cujo lado inverso também é lista. Se
+// o inverso não for lista, é um-para-muitos comum, e aí a chave já está na
+// tabela do outro lado.
+function relacoesImplicitas(): string[] {
+  const nomes = new Set<string>();
+
+  for (const model of Prisma.dmmf.datamodel.models) {
+    for (const campo of model.fields) {
+      const semChaveAqui = (campo.relationFromFields?.length ?? 0) === 0;
+      if (campo.kind !== 'object' || !campo.isList || !semChaveAqui) continue;
+
+      const outroLado = Prisma.dmmf.datamodel.models.find(
+        (m) => m.name === campo.type,
+      );
+      const inverso = outroLado?.fields.find(
+        (f) => f.relationName === campo.relationName && f.name !== campo.name,
+      );
+
+      if (inverso?.isList && campo.relationName) nomes.add(campo.relationName);
+    }
+  }
+
+  return [...nomes].sort();
+}
+
 async function main() {
   const destino =
     process.argv[2] ??
@@ -37,15 +71,26 @@ async function main() {
   // no schema entra no backup sozinha, sem depender de alguém lembrar daqui.
   for (const model of Prisma.dmmf.datamodel.models) {
     const delegate = (
-      prisma as unknown as Record<
-        string,
-        { findMany(): Promise<unknown[]> }
-      >
+      prisma as unknown as Record<string, { findMany(): Promise<unknown[]> }>
     )[delegateDe(model.name)];
     const linhas = await delegate.findMany();
     dump[model.name] = linhas;
     total += linhas.length;
     console.log(`  ${model.name}: ${linhas.length} registro(s)`);
+  }
+
+  // As tabelas de ligação entram com o underscore no nome, igual ao banco, e é
+  // por ele que o importador as distingue de model.
+  //
+  // O nome da tabela vem do DMMF, não de entrada externa, então a interpolação
+  // no SQL não é superfície de injeção.
+  for (const relacao of relacoesImplicitas()) {
+    const vinculos = await prisma.$queryRawUnsafe<
+      Array<Record<string, string>>
+    >(`SELECT "A", "B" FROM "_${relacao}"`);
+    dump[`_${relacao}`] = vinculos;
+    total += vinculos.length;
+    console.log(`  _${relacao}: ${vinculos.length} vínculo(s)`);
   }
 
   writeFileSync(
