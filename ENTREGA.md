@@ -541,9 +541,23 @@ Segue aberto: faltam 3 contas que são de pessoas de verdade**
 > ensaio por padrão. Ele também reativa (`--reativar`), que é como esta correção
 > foi feita.
 >
-> **O que falta para fechar:** as três contas de pessoas de verdade. Enquanto
-> elas existirem como `@teste.com`, o critério do item ("nenhuma conta
-> `@teste.com` aparece como ativa") não está cumprido.
+> **As três contas de pessoas ficam, por decisão do Nícolas em 10/08/2026.**
+> Ele optou por não mexer nelas, e o item para de cobrar isso. Fica registrado o
+> que essa decisão custa, para ninguém redescobrir depois:
+>
+> O endereço `@teste.com` **não existe**. No dia em que a `RESEND_API_KEY`
+> entrar, o aviso diário da Giovanna, da Erica e da Aline vai ser enviado para
+> `analista2/3/4@teste.com` e não vai chegar em ninguém. Elas têm 3, 2 e 1
+> alerta pendentes hoje. De cinco contas ativas na produção, **três não
+> conseguem receber aviso nenhum**, que é a promessa do produto falhando calada
+> para a maioria da equipe.
+>
+> O conserto, quando for a hora, é uma troca de e-mail, não uma desativação. Com
+> os endereços reais em mãos isso é um comando, e fecha junto com o item 29, que
+> é sobre os mesmos nomes ("Giovanna " e "Erica " ainda têm espaço sobrando).
+>
+> O critério original do item ("nenhuma conta `@teste.com` aparece como ativa")
+> segue **não cumprido**, e por escolha, não por esquecimento.
 
 Seis das oito contas de produção são `@teste.com`. Duas entram agora
 (`coordenador@teste.com` e `analista@teste.com`), e a de Coordenador tem
@@ -1835,7 +1849,7 @@ despercebido.
 | 5 | 1 | Verificação do domínio (Nícolas) | | aberto |
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
-| 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **metade feita, 3 contas dependem do Fabrício** |
+| 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **feito no que foi decidido: 3 desativadas, 3 ficam por escolha** |
 | 9 | 2 | Dado de demonstração separado do real | 8 | aberto |
 | 10 | 2 | Backup com rotina, cópia fora, restauração testada | 7 | aberto |
 | 11 | 2 | Higiene de ambiente e endereços | | **feito** |
@@ -1869,8 +1883,8 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**5 abertos, 34 fechados, 1 esperando o Nícolas.** Os 5 abertos dependem de
-decisão sua ou do deploy da produção. Não sobrou item de código.
+**4 abertos, 35 fechados, 1 esperando o Nícolas.** Nenhum dos abertos é item de
+código: dependem de decisão do Nícolas ou de acesso que só ele tem.
 
 ---
 
