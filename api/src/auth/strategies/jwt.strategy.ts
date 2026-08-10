@@ -67,7 +67,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // que a senha antiga morre na hora; sem esta linha, quem já estava logado
     // seguiria dentro com o token na mão e o break-glass não fecharia porta
     // nenhuma.
-    if (user.codigoConvite) {
+    if (user.codigoConviteHash) {
       throw new UnauthorizedException(
         'Acesso redefinido: use o código de primeiro acesso',
       );

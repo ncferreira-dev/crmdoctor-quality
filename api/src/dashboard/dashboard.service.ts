@@ -54,7 +54,16 @@ export class DashboardService {
           status: { not: 'CANCELADA' },
         },
       }),
-      this.prisma.notificacao.count({ where: { lida: false } }),
+      // Alerta não lido DESTA pessoa. Contava notificacao.lida, que era o
+      // estado da empresa inteira: um colega dava baixa e o número zerava no
+      // cartão de todo mundo. Sem usuário na request o número é 0, e não o
+      // total, porque afirmar "você tem N alertas" para ninguém em particular
+      // é a mesma mentira de antes.
+      user
+        ? this.prisma.notificacaoDestinatario.count({
+            where: { usuarioId: user.sub, lidaEm: null },
+          })
+        : Promise.resolve(0),
       this.prisma.ticket.count({ where: whereEmAtraso(agora) }),
       this.prisma.etapaProjeto.count({
         where: {

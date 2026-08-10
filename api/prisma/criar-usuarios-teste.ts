@@ -45,7 +45,7 @@ async function main() {
       continue;
     }
 
-    // senhaDefinidaEm preenchido e codigoConvite null: a conta já loga direto,
+    // senhaDefinidaEm preenchido e codigoConviteHash null: a conta já loga direto,
     // sem passar pelo primeiro acesso.
     await prisma.user.upsert({
       where: { email: conta.email },
@@ -53,7 +53,7 @@ async function main() {
         senhaHash,
         cargoId: cargo.id,
         ativo: true,
-        codigoConvite: null,
+        codigoConviteHash: null,
         senhaDefinidaEm: new Date(),
       },
       create: {

@@ -25,7 +25,7 @@ export class UsersController {
 
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
-    return this.usersService.findOne(user.sub);
+    return this.usersService.findOne(user.sub, user);
   }
 
   // Primeiro acesso: público (quem resgata ainda não tem sessão) e com rate
@@ -44,7 +44,7 @@ export class UsersController {
     @CurrentUser() user: AuthUser,
     @Body() dto: AtualizarPerfilDto,
   ) {
-    return this.usersService.atualizarPerfil(user.sub, dto);
+    return this.usersService.atualizarPerfil(user, dto);
   }
 
   // Troca da própria senha: não exige permissão nenhuma, qualquer pessoa
@@ -63,16 +63,19 @@ export class UsersController {
     return this.usersService.reenviarConvite(id, user);
   }
 
+  // Quem pede desce até o serviço porque a resposta muda com ele: o telefone
+  // dos outros só sai para quem tem USUARIOS_MANAGE. USUARIOS_READ continua
+  // sendo o que abre a lista, e é uma permissão que cargo de agenda tem.
   @RequirePermissao('USUARIOS_READ')
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@CurrentUser() user: AuthUser) {
+    return this.usersService.findAll(user);
   }
 
   @RequirePermissao('USUARIOS_READ')
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.usersService.findOne(id, user);
   }
 
   @RequirePermissao('USUARIOS_MANAGE')

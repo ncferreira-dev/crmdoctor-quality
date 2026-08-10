@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { CommonModule } from './common/common.module';
+import { EmailModule } from './email/email.module';
 import { AuthModule } from './auth/auth.module';
 import { CargosModule } from './cargos/cargos.module';
 import { UsersModule } from './users/users.module';
@@ -30,6 +31,7 @@ import { TarefasModule } from './tarefas/tarefas.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
     CommonModule,
+    EmailModule,
     AuthModule,
     CargosModule,
     UsersModule,

@@ -110,24 +110,36 @@ model User {
   ativo     Boolean @default(true)
 
   // Convite / primeiro acesso: o membro é cadastrado com um código de uso único
-  // em vez de uma senha escolhida por terceiros. Enquanto codigoConvite existir,
-  // o login por senha é recusado — a pessoa precisa resgatar o código e definir
-  // a própria senha. Ao resgatar, o código é apagado e senhaDefinidaEm marcado.
-  codigoConvite   String?   @unique
-  senhaDefinidaEm DateTime?
+  // em vez de uma senha escolhida por terceiros. Enquanto este campo existir,
+  // o login por senha é recusado: a pessoa precisa resgatar o código e definir
+  // a própria senha. Ao resgatar, o campo é apagado e senhaDefinidaEm marcado.
+  //
+  // Guarda o HASH, nunca o código. Até 09/08/2026 a coluna se chamava
+  // `codigoConvite` e guardava os 8 dígitos em claro: quem lesse a tabela, ou o
+  // arquivo de backup, resgatava a conta e definia a senha. Era uma senha de
+  // uso único escrita à vista, ao lado do hash da senha de verdade.
+  //
+  // argon2, o mesmo do senhaHash, e por isso SALGADO: não existe busca pelo
+  // hash. É o motivo de o resgate pedir e-mail mais código (ver
+  // UsersService.resgatarConvite). O custo é um campo a mais na tela de
+  // primeiro acesso; o ganho é que nem quem tem o banco inteiro na mão
+  // consegue entrar numa conta pendente.
+  codigoConviteHash String?
+  senhaDefinidaEm   DateTime?
 
   // Só preenchido para quem atua como consultor (visita cliente em campo).
   // Nulo para os demais cargos — não é um atributo de todo membro.
   especialidade String?
 
   cargoId           String
-  cargo             Cargo          @relation(fields: [cargoId], references: [id])
+  cargo             Cargo                     @relation(fields: [cargoId], references: [id])
   etapasResponsavel EtapaProjeto[]
   tarefas           Tarefa[]
   visitas           Visita[]
   competencias      Competencia[]
-  projetosNaEquipe  Projeto[]      @relation("EquipeDoProjeto")
-  criadoEm          DateTime       @default(now())
+  projetosNaEquipe  Projeto[]                 @relation("EquipeDoProjeto")
+  alertas           NotificacaoDestinatario[]
+  criadoEm          DateTime                  @default(now())
 
   @@map("users")
 }
@@ -370,16 +382,32 @@ model CronExecucao {
   @@map("cron_execucoes")
 }
 
+// Uma linha por FATO, não por pessoa: "o marco X vence em tal dia" é um fato
+// só, mesmo que quatro pessoas precisem saber dele. Quem precisa saber, e quem
+// já leu, vivem em NotificacaoDestinatario.
+//
+// `mensagem` guarda o fato e nada mais. Ela NÃO pode conter contagem de dias:
+// o texto é gravado uma vez e o @@unique impede regravar, então um "vence em 9
+// dias" escrito aqui continua dizendo 9 pelo resto da vida. A tela calcula os
+// dias a partir de dataReferencia, que é o dado, e não a frase sobre o dado.
 model Notificacao {
-  id             String        @id @default(uuid())
-  tipo           String        @default("COMPLIANCE_PRAZO")
-  mensagem       String
-  lida           Boolean       @default(false)
+  id       String  @id @default(uuid())
+  tipo     String  @default("COMPLIANCE_PRAZO")
+  mensagem String
+  /// LEGADO. Era a leitura da empresa inteira: uma pessoa marcava como lida e
+  /// o aviso sumia para todos. A leitura agora é por pessoa, em
+  /// NotificacaoDestinatario.lidaEm. Nada escreve mais aqui. A coluna fica
+  /// porque derrubá-la é migration destrutiva sobre dado existente, e o custo
+  /// de mantê-la é um boolean parado.
+  lida     Boolean @default(false)
+
   projetoId      String?
   projeto        Projeto?      @relation(fields: [projetoId], references: [id])
   etapaId        String?
   etapa          EtapaProjeto? @relation(fields: [etapaId], references: [id])
   dataReferencia DateTime?     @db.Date // = dataLimiteCompliance do projeto OU prazo da etapa
+
+  destinatarios NotificacaoDestinatario[]
 
   criadoEm DateTime @default(now())
 
@@ -391,6 +419,36 @@ model Notificacao {
   // deduplicação depende só deste índice, não do de cima.
   @@unique([etapaId, tipo, dataReferencia])
   @@map("notificacoes")
+}
+
+// Quem precisa saber de um aviso, e se já leu. Uma linha aqui significa duas
+// coisas ao mesmo tempo: "este alerta é seu" e, quando lidaEm está preenchido,
+// "você deu baixa em tal instante".
+//
+// Duas tabelas (uma de destinatário, outra de leitura) responderiam as mesmas
+// duas perguntas com o dobro de junção e uma inconsistência possível: leitura
+// de quem não é destinatário. Uma tabela só não deixa esse estado existir.
+//
+// Esta tabela é ADITIVA de propósito: não toca nos dois @@unique de
+// notificacoes, que são o que garante a idempotência do cron. Um desenho com
+// uma linha de notificação por pessoa obrigaria a derrubar e recriar aqueles
+// dois índices.
+model NotificacaoDestinatario {
+  id            String      @id @default(uuid())
+  notificacaoId String
+  notificacao   Notificacao @relation(fields: [notificacaoId], references: [id], onDelete: Cascade)
+  usuarioId     String
+  usuario       User        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  lidaEm        DateTime?
+  criadoEm      DateTime    @default(now())
+
+  // O cron reconcilia destinatários a cada execução com skipDuplicates: este
+  // índice é o que faz "acrescentar quem entrou na equipe" ser seguro de
+  // repetir todo dia.
+  @@unique([notificacaoId, usuarioId])
+  // A pergunta que o sino faz a cada 60s: o que ESTA pessoa ainda não leu.
+  @@index([usuarioId, lidaEm])
+  @@map("notificacao_destinatarios")
 }
 
 model AuditLog {

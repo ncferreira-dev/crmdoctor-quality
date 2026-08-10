@@ -54,7 +54,7 @@ async function main() {
       nome,
       email,
       senhaHash: await argon2.hash(randomUUID()),
-      codigoConvite,
+      codigoConviteHash: await argon2.hash(codigoConvite),
       cargoId: cargo.id,
     },
   });

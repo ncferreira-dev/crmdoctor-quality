@@ -16,6 +16,7 @@
 // ou ao banco, que é exatamente o perímetro certo para um break-glass.
 
 import { PrismaClient } from '@prisma/client';
+import * as argon2 from 'argon2';
 import { randomInt } from 'node:crypto';
 
 const prisma = new PrismaClient();
@@ -45,7 +46,10 @@ async function main() {
   const codigoConvite = String(randomInt(10_000_000, 100_000_000));
   await prisma.user.update({
     where: { id: user.id },
-    data: { codigoConvite, ...(reativar ? { ativo: true } : {}) },
+    data: {
+      codigoConviteHash: await argon2.hash(codigoConvite),
+      ...(reativar ? { ativo: true } : {}),
+    },
   });
 
   console.log('');

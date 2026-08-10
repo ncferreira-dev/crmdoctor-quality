@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import { aparar } from '../../common/transforms/aparar';
 import {
   IsArray,
   IsBoolean,
@@ -14,9 +15,6 @@ import {
 // mostra o nome, inclusive no filtro de consultor da agenda e na carga do
 // dashboard. Aconteceu de verdade em 05/08/2026. Aparar é trabalho da API, e
 // não do formulário: o formulário é um cliente, e cliente não é para confiar.
-const aparar = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
-
 // Cadastro de membro: quem cadastra NÃO define a senha de outra pessoa. O
 // sistema gera um código de primeiro acesso e o próprio membro escolhe a senha
 // ao resgatá-lo.

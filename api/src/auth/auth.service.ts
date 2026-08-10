@@ -25,7 +25,7 @@ export class AuthService {
     // Convite pendente: a conta existe mas ainda não tem senha escolhida pelo
     // dono. Mensagem específica aqui é intencional — não é tentativa de invasão,
     // é alguém que precisa ser direcionado ao primeiro acesso.
-    if (user.codigoConvite) {
+    if (user.codigoConviteHash) {
       throw new UnauthorizedException(
         'Primeiro acesso pendente: use o código de convite para definir sua senha',
       );
@@ -50,7 +50,7 @@ export class AuthService {
     // jeito, em vez de depender dessa garantia continuar valendo.
     const {
       senhaHash: _senhaHash,
-      codigoConvite: _codigo,
+      codigoConviteHash: _codigo,
       ...userSemSenha
     } = user;
 

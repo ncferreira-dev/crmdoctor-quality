@@ -45,6 +45,29 @@ export class CargosService {
     return cargos.map(semPermissoesMortas);
   }
 
+  // Lista enxuta para o cadastro de membro: nome e nível, sem a lista de
+  // permissões de cada cargo.
+  //
+  // Nasceu em 09/08/2026, junto com o fechamento de GET /cargos. O formulário
+  // de membro precisa de um seletor de cargo, e para isso vinha buscando a
+  // rota completa, ou seja, baixava o mapa de permissões inteiro da empresa
+  // para desenhar um dropdown. Fechar aquela rota sem esta aqui deixaria o
+  // seletor vazio para quem gerencia membros e não gerencia cargos, e vazio em
+  // silêncio, porque a tela engole o erro.
+  //
+  // Mesmo desenho de GET /visitas/consultores: quem precisa da lista para
+  // trabalhar recebe a lista, e não o cadastro inteiro por tabela.
+  //
+  // O nível vai junto de propósito: é com ele que a tela desabilita o cargo
+  // fora do alcance de quem está cadastrando, e sem ele a hierarquia só
+  // apareceria como erro depois de o formulário inteiro ter sido preenchido.
+  atribuiveis() {
+    return this.prisma.cargo.findMany({
+      select: { id: true, nome: true, nivel: true },
+      orderBy: { nivel: 'desc' },
+    });
+  }
+
   async findOne(id: string) {
     const cargo = await this.prisma.cargo.findUnique({ where: { id } });
     if (!cargo) {

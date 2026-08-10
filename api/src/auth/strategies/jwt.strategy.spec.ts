@@ -8,7 +8,7 @@ type UsuarioNoBanco = {
   nome: string;
   email: string;
   ativo: boolean;
-  codigoConvite: string | null;
+  codigoConviteHash: string | null;
   senhaDefinidaEm: Date | null;
   cargo: { nivel: number; permissoes: string[] };
 };
@@ -18,7 +18,7 @@ const ATIVO: UsuarioNoBanco = {
   nome: 'Fabrício',
   email: 'fabricio@doctorquality.com.br',
   ativo: true,
-  codigoConvite: null,
+  codigoConviteHash: null,
   senhaDefinidaEm: null,
   cargo: { nivel: 60, permissoes: ['LEADS_READ', 'VISITAS_READ'] },
 };
@@ -62,7 +62,10 @@ describe('JwtStrategy.validate', () => {
   });
 
   it('recusa token de conta com acesso redefinido (convite pendente)', async () => {
-    const estrategia = estrategiaCom({ ...ATIVO, codigoConvite: '12345678' });
+    const estrategia = estrategiaCom({
+      ...ATIVO,
+      codigoConviteHash: '$argon2id$hash-de-convite',
+    });
     await expect(estrategia.validate({ sub: 'u-1' })).rejects.toThrow(
       'Acesso redefinido: use o código de primeiro acesso',
     );

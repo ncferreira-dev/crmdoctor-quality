@@ -15,7 +15,7 @@ import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { AuthUser } from '../common/types/auth-user';
 import { exigirNivelMenor } from '../common/rbac/exigir-nivel-menor';
 
-// Código de 8 dígitos legível por telefone/WhatsApp. randomInt é do crypto —
+// Código de 8 dígitos legível por telefone/WhatsApp. randomInt é do crypto:
 // Math.random seria previsível e isso aqui dá acesso a uma conta.
 function gerarCodigoConvite(): string {
   return String(randomInt(10_000_000, 100_000_000));
@@ -25,15 +25,42 @@ function gerarCodigoConvite(): string {
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  // Tira da resposta os dois campos que dão acesso à conta. O codigoConvite
-  // precisa sair junto com o hash: ele é uma senha de uso único, e listá-lo
-  // entregaria qualquer conta pendente a quem lesse a listagem. Em troca sai
-  // acessoPendente, que é o que a interface realmente precisa saber.
+  // Telefone é contato pessoal, não dado de trabalho: quem gerencia membros
+  // precisa dele para falar com a pessoa, e o dono sempre vê o próprio, senão a
+  // tela de perfil não teria como editar o próprio número. Para o resto da
+  // empresa ele não sai da API.
+  //
+  // Quem pede vem como argumento obrigatório de propósito: com valor opcional,
+  // um método novo que esquecesse de passá-lo voltaria a entregar o número de
+  // todo mundo, e voltaria em silêncio.
+  private podeVerTelefone(donoId: string, quemPede: AuthUser): boolean {
+    return (
+      quemPede.sub === donoId || quemPede.permissoes.includes('USUARIOS_MANAGE')
+    );
+  }
+
+  // Tira da resposta os dois campos que dão acesso à conta. O hash do convite
+  // sai junto com o da senha: mesmo sendo hash, é o verificador de uma
+  // credencial e não tem por que trafegar. Em troca sai acessoPendente, que é
+  // o que a interface realmente precisa saber.
+  //
+  // O telefone de terceiro vira null em vez de sumir da resposta: null é o que
+  // o campo já vale para quem não cadastrou número, então a interface trata os
+  // dois casos do mesmo jeito (não mostra) e o tipo Usuario continua o mesmo.
   private semSegredos<
-    T extends { senhaHash: string; codigoConvite: string | null },
-  >(user: T) {
-    const { senhaHash: _senhaHash, codigoConvite, ...resto } = user;
-    return { ...resto, acessoPendente: codigoConvite !== null };
+    T extends {
+      id: string;
+      telefone: string | null;
+      senhaHash: string;
+      codigoConviteHash: string | null;
+    },
+  >(user: T, quemPede: AuthUser) {
+    const { senhaHash: _senhaHash, codigoConviteHash, ...resto } = user;
+    return {
+      ...resto,
+      telefone: this.podeVerTelefone(user.id, quemPede) ? resto.telefone : null,
+      acessoPendente: codigoConviteHash !== null,
+    };
   }
 
   private async buscarComCargoOuFalhar(id: string) {
@@ -55,17 +82,17 @@ export class UsersService {
     return cargo;
   }
 
-  async findAll() {
+  async findAll(quemPede: AuthUser) {
     const users = await this.prisma.user.findMany({
       include: { cargo: true, competencias: true },
       orderBy: { nome: 'asc' },
     });
-    return users.map((u) => this.semSegredos(u));
+    return users.map((u) => this.semSegredos(u, quemPede));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, quemPede: AuthUser) {
     const user = await this.buscarComCargoOuFalhar(id);
-    return this.semSegredos(user);
+    return this.semSegredos(user, quemPede);
   }
 
   async create(dto: CreateUserDto, requestUser: AuthUser) {
@@ -90,10 +117,10 @@ export class UsersService {
         email: dto.email,
         telefone: dto.telefone,
         // Hash de um segredo aleatório: a conta nasce sem senha utilizável.
-        // Enquanto codigoConvite existir, o login por senha é recusado — só o
-        // resgate do código define a senha real.
+        // Enquanto o hash do convite existir, o login por senha é recusado: só
+        // o resgate do código define a senha real.
         senhaHash: await argon2.hash(randomUUID()),
-        codigoConvite,
+        codigoConviteHash: await argon2.hash(codigoConvite),
         cargoId: dto.cargoId,
         ativo: dto.ativo ?? true,
         especialidade: dto.especialidade,
@@ -107,24 +134,47 @@ export class UsersService {
     // O código volta UMA vez, na resposta da criação: é o que quem cadastrou
     // repassa ao novo membro. Depois disso ele não é mais exibido em lugar
     // nenhum (findAll/findOne omitem).
-    return { ...this.semSegredos(user), codigoConvite };
+    return { ...this.semSegredos(user, requestUser), codigoConvite };
   }
 
   // Resgate do primeiro acesso: valida o código e a pessoa define a senha.
-  // Rota pública — quem resgata ainda não tem sessão.
+  // Rota pública, porque quem resgata ainda não tem sessão.
+  //
+  // Pede e-mail junto com o código, e a razão é de banco: o código é guardado
+  // com argon2, que é SALGADO, então o mesmo código gera hashes diferentes e
+  // não existe `findUnique({ where: { hash } })`. O e-mail acha a linha, o
+  // argon2 confere o código. Antes de 09/08/2026 a busca era pelo código em
+  // claro, o que também significava que qualquer pessoa podia varrer o espaço
+  // de 8 dígitos sem saber o e-mail de ninguém.
+  //
+  // A mensagem de erro é a mesma para e-mail que não existe, conta desativada
+  // e código errado, de propósito: respostas diferentes transformariam esta
+  // rota pública num confirmador de quem tem conta aqui.
   async resgatarConvite(dto: ResgatarConviteDto) {
+    const recusar = () => {
+      throw new NotFoundException('E-mail ou código inválido');
+    };
+
     const user = await this.prisma.user.findUnique({
-      where: { codigoConvite: dto.codigo },
+      where: { email: dto.email },
     });
-    if (!user || !user.ativo) {
-      throw new NotFoundException('Código inválido ou já utilizado');
+    if (!user || !user.ativo || !user.codigoConviteHash) {
+      return recusar();
+    }
+
+    const codigoConfere = await argon2.verify(
+      user.codigoConviteHash,
+      dto.codigo,
+    );
+    if (!codigoConfere) {
+      return recusar();
     }
 
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
         senhaHash: await argon2.hash(dto.senha),
-        codigoConvite: null,
+        codigoConviteHash: null,
         senhaDefinidaEm: new Date(),
       },
     });
@@ -149,7 +199,7 @@ export class UsersService {
     const codigoConvite = gerarCodigoConvite();
     await this.prisma.user.update({
       where: { id },
-      data: { codigoConvite },
+      data: { codigoConviteHash: await argon2.hash(codigoConvite) },
     });
     // ehReset distingue os dois casos para a interface escolher o texto certo:
     // reenviar um convite e derrubar a senha de alguém não são a mesma notícia.
@@ -159,15 +209,15 @@ export class UsersService {
   // Edição dos próprios dados. Separado do update() pelo mesmo motivo da troca
   // de senha: lá a hierarquia protege uma pessoa de outra, aqui não há duas
   // pessoas. Sem isto, quem está no topo do organograma nunca conseguiria
-  // corrigir o próprio nome — exigirNivelMenor pede nível estritamente maior,
+  // corrigir o próprio nome. exigirNivelMenor pede nível estritamente maior,
   // e ninguém tem nível maior que o seu.
-  async atualizarPerfil(userId: string, dto: AtualizarPerfilDto) {
+  async atualizarPerfil(quemPede: AuthUser, dto: AtualizarPerfilDto) {
     const user = await this.prisma.user.update({
-      where: { id: userId },
+      where: { id: quemPede.sub },
       data: { nome: dto.nome, telefone: dto.telefone },
       include: { cargo: true },
     });
-    return this.semSegredos(user);
+    return this.semSegredos(user, quemPede);
   }
 
   // Troca da própria senha. Não passa pelo update() porque ali quem age é um
@@ -239,7 +289,7 @@ export class UsersService {
       include: { cargo: true, competencias: true },
     });
 
-    return this.semSegredos(user);
+    return this.semSegredos(user, requestUser);
   }
 
   async remove(id: string, requestUser: AuthUser) {
