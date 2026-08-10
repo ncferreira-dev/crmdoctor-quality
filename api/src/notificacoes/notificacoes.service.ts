@@ -6,13 +6,26 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { FindNotificacoesQueryDto } from './dto/find-notificacoes-query.dto';
 import { inicioDoDiaCivil } from '../common/utils/dia-civil';
 import { Permissao } from '../common/constants/permissoes';
+import {
+  AlertaDoResumo,
+  montarResumo,
+  separarEmSecoes,
+  totalDeAlertas,
+} from './resumo-diario';
 
 // Chave do heartbeat na tabela cron_execucoes. /health/cron lê pela mesma
 // constante (exportada) para os dois lados nunca divergirem.
 export const CRON_COMPLIANCE = 'compliance-prazos';
+
+// Carimbo do aviso diário, separado do heartbeat do vigia de prazos. São duas
+// perguntas diferentes: "o vigia rodou?" e "o e-mail de hoje já saiu?". Juntar
+// as duas num carimbo só faria o disparo do boot ser lido como o disparo do
+// dia, ou o contrário.
+export const CRON_RESUMO_DIARIO = 'resumo-diario-email';
 
 // Quantos dias antes do prazo o sistema começa a avisar. A tela usa a MESMA
 // régua (urgenciaDoPrazo em web/src/lib/formato.ts): divergir faria a tela
@@ -28,7 +41,10 @@ const PERMISSAO_DE_ULTIMO_RECURSO: Permissao = 'PROJETOS_READ';
 export class NotificacoesService implements OnApplicationBootstrap {
   private readonly logger = new Logger(NotificacoesService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private email: EmailService,
+  ) {}
 
   // Roda o cron no boot. Dois motivos: o deploy diário costuma acontecer fora
   // das 8h, e sem isto o /health/cron responderia 503 até a primeira execução
@@ -134,7 +150,145 @@ export class NotificacoesService implements OnApplicationBootstrap {
         `(${resultado.projetos} projeto(s), ${resultado.etapas} etapa(s)), ` +
         `${resultado.destinatarios} destinatário(s) novo(s)`,
     );
-    return resultado;
+
+    // O aviso sai DEPOIS de criar e reconciliar, senão o e-mail da manhã
+    // contaria o mundo de ontem. A trava de um por dia mora dentro do disparo,
+    // e é ela que faz este ponto ser seguro mesmo com o cron rodando no boot.
+    const resumo = await this.dispararResumoDiario();
+
+    return { ...resultado, resumo };
+  }
+
+  // O AVISO DIÁRIO: um e-mail por pessoa, por dia, com o que é dela.
+  //
+  // Quem não tem nada não recebe nada. É a regra que separa aviso de ruído: um
+  // e-mail diário que chega mesmo vazio é um e-mail que se aprende a arquivar
+  // sem ler, e aí o dia em que ele importa também passa batido.
+  //
+  // A trava de "um por dia" é o carimbo em cron_execucoes, e não uma coluna na
+  // notificação, porque a pergunta é sobre O DIA e não sobre cada alerta. Sem
+  // ela, todo deploy dispararia a rodada inteira de novo (o cron roda no boot),
+  // e três deploys numa terça significariam três e-mails iguais para todo
+  // mundo.
+  // `forcar` ignora a trava do dia e `carimbar: false` não grava o carimbo: as
+  // duas existem para o ensaio do script de medição poder rodar quantas vezes
+  // for preciso sem gastar o disparo real do dia. O padrão é o comportamento de
+  // produção, então esquecer de passar opção nenhuma faz a coisa certa.
+  async dispararResumoDiario(
+    opcoes: { forcar?: boolean; carimbar?: boolean } = {},
+  ) {
+    const carimbar = opcoes.carimbar ?? true;
+    const hoje = inicioDoDiaCivil();
+
+    if (!opcoes.forcar) {
+      const carimbo = await this.prisma.cronExecucao.findUnique({
+        where: { nome: CRON_RESUMO_DIARIO },
+      });
+      if (carimbo && carimbo.executadoEm.getTime() >= hoje.getTime()) {
+        this.logger.log(
+          'Aviso diário: já saiu hoje, nada a fazer nesta execução',
+        );
+        return {
+          jaSaiuHoje: true,
+          pessoasComAlerta: 0,
+          enviados: 0,
+          falhas: 0,
+          semNadaPendente: 0,
+        };
+      }
+    }
+
+    // Conta desativada e conta com convite pendente ficam de fora pelo mesmo
+    // motivo da regra de destinatário: as duas não conseguem entrar no sistema,
+    // e o aviso mandaria a pessoa para uma porta fechada.
+    const pendentes = await this.prisma.notificacaoDestinatario.findMany({
+      where: {
+        lidaEm: null,
+        usuario: { ativo: true, codigoConviteHash: null },
+      },
+      select: {
+        usuario: { select: { id: true, nome: true, email: true } },
+        notificacao: {
+          select: { mensagem: true, dataReferencia: true, criadoEm: true },
+        },
+      },
+    });
+
+    const porPessoa = new Map<
+      string,
+      { nome: string; email: string; alertas: AlertaDoResumo[] }
+    >();
+    for (const linha of pendentes) {
+      const atual = porPessoa.get(linha.usuario.id) ?? {
+        nome: linha.usuario.nome,
+        email: linha.usuario.email,
+        alertas: [],
+      };
+      atual.alertas.push(linha.notificacao);
+      porPessoa.set(linha.usuario.id, atual);
+    }
+
+    // Quem está apto a receber e não tem nada. É a terceira contagem que o item
+    // 3 pede, e ela vale medir: se um dia ela zerar sozinha, é sinal de que o
+    // aviso virou correio da empresa inteira de novo.
+    const elegiveis = await this.prisma.user.count({
+      where: { ativo: true, codigoConviteHash: null },
+    });
+
+    let enviados = 0;
+    let falhas = 0;
+
+    for (const pessoa of porPessoa.values()) {
+      const secoes = separarEmSecoes(pessoa.alertas, hoje);
+      // Alerta sem data de referência não entra em seção nenhuma, então uma
+      // pessoa pode ter linha pendente e mesmo assim nada a receber.
+      if (totalDeAlertas(secoes) === 0) continue;
+
+      const resultado = await this.email.enviar({
+        ...montarResumo(pessoa.nome, secoes, hoje),
+        para: pessoa.email,
+      });
+      if (resultado.enviado) enviados += 1;
+      else falhas += 1;
+    }
+
+    // Carimba o dia, MENOS quando tudo falhou. Se nada saiu (motor desligado,
+    // provedor fora, chave vencida), carimbar transformaria o problema em
+    // silêncio até amanhã: o dia estaria "gasto" sem ninguém ter sido avisado.
+    // Sem carimbo, o próximo boot tenta de novo, que é o desfecho certo.
+    // Falha parcial carimba de propósito: parte das pessoas já recebeu, e
+    // repetir mandaria e-mail dobrado para elas.
+    const tudoFalhou = enviados === 0 && falhas > 0;
+    if (!carimbar) {
+      this.logger.log('Aviso diário: ensaio, o dia não foi carimbado');
+    } else if (tudoFalhou) {
+      this.logger.warn(
+        `Aviso diário: nenhum dos ${falhas} e-mail(s) saiu. O dia NÃO foi ` +
+          'carimbado, então a próxima execução tenta de novo.',
+      );
+    } else {
+      const executadoEm = new Date();
+      await this.prisma.cronExecucao.upsert({
+        where: { nome: CRON_RESUMO_DIARIO },
+        update: { executadoEm },
+        create: { nome: CRON_RESUMO_DIARIO, executadoEm },
+      });
+    }
+
+    const pessoasComAlerta = porPessoa.size;
+    const semNadaPendente = Math.max(elegiveis - pessoasComAlerta, 0);
+    this.logger.log(
+      `Aviso diário: ${enviados} enviado(s), ${falhas} falha(s), ` +
+        `${semNadaPendente} pessoa(s) sem nada pendente (não recebem e-mail)`,
+    );
+
+    return {
+      jaSaiuHoje: false,
+      pessoasComAlerta,
+      enviados,
+      falhas,
+      semNadaPendente,
+    };
   }
 
   async verificarPrazosCompliance() {

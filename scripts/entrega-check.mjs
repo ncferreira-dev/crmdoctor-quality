@@ -263,6 +263,25 @@ registrar(
   temEnvio ? 'presente' : 'nenhum: o alerta nasce e morre dentro do banco',
 );
 
+// Ter motor não é avisar ninguém: até o item 3 o EmailService existia e nada o
+// chamava. Esta checagem cobra o LAÇO: o cron diário precisa disparar o resumo,
+// e o resumo precisa ser montado por pessoa (o serviço agrupa por destinatário
+// antes de chamar o motor).
+const chamaResumoNoCron =
+  /dispararResumoDiario\(/.test(servicoNotifSemComentario) &&
+  /this\.email\.enviar\(/.test(servicoNotifSemComentario);
+const separaPorPessoa = existsSync(
+  join(RAIZ, 'api/src/notificacoes/resumo-diario.ts'),
+);
+registrar(
+  'o alerta sai do banco: cron dispara aviso por pessoa',
+  chamaResumoNoCron && separaPorPessoa,
+  'dispararResumoDiario + this.email.enviar em notificacoes.service.ts, e o módulo resumo-diario.ts',
+  chamaResumoNoCron && separaPorPessoa
+    ? 'o cron diário monta e manda o aviso de cada pessoa'
+    : 'o motor existe mas ninguém o chama: o alerta continua morrendo no banco',
+);
+
 // ===========================================================================
 titulo('3. Guarda de rota (Bloco 3)');
 // ===========================================================================

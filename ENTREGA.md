@@ -198,7 +198,72 @@ de verdade**, com o print ou o id da mensagem registrado aqui. API respondendo
 
 ### 3. Disparo diário por destinatário
 
-**Bloco:** 1 · **Depende de:** 1 e 2 · **Estado:** aberto
+**Bloco:** 1 · **Depende de:** 1 e 2 · **Estado:** **feito em 10/08/2026, com a
+entrega dependendo da chave**
+
+> **O alerta saiu do banco pela primeira vez.** Até aqui o motor de e-mail
+> existia e ninguém o chamava: o item 2 provou que dá para enviar, e este é o
+> item que resolve enviar.
+>
+> **As três seções são mutuamente exclusivas, e essa é a decisão que mais
+> importa.** Um alerta que aparecesse em duas seções ensinaria a pessoa a ler o
+> e-mail na diagonal, que é o ruído que o item existe para não criar:
+>
+> | Seção | O que entra |
+> |---|---|
+> | Já venceu | prazo já passou, não importa quando o alerta nasceu |
+> | Vence | prazo ainda não chegou e o alerta nasceu hoje |
+> | Em aberto desde ontem | prazo ainda não chegou e o alerta já existia ontem |
+>
+> A contagem de dias é feita na hora do envio, nunca lida do banco. É a mesma
+> regra do item 1, e agora vale nos três lugares que falam de prazo: a tela, o
+> sino e o e-mail.
+>
+> **Medido contra o banco local, com `npm run resumo:teste`:**
+>
+> ```
+> pessoas com alerta pendente: 6
+> e-mails montados:            6
+> pessoas sem nada:            1   (não recebem e-mail)
+> ```
+>
+> Cada e-mail levou só o que é da pessoa, conferido um por um. Três amostras:
+>
+> | Quem | Assunto | Conteúdo |
+> |---|---|---|
+> | Renata (Coordenadora) | 2 vencido(s) e 1 a vencer | Plano de ação venceu há 3 dias, Registro dermocosmético venceu há 2, BPF vence em 6 |
+> | Marcos (Consultor) | 1 a vencer | Treinamento da equipe, vence em 3 dias |
+> | Diego (Analista) | 1 vencido e 2 a vencer | Qualificação de transporte venceu há 9 dias, mais duas |
+>
+> Renata não recebeu nada do Marcos, e vice-versa. A sétima pessoa apta não
+> recebeu e-mail nenhum, que é o critério de "quem não tem nada não recebe".
+>
+> **A trava de um por dia, medida contra a tabela de verdade:**
+>
+> | Rodada | O que aconteceu |
+> |---|---|
+> | motor desligado, 6 destinatários | 0 enviados, 6 falhas, **o dia NÃO foi carimbado** |
+> | com o carimbo do dia no lugar | "já saiu hoje", 0 disparos |
+>
+> As duas linhas são de propósito. O cron roda no boot do container, então sem
+> a trava três deploys numa terça seriam três e-mails iguais para todo mundo. E
+> o dia só é carimbado se pelo menos um e-mail saiu: carimbar uma rodada em que
+> tudo falhou trocaria o problema por silêncio até o dia seguinte. Falha
+> parcial carimba, senão quem já recebeu receberia de novo.
+>
+> 12 testes novos (6 do conteúdo, 6 do disparo), incluindo o escape de HTML:
+> nome de projeto é texto digitado por gente e vai para dentro de uma tag.
+>
+> Checagem nova no verificador, a de número 40: "o alerta sai do banco, cron
+> dispara aviso por pessoa". Ela cobra o LAÇO e não a biblioteca, porque ter
+> motor não é avisar ninguém, e foi exatamente esse o estado entre os itens 2 e
+> 3.
+>
+> **O que este item NÃO prova, e é honesto dizer:** que o e-mail chega. Sem a
+> `RESEND_API_KEY` o motor sobe desligado e a medição vai até a fronteira do
+> envio, não até a caixa de entrada. A prova de entrega é do item 5, e o passo
+> a passo da chave está em `CHAVES-PENDENTES.md`. O dia em que a chave entrar,
+> este disparo já está pronto e nada precisa mudar aqui.
 
 Um e-mail por pessoa, por dia, com três seções: o que vence, o que já venceu, e
 o que ficou em aberto desde ontem. Quem não tem nada não recebe e-mail, para o
@@ -1133,7 +1198,7 @@ despercebido.
 |---|---|---|---|---|
 | 1 | 1 | Notificação vira aviso de uma pessoa | | **feito** |
 | 2 | 1 | Motor de envio de e-mail | | **esperando a chave** |
-| 3 | 1 | Disparo diário por destinatário | 1, 2 | aberto |
+| 3 | 1 | Disparo diário por destinatário | 1, 2 | **feito (entrega depende da chave)** |
 | 4 | 1 | SLA de ticket no mesmo disparo | 3 | aberto |
 | 5 | 1 | Verificação do domínio (Nícolas) | | aberto |
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
@@ -1170,7 +1235,7 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 
-**25 abertos, 12 fechados, 1 esperando o Nícolas.**
+**24 abertos, 13 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1191,3 +1256,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 09/08/2026 | 25 | 39 | itens 13 e 15: os 3 buracos fechados, teste de tabela verde, e nasceu GET /cargos/atribuiveis (71 rotas) |
 | 10/08/2026 | 26 | 39 | item 14: telefone sai de /users só para quem gerencia e para o dono, medido com dois tokens e nas duas telas |
 | 10/08/2026 | 27 | 39 | item 28: raiz do Turbopack fixada. O `npm run dev` estava servindo 404 em toda página autenticada desde 08/08 |
+| 10/08/2026 | 28 | 40 | item 3: o aviso diário existe e sai por pessoa, mais 1 checagem nova cobrando o laço entre cron e motor |

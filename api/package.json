@@ -19,6 +19,8 @@
     "backup:producao": "set -a && . ./.env.producao && set +a && node dist/prisma/exportar-backup.js",
     "comentario:email": "email:teste prova o motor de envio de ponta a ponta. Carrega .env.local, sobe só ConfigModule + EmailModule e usa o MESMO EmailService que o cron usa. Uso: npm run email:teste -- voce@exemplo.com. Enquanto o domínio não estiver verificado, o Resend só entrega para o e-mail dono da conta.",
     "email:teste": "set -a && . ./.env.local && set +a && ts-node scripts/enviar-email-teste.ts",
+    "comentario:resumo": "resumo:teste roda o aviso diário do item 3 contra o banco do .env.local. Sem argumento é ENSAIO: imprime o e-mail de cada pessoa e NÃO carimba a execução do dia, então pode repetir à vontade. Com -- --enviar manda de verdade e respeita a trava de um por dia.",
+    "resumo:teste": "set -a && . ./.env.local && set +a && ts-node scripts/disparar-resumo-teste.ts",
     "comentario:lint": "lint roda o typecheck ANTES do eslint, e sem --fix, e as duas coisas sao correcao de defeito medido. O --fix fazia o comando consertar e sair verde, entao o zero era o estado DEPOIS do conserto e nao o do codigo commitado. E o typecheck ficou quebrado de 07/08 a 09/08/2026 sem ninguem ver, porque nest build exclui os *.spec.ts e ninguem rodava tsc sozinho: dava para ter lint verde com a compilacao quebrada. Quem quiser o conserto automatico chama lint:fix de proposito. prisma/ entrou na lista em 07/08/2026 e scripts/ em 09/08/2026: e onde moram os comandos que rodam contra banco real.",
     "lint": "npm run typecheck && eslint \"{src,apps,libs,test,prisma,scripts}/**/*.ts\"",
     "lint:fix": "eslint \"{src,apps,libs,test,prisma,scripts}/**/*.ts\" --fix",

@@ -1,5 +1,6 @@
 import { NotificacoesService } from './notificacoes.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService, MensagemEmail } from '../email/email.service';
 
 // Mock só dos métodos do Prisma que o serviço toca. Não valida as constraints
 // do banco (isso é da migration), mas trava a janela, a regra de destinatário,
@@ -23,20 +24,35 @@ function criarMockPrisma() {
       update: metodoPrisma(),
       count: metodoPrisma(),
     },
-    user: { findMany: metodoPrisma() },
-    cronExecucao: { upsert: metodoPrisma() },
+    user: { findMany: metodoPrisma(), count: metodoPrisma() },
+    cronExecucao: { upsert: metodoPrisma(), findUnique: metodoPrisma() },
   };
 }
 
 type MockPrisma = ReturnType<typeof criarMockPrisma>;
+
+// O motor de e-mail entra como dublê para o serviço poder ser construído e para
+// os testes do aviso diário lerem O QUE seria enviado, e para quem, sem rede.
+function criarMockEmail() {
+  return {
+    enviar: jest
+      .fn<Promise<unknown>, [MensagemEmail]>()
+      .mockResolvedValue({ enviado: true, id: 'msg-teste' }),
+  };
+}
+
+type MockEmail = ReturnType<typeof criarMockEmail>;
 
 interface CreateManyArg {
   data: Array<Record<string, unknown>>;
   skipDuplicates?: boolean;
 }
 
-function servicoCom(prisma: MockPrisma) {
-  return new NotificacoesService(prisma as unknown as PrismaService);
+function servicoCom(prisma: MockPrisma, email: MockEmail = criarMockEmail()) {
+  return new NotificacoesService(
+    prisma as unknown as PrismaService,
+    email as unknown as EmailService,
+  );
 }
 
 // Estado padrão: nada a fazer. Cada teste sobrescreve só o que lhe interessa.
@@ -46,7 +62,11 @@ function semNada(prisma: MockPrisma) {
   prisma.notificacao.findMany.mockResolvedValue([]);
   prisma.notificacao.createMany.mockResolvedValue({ count: 0 });
   prisma.notificacaoDestinatario.createMany.mockResolvedValue({ count: 0 });
+  prisma.notificacaoDestinatario.findMany.mockResolvedValue([]);
   prisma.user.findMany.mockResolvedValue([]);
+  prisma.user.count.mockResolvedValue(0);
+  prisma.cronExecucao.findUnique.mockResolvedValue(null);
+  prisma.cronExecucao.upsert.mockResolvedValue({});
 }
 
 const DIA = 24 * 60 * 60 * 1000;
@@ -444,5 +464,216 @@ describe('NotificacoesService — leitura é de uma pessoa', () => {
 
     expect(resultado.lidaEm).toBe(jaLida);
     expect(prisma.notificacaoDestinatario.update).not.toHaveBeenCalled();
+  });
+});
+
+// Item 3 do ENTREGA.md. O aviso diário é a primeira vez que um alerta sai do
+// banco e chega em alguém: até aqui ele nascia e morria dentro do Postgres.
+describe('NotificacoesService — aviso diário', () => {
+  const HOJE = new Date('2026-08-10T00:00:00.000Z');
+  const ONTEM = new Date('2026-08-09T10:00:00.000Z');
+
+  function linhaPendente(
+    usuario: { id: string; nome: string; email: string },
+    notificacao: {
+      mensagem: string;
+      dataReferencia: Date | null;
+      criadoEm: Date;
+    },
+  ) {
+    return { usuario, notificacao };
+  }
+
+  const RENATA = {
+    id: 'u-renata',
+    nome: 'Renata',
+    email: 'renata@exemplo.com',
+  };
+  const MARCOS = {
+    id: 'u-marcos',
+    nome: 'Marcos',
+    email: 'marcos@exemplo.com',
+  };
+
+  function comPendencias(
+    prisma: MockPrisma,
+    linhas: unknown[],
+    elegiveis: number,
+  ) {
+    semNada(prisma);
+    prisma.notificacaoDestinatario.findMany.mockResolvedValue(linhas);
+    prisma.user.count.mockResolvedValue(elegiveis);
+  }
+
+  it('manda um e-mail por pessoa, com o conteúdo dela, e não manda para quem não tem nada', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    comPendencias(
+      prisma,
+      [
+        linhaPendente(RENATA, {
+          mensagem: 'Etapa Dossiê do projeto Registro ANVISA',
+          dataReferencia: new Date('2026-08-05T00:00:00.000Z'),
+          criadoEm: ONTEM,
+        }),
+        linhaPendente(MARCOS, {
+          mensagem: 'Projeto Boas Práticas da empresa Acme',
+          dataReferencia: new Date('2026-08-20T00:00:00.000Z'),
+          criadoEm: HOJE,
+        }),
+      ],
+      // Três pessoas aptas, duas com pendência: a terceira é o caso que o item
+      // 3 pede para medir.
+      3,
+    );
+
+    const resultado = await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(resultado).toMatchObject({
+      pessoasComAlerta: 2,
+      enviados: 2,
+      falhas: 0,
+      semNadaPendente: 1,
+    });
+
+    const destinos = email.enviar.mock.calls.map((c) => c[0].para);
+    expect(destinos.sort()).toEqual([
+      'marcos@exemplo.com',
+      'renata@exemplo.com',
+    ]);
+
+    // Cada e-mail carrega só o que é da pessoa. Um vazamento aqui seria o
+    // oposto do item: o aviso viraria a lista da empresa outra vez.
+    const paraRenata = email.enviar.mock.calls.find(
+      (c) => c[0].para === RENATA.email,
+    )![0];
+    expect(paraRenata.texto).toContain('Etapa Dossiê');
+    expect(paraRenata.texto).not.toContain('Boas Práticas');
+  });
+
+  it('não manda nada quando ninguém tem pendência', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    comPendencias(prisma, [], 4);
+
+    const resultado = await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(email.enviar).not.toHaveBeenCalled();
+    expect(resultado).toMatchObject({ enviados: 0, semNadaPendente: 4 });
+  });
+
+  // O cron roda no boot, e o boot acontece a cada deploy. Sem esta trava, três
+  // deploys numa terça seriam três e-mails iguais para todo mundo.
+  it('não repete o disparo no mesmo dia civil', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    comPendencias(
+      prisma,
+      [
+        linhaPendente(RENATA, {
+          mensagem: 'Etapa Dossiê',
+          dataReferencia: new Date('2026-08-20T00:00:00.000Z'),
+          criadoEm: HOJE,
+        }),
+      ],
+      1,
+    );
+    prisma.cronExecucao.findUnique.mockResolvedValue({
+      executadoEm: new Date(),
+    });
+
+    const resultado = await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(resultado.jaSaiuHoje).toBe(true);
+    expect(email.enviar).not.toHaveBeenCalled();
+  });
+
+  // Se nada saiu, o dia não pode ficar carimbado: seria trocar o problema por
+  // silêncio até amanhã.
+  it('não carimba o dia quando NENHUM e-mail saiu', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    email.enviar.mockResolvedValue({
+      enviado: false,
+      motivo: 'desligado',
+      erro: 'RESEND_API_KEY não configurada',
+    });
+    comPendencias(
+      prisma,
+      [
+        linhaPendente(RENATA, {
+          mensagem: 'Etapa Dossiê',
+          dataReferencia: new Date('2026-08-20T00:00:00.000Z'),
+          criadoEm: HOJE,
+        }),
+      ],
+      1,
+    );
+
+    await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(prisma.cronExecucao.upsert).not.toHaveBeenCalled();
+  });
+
+  // Falha parcial carimba: quem recebeu não pode receber de novo.
+  it('carimba o dia quando pelo menos um e-mail saiu', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    email.enviar
+      .mockResolvedValueOnce({ enviado: true, id: 'ok' })
+      .mockResolvedValueOnce({
+        enviado: false,
+        motivo: 'falhou',
+        erro: 'provedor fora',
+      });
+    comPendencias(
+      prisma,
+      [
+        linhaPendente(RENATA, {
+          mensagem: 'Etapa A',
+          dataReferencia: new Date('2026-08-20T00:00:00.000Z'),
+          criadoEm: HOJE,
+        }),
+        linhaPendente(MARCOS, {
+          mensagem: 'Etapa B',
+          dataReferencia: new Date('2026-08-20T00:00:00.000Z'),
+          criadoEm: HOJE,
+        }),
+      ],
+      2,
+    );
+
+    const resultado = await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(resultado).toMatchObject({ enviados: 1, falhas: 1 });
+    const arg = prisma.cronExecucao.upsert.mock.calls[0][0] as {
+      where: { nome: string };
+    };
+    expect(arg.where.nome).toBe('resumo-diario-email');
+  });
+
+  it('conta falha de envio como falha, e não como enviado', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    email.enviar.mockResolvedValue({
+      enviado: false,
+      motivo: 'desligado',
+      erro: 'RESEND_API_KEY não configurada',
+    });
+    comPendencias(
+      prisma,
+      [
+        linhaPendente(RENATA, {
+          mensagem: 'Etapa Dossiê',
+          dataReferencia: new Date('2026-08-20T00:00:00.000Z'),
+          criadoEm: HOJE,
+        }),
+      ],
+      1,
+    );
+
+    const resultado = await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(resultado).toMatchObject({ enviados: 0, falhas: 1 });
   });
 });
