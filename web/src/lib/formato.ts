@@ -125,6 +125,23 @@ export function textoPrazo(prazoIso: string | null): string {
   return `Vence em ${dias} dias`;
 }
 
+// Linha de prazo de um alerta de compliance, calculada na hora.
+//
+// Existe porque a mensagem gravada na notificação guarda só o FATO ("Etapa X do
+// projeto Y"). A contagem de dias mora aqui de propósito: no banco ela ficava
+// dentro do texto, era escrita uma vez e o índice único impedia regravar, então
+// um alerta criado com "vence em 9 dias" continuava dizendo 9 uma semana
+// depois. Em 09/08/2026 o dashboard anunciava 9 dias ao lado de uma data que
+// faltavam 4, e a tela do projeto, que sempre calculou na hora, dizia 4.
+//
+// O sino e o painel do dashboard chamam esta função, e não montam o texto cada
+// um do seu jeito: duas cópias da mesma regra é como as duas telas passariam a
+// discordar de novo.
+export function textoPrazoDoAlerta(dataReferencia: string | null): string {
+  if (!dataReferencia) return 'Sem prazo definido';
+  return `${textoPrazo(dataReferencia)} · ${formatarDataCivil(dataReferencia)}`;
+}
+
 export const STATUS_VISITA_LABEL: Record<StatusVisita, string> = {
   AGENDADA: 'Agendada',
   CONFIRMADA: 'Confirmada',

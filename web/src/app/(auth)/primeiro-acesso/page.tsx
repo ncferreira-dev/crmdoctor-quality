@@ -29,6 +29,9 @@ export default function PrimeiroAcessoPage() {
     setCarregando(true);
     try {
       await api.post('/users/resgatar-convite', {
+        // O e-mail entrou aqui em 09/08/2026: o código passou a ser guardado
+        // com hash salgado, e por isso não dá para achar a conta pelo código.
+        email: String(form.get('email')).trim(),
         codigo: String(form.get('codigo')).trim(),
         senha,
       });
@@ -64,6 +67,16 @@ export default function PrimeiroAcessoPage() {
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input
+              id="email"
+              name="email"
+              label="Seu e-mail"
+              type="email"
+              autoComplete="email"
+              placeholder="voce@doctorquality.com.br"
+              required
+              autoFocus
+            />
+            <Input
               id="codigo"
               name="codigo"
               label="Código de acesso"
@@ -71,7 +84,6 @@ export default function PrimeiroAcessoPage() {
               inputMode="numeric"
               className="dado tracking-[0.2em]"
               required
-              autoFocus
             />
             <Input
               id="senha"

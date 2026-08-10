@@ -56,6 +56,14 @@ export interface Cargo {
   atualizadoEm: string;
 }
 
+// O que GET /cargos/atribuiveis devolve: o suficiente para o seletor de cargo
+// do cadastro de membro, e nada mais. A rota completa exige CARGOS_MANAGE, e
+// quem cadastra membro nem sempre gerencia cargo.
+//
+// O nível vem junto porque é com ele que a tela desabilita o cargo fora do
+// alcance de quem está cadastrando.
+export type CargoAtribuivel = Pick<Cargo, 'id' | 'nome' | 'nivel'>;
+
 export interface Usuario {
   id: string;
   nome: string;
@@ -216,12 +224,20 @@ export interface Visita {
   atualizadoEm: string;
 }
 
+// `mensagem` guarda só o fato ("Etapa X do projeto Y"). A contagem de dias NÃO
+// vem da API: ela é calculada na tela a partir de dataReferencia, porque o
+// texto é gravado uma vez no banco e nunca mais muda. Ver textoPrazoDoAlerta.
+//
+// `lida` e `lidaEm` são desta pessoa, não da empresa: vêm da linha em
+// notificacao_destinatarios, e não do campo antigo da notificação.
 export interface Notificacao {
   id: string;
   tipo: string;
   mensagem: string;
   lida: boolean;
+  lidaEm: string | null;
   projetoId: string | null;
+  etapaId: string | null;
   dataReferencia: string | null;
   criadoEm: string;
 }

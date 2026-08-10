@@ -196,19 +196,15 @@ export default function MembrosPage() {
                       {pendenteDeAcesso && <Badge tom="alerta">Acesso pendente</Badge>}
                       {!membro.ativo && <Badge>Inativo</Badge>}
                     </div>
-                    {/* Telefone é contato pessoal e aparecia para qualquer um
-                        que abrisse a tela, inclusive quem só tem USUARIOS_READ
-                        para montar a agenda. Fica com quem gerencia membros e
-                        com o dono do número. E-mail continua visível: é a
-                        identidade de login e o canal de trabalho.
-                        Isto é decisão de tela, não de API: /users devolve o
-                        telefone para quem tem USUARIOS_READ. Fechar de verdade
-                        exige mexer no que a rota retorna por cargo. */}
+                    {/* Telefone é contato pessoal. Quem decide se ele aparece é
+                        a API: GET /users só manda o número para quem tem
+                        USUARIOS_MANAGE e para o dono, e devolve null para o
+                        resto. A tela não repete a regra de propósito, senão
+                        seriam dois lugares para errar. E-mail continua visível:
+                        é a identidade de login e o canal de trabalho. */}
                     <p className="mt-1 truncate text-xs text-ink/55">
                       {membro.email}
-                      {membro.telefone && (podeGerenciar || membro.id === eu?.id)
-                        ? ` · ${membro.telefone}`
-                        : ''}
+                      {membro.telefone ? ` · ${membro.telefone}` : ''}
                       {membro.especialidade ? ` · ${membro.especialidade}` : ''}
                     </p>
                   </div>

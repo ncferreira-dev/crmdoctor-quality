@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useSessaoUsuario } from '../../hooks/useSessao';
-import { Cargo, Competencia, Usuario } from '../../types';
+import { CargoAtribuivel, Competencia, Usuario } from '../../types';
 import {
   ErrosForm,
   focarPrimeiroErro,
@@ -24,7 +24,7 @@ interface MembroFormModalProps {
 
 export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFormModalProps) {
   const editando = Boolean(membro);
-  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [cargos, setCargos] = useState<CargoAtribuivel[]>([]);
   // Nível de quem está logado, para não oferecer cargo que a API vai recusar.
   const meuNivel = useSessaoUsuario()?.cargo.nivel ?? null;
   const [competencias, setCompetencias] = useState<Competencia[]>([]);
@@ -34,21 +34,31 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [erros, setErros] = useState<ErrosForm>({});
-  // O código só existe no instante da criação — é o que se repassa ao membro.
+  // O código só existe no instante da criação: é o que se repassa ao membro.
   const [codigoGerado, setCodigoGerado] = useState<string | null>(null);
 
   useEffect(() => {
     if (!aberto) return;
     // setState só no callback assíncrono (react-hooks/set-state-in-effect):
     // chamar direto no corpo do effect dispara render em cascata.
+    // /cargos/atribuiveis e não /cargos: este formulário precisa de nome e
+    // nível para desenhar o seletor, e não do mapa de permissões da empresa
+    // inteira, que é o que a rota completa devolve. A rota completa passou a
+    // exigir CARGOS_MANAGE em 09/08/2026, e quem cadastra membro nem sempre
+    // gerencia cargo.
     api
-      .get<Cargo[]>('/cargos')
+      .get<CargoAtribuivel[]>('/cargos/atribuiveis')
       .then((lista) => {
         setCargos(lista);
         setCodigoGerado(null);
         setErro(null);
       })
-      .catch(() => setCargos([]));
+      // Lista vazia esconde o motivo: sem cargo no seletor não dá para
+      // cadastrar ninguém, e a pessoa fica olhando um campo vazio sem saber por
+      // quê. Melhor dizer.
+      .catch(() =>
+        setErro('Não foi possível carregar os cargos. Tente de novo.'),
+      );
     api
       .getTodos<Competencia>('/competencias')
       .then(setCompetencias)
@@ -111,7 +121,7 @@ export function MembroFormModal({ aberto, membro, onFechar, onMudou }: MembroFor
     }
   }
 
-  // Tela de código gerado — o passo mais importante do cadastro.
+  // Tela de código gerado, o passo mais importante do cadastro.
   if (codigoGerado) {
     return (
       <Modal aberto={aberto} titulo="Membro cadastrado" onFechar={onFechar}>

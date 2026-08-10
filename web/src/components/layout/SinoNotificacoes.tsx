@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { carregarAlertas, marcarAlertaLido } from '../../lib/alertas';
-import { formatarDataCivil } from '../../lib/formato';
+import { textoPrazoDoAlerta } from '../../lib/formato';
 import { useAlertas } from '../../hooks/useAlertas';
 import { usePermissao } from '../../hooks/useSessao';
 import { IconeSino } from '../ui/icons';
@@ -125,7 +125,7 @@ export function SinoNotificacoes() {
             </div>
           ) : quantidade === 0 ? (
             <p className="px-4 py-6 text-center text-sm leading-relaxed text-ink/45">
-              Nenhum prazo vencendo nos próximos 15 dias.
+              Nenhum prazo de compliance esperando você.
             </p>
           ) : (
             <ul className="max-h-80 overflow-y-auto divide-y divide-ink/10">
@@ -135,7 +135,7 @@ export function SinoNotificacoes() {
                   <div className="mt-1.5 flex items-center justify-between gap-3">
                     <span className="text-[11px] text-ink/45">
                       {alerta.dataReferencia
-                        ? `Vence em ${formatarDataCivil(alerta.dataReferencia)}`
+                        ? textoPrazoDoAlerta(alerta.dataReferencia)
                         : alerta.tipo === 'COMPLIANCE_ETAPA'
                           ? 'Marco do projeto'
                           : 'Prazo do projeto'}
