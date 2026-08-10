@@ -106,6 +106,21 @@ export default function DashboardPage() {
   const marcos = resumo.marcosDaSemana ?? [];
   const totalProjetos = porEstagio.reduce((s, p) => s + p.total, 0);
 
+  // Três blocos escondidos, e não removidos (item 35 do ENTREGA.md).
+  //
+  // "Concentração por empresa" e "Projetos por estágio" são gráficos de 6
+  // projetos, em que cada barra vale 1: com esse volume, a barra não informa
+  // nada que a lista já não diga, e ainda dá ar de relatório a um número que
+  // cabe na cabeça. "Marcos desta semana" é a QUARTA superfície a mostrar o
+  // mesmo prazo, junto do cartão "Marcos vencendo", do painel de alertas e do
+  // sino: repetir o mesmo aviso quatro vezes é como se aprende a ignorar os
+  // quatro.
+  //
+  // A condição é uma constante legível de propósito. Quando houver volume,
+  // trocar para `true` devolve os três blocos como estavam, sem arqueologia no
+  // histórico do git.
+  const MOSTRAR_GRAFICOS_DE_VOLUME = false;
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="titulo-pagina">Dashboard</h1>
@@ -184,21 +199,24 @@ export default function DashboardPage() {
         <PainelAlertas alertas={alertas} onMarcarLida={marcarLida} marcando={marcando} />
       )}
 
-      {/* Rankings: onde estão os projetos e como está a carga do time */}
+      {/* Carga por responsável fica: o item 30 tornou o campo preenchível pela
+          tela, então o número passou a ser mantido por quem usa. */}
       <div className="grid gap-3 lg:grid-cols-2">
-        <BarraRanking
-          titulo="Concentração por empresa"
-          vazio="Nenhum projeto ativo ainda."
-          itens={concentracao.map((c) => ({
-            id: c.empresaId,
-            rotulo: c.empresa,
-            valor: c.projetos,
-            detalhe: podeVerValor
-              ? `${c.projetos} · ${moeda(c.valor)}`
-              : `${c.projetos} ${c.projetos === 1 ? 'projeto' : 'projetos'}`,
-            href: `/empresas/${c.empresaId}`,
-          }))}
-        />
+        {MOSTRAR_GRAFICOS_DE_VOLUME && (
+          <BarraRanking
+            titulo="Concentração por empresa"
+            vazio="Nenhum projeto ativo ainda."
+            itens={concentracao.map((c) => ({
+              id: c.empresaId,
+              rotulo: c.empresa,
+              valor: c.projetos,
+              detalhe: podeVerValor
+                ? `${c.projetos} · ${moeda(c.valor)}`
+                : `${c.projetos} ${c.projetos === 1 ? 'projeto' : 'projetos'}`,
+              href: `/empresas/${c.empresaId}`,
+            }))}
+          />
+        )}
         <BarraRanking
           titulo="Carga por responsável"
           vazio="Nenhum marco atribuído ainda."
@@ -211,6 +229,7 @@ export default function DashboardPage() {
         />
       </div>
 
+      {MOSTRAR_GRAFICOS_DE_VOLUME && (
       <div className="grid gap-3 lg:grid-cols-2">
         {/* Projetos por estágio */}
         <BarraRanking
@@ -255,6 +274,7 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

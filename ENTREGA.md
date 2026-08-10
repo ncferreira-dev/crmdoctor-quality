@@ -1517,7 +1517,23 @@ funcionar é arrumar a casa com o telhado aberto.
 
 ### 35. Esconder três blocos do dashboard
 
-**Bloco:** 6 · **Depende de:** 1, 2, 3, 4 · **Estado:** aberto
+**Bloco:** 6 · **Depende de:** 1, 2, 3, 4 · **Estado:** **feito em 10/08/2026**
+
+> Escondidos atrás de uma constante legível, `MOSTRAR_GRAFICOS_DE_VOLUME`, e
+> não apagados: trocar para `true` devolve os três como estavam, sem
+> arqueologia no histórico do git.
+>
+> O motivo de cada um, escrito no código: "Concentração por empresa" e
+> "Projetos por estágio" são gráficos de 6 projetos, em que cada barra vale 1, e
+> dão ar de relatório a um número que cabe na cabeça. "Marcos desta semana" era
+> a **quarta** superfície a mostrar o mesmo prazo, junto do cartão "Marcos
+> vencendo", do painel de alertas e do sino.
+>
+> **"Carga por responsável" fica**, pela decisão do item 37: o item 30 tornou o
+> campo preenchível pela tela, então o número passou a ser mantido por quem usa.
+>
+> Conferido na tela, como CEO: dos quatro blocos, só "Carga por responsável"
+> aparece.
 
 Concentração por empresa, projetos por estágio e marcos desta semana. Os dois
 primeiros são gráficos de 6 projetos, em que cada barra vale 1. O terceiro é a
@@ -1531,7 +1547,15 @@ segue no repositório atrás de uma condição legível.
 
 ### 36. Esconder Competências do menu
 
-**Bloco:** 6 · **Depende de:** 1, 2, 3, 4 · **Estado:** aberto
+**Bloco:** 6 · **Depende de:** 1, 2, 3, 4 · **Estado:** **feito em 10/08/2026**
+
+> Saiu do menu, e não do sistema. Conferido na tela: o menu passou a ter
+> Dashboard, Empresas, Projetos, Agenda, Minhas tarefas, Membros e Cargos, e
+> `/competencias` digitado no endereço continua respondendo 200.
+>
+> A condição de volta ficou escrita ao lado do item removido, no próprio
+> `Sidebar.tsx`: quando a equipe passar de 10 pessoas, ou no primeiro dia em que
+> alguém precisar perguntar quem sabe fazer o quê.
 
 Produção tem **0 competências cadastradas, 0 vínculos com membro e 0
 especialidades preenchidas**. A tela existe, é bem feita, e está vazia desde que
@@ -1677,14 +1701,14 @@ despercebido.
 | 32 | 5 | Executor de teste no front | | **feito** |
 | 33 | 5 | e2e rodando ou removido | | **feito (removido)** |
 | 34 | 5 | Tour guiado: relatado, não existe | | **feito** |
-| 35 | 6 | Esconder três blocos do dashboard | 1, 2, 3, 4 | aberto |
-| 36 | 6 | Esconder Competências do menu | 1, 2, 3, 4 | aberto |
+| 35 | 6 | Esconder três blocos do dashboard | 1, 2, 3, 4 | **feito** |
+| 36 | 6 | Esconder Competências do menu | 1, 2, 3, 4 | **feito** |
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | **decidido: fica** |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**9 abertos, 30 fechados, 1 esperando o Nícolas.**
+**7 abertos, 32 fechados, 1 esperando o Nícolas.**
 
 ---
 

@@ -12,7 +12,6 @@ import {
   ChevronRight,
   IconeAgenda,
   IconeCargos,
-  IconeCompetencias,
   IconeDashboard,
   IconeEmpresas,
   IconeMembros,
@@ -40,7 +39,13 @@ const NAV: ItemNav[] = [
   { href: '/agenda', label: 'Agenda', icone: <IconeAgenda /> },
   { href: '/tarefas', label: 'Minhas tarefas', icone: <IconeTarefas />, permissao: 'TAREFAS_READ' },
   { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true, permissao: 'USUARIOS_READ' },
-  { href: '/competencias', label: 'Competências', icone: <IconeCompetencias />, permissao: 'COMPETENCIAS_READ' },
+  // Competências saiu do menu em 10/08/2026 (item 36 do ENTREGA.md), e não do
+  // sistema: a tela e a API continuam de pé para quem digitar /competencias.
+  // Produção tinha 0 competências, 0 vínculos com membro e 0 especialidades
+  // preenchidas, e com 5 pessoas quem sabe fazer o quê se sabe de cor. Item de
+  // menu que leva a uma tela sempre vazia ensina que o sistema é vazio.
+  // Volta quando a equipe passar de 10 pessoas, ou no primeiro dia em que
+  // alguém precisar perguntar quem sabe fazer o quê.
   { href: '/cargos', label: 'Cargos', icone: <IconeCargos />, permissao: 'CARGOS_MANAGE' },
 ];
 
@@ -77,7 +82,6 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
   const concedida: Partial<Record<Permissao, boolean>> = {
     CARGOS_MANAGE: usePermissao('CARGOS_MANAGE'),
     USUARIOS_READ: usePermissao('USUARIOS_READ'),
-    COMPETENCIAS_READ: usePermissao('COMPETENCIAS_READ'),
     TAREFAS_READ: usePermissao('TAREFAS_READ'),
   };
   const itensVisiveis = NAV.filter((item) => !item.permissao || concedida[item.permissao]);
