@@ -1805,7 +1805,8 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**6 abertos, 33 fechados, 1 esperando o Nícolas.**
+**5 abertos, 34 fechados, 1 esperando o Nícolas.** Os 5 abertos dependem de
+decisão sua ou do deploy da produção. Não sobrou item de código.
 
 ---
 
