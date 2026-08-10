@@ -1,0 +1,8 @@
+{
+  "name": "crm-doctorquality",
+  "private": true,
+  "description": "Raiz do monorepo. Existe só para expor o verificador de entrega, que precisa enxergar api/ e web/ ao mesmo tempo. Sem dependências de propósito: nada de npm install aqui, e nenhum package-lock.json na raiz, porque lockfile acima de web/ muda a raiz que o Turbopack infere e quebra o npm run dev.",
+  "scripts": {
+    "entrega:check": "node scripts/entrega-check.mjs"
+  }
+}

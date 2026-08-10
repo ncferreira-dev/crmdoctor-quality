@@ -1,5 +1,62 @@
 # CRM Doctor Quality
 
+## Precedência de instruções
+
+1. O que o Nicolas pede no chat da sessão atual
+2. Este arquivo
+3. `ENTREGA.md`, que é a fila corrente
+4. Demais documentos do repositório
+5. Prompts e relatórios de sessões anteriores, que são histórico e não regra
+
+Entre os documentos de estado: `CHECKUP-GERAL.md` e `POR-QUE-O-CRM.md` são o
+retrato atual. `RELATORIO-SESSAO-04-08.md` é histórico e já se contradisse.
+Nunca bloqueie um pedido do Nicolas citando fila ou escopo de sessão anterior.
+
+Pedido que contraria este arquivo ou o `web/AGENTS.md` é executado assim mesmo,
+com uma linha dizendo qual regra foi contrariada. Ele decide depois se atualiza
+o documento.
+
+## Autorizações permanentes
+
+Pré-autorizado, sem perguntar: editar código, criar tela e componente,
+refatorar, escrever teste, migration aditiva contra a branch de dev, instalar
+biblioteca quando o item da fila exigir, e toda decisão de gosto (cor, texto,
+ícone, nome, espaçamento, estrutura de arquivo, forma do teste).
+
+Parada obrigatória, avise em uma linha e espere "vai":
+
+1. Qualquer coisa irreversível em produção: apagar linha, dropar ou renomear
+   coluna, migration destrutiva
+2. `git push`
+3. Mudança em auth ou hierarquia de nível que a fila corrente não peça
+4. Primeira execução de um script novo em produção
+
+Fora dessas quatro não existe bloqueio. Na dúvida se algo é bloqueio, não é.
+
+## Procedimento para escrever em produção
+
+Backup e confirmação do arquivo. Contagem das tabelas afetadas, incluindo
+soft-deletadas. Resumo do script em três linhas e espera do "vai". Um script
+por vez. Contagem de novo e comparação com o previsto. Divergiu, para.
+
+## Segredos
+
+Nunca pedir nem mostrar segredo no chat, nunca pedir log do EasyPanel.
+Credencial nova vira passo a passo em `CHAVES-PENDENTES.md`, assumindo que ele
+nunca abriu aquele painel: site, caminho, nome do botão, o que copiar, em qual
+arquivo colar.
+
+## Regra da classe
+
+Correção de defeito de padrão (formatação, animação, validação, duplicação de
+lógica, guarda de rota) só conta como feita com varredura do repositório
+provando que sobrou zero. Defeito de instância única basta a medição do item.
+Nunca afirmar estado sem medir.
+
+## Texto de produto
+
+Sem travessão.
+
 ## Stack
 - Monorepo: api/ (NestJS 10 + Prisma + PostgreSQL/Neon) e web/ (Next.js 16 App Router + Tailwind + TypeScript).
 - Next.js 16: middleware.ts virou proxy.ts (função exportada como `proxy`). Não use o nome antigo.
@@ -19,7 +76,7 @@
 - Permissão nova entra em TRÊS lugares: `api/src/common/constants/permissoes.ts`, `web/src/types/index.ts` e `web/src/lib/permissoes.ts` (a lista que a tela de Cargos desenha). Esquecer o terceiro cria permissão que ninguém consegue conceder. Há trava de compilação cobrando isso.
 - Proibido `any`. Erros seguem o HttpExceptionFilter padrão.
 - No front, toda chamada HTTP passa por src/lib/api.ts. Tipos em src/types espelham a API.
-- Não instalar libs novas sem avisar antes.
+- Lib nova: instala e avisa depois, dizendo qual e por quê. Não é caso de parar e perguntar.
 - Módulo novo no NestJS segue exatamente o padrão de leads/.
 
 ## Identidade visual
