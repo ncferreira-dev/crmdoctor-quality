@@ -857,7 +857,56 @@ sozinhos.
 
 ### 16. Gaveta do celular: transform no lugar de opacity, e Esc
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026, e o
+diagnóstico da fila estava incompleto**
+
+> **Tirar o `opacity` não bastava, e descobrir isso foi o item.**
+>
+> O fundo da gaveta entrava com `opacity: 0 -> 1`, que é o defeito que a fila
+> descreve. Tirei: o fundo passou a nascer com a cor final, e quem entra
+> deslizando é a gaveta, por transform. Isso fechou a checagem.
+>
+> **Só que a gaveta deslizava de `-100%`, e isso é a MESMA classe de defeito.**
+> Medido em 390px com a aba em segundo plano, que é a condição que já derrubou
+> esta tela duas vezes:
+>
+> | Motor do deslize | Onde a gaveta parou | O que a pessoa via |
+> |---|---|---|
+> | motion, `x: '-100%' -> 0` | `translateX(-130px)` | metade da gaveta fora da tela |
+> | CSS, mesmo `-100%` | `translateX(-256px)` | gaveta **inteira** fora, e o fundo escuro clicável por cima |
+> | CSS, `-16px` (como ficou) | `translateX(-16px)` | 240 dos 256px na tela, gaveta usável |
+>
+> Trocar de motor não resolveu nada, porque o problema nunca foi o motor.
+> **Toda animação segura o estado inicial enquanto não avança**, e ela não
+> avança com a aba em segundo plano. Então o estado inicial precisa ser um
+> estado aceitável. `opacity: 0` não é. `-100%` também não é. `-16px` é, e é a
+> mesma distância que o resto do `globals.css` já usava sem ninguém ter escrito
+> por quê.
+>
+> A regra no `globals.css` foi reescrita com isso: não é "não animar opacity",
+> é "o estado inicial da animação tem que ser um estado em que dá para usar a
+> tela".
+>
+> **É defeito de padrão, e a varredura prova que sobrou zero:** o `KanbanCard`
+> tinha os dois casos, a entrada em `opacity: 0` e o card arrastado em
+> `opacity: 0.4` vindo do `animate`. O primeiro virou só deslocamento; o segundo
+> virou classe estática, então um card preso por animação parada continua opaco
+> em vez de virar um lead meio invisível no funil.
+>
+> **Esc fecha a gaveta**, como já fechava o Modal, e o ouvinte só existe
+> enquanto ela está aberta.
+>
+> Medido na tela, em 390px, com `visibilityState: hidden`:
+>
+> | O que | Resultado |
+> |---|---|
+> | fundo ao abrir | `opacity: 1`, escurece de uma vez |
+> | posição da gaveta | 16px deslocada, 240px visíveis |
+> | Esc | fecha |
+> | toque fora | fecha |
+> | depois de fechar, quem recebe o toque no meio da tela | a grade do dashboard, e não um overlay invisível |
+>
+> Verificador: de 28 para 30 de 40.
 
 `Sidebar.tsx` monta o fundo da gaveta com `initial={{ opacity: 0 }}`, que é
 exatamente o que a regra de `globals.css` proíbe. Medido em 390px com
@@ -1252,7 +1301,7 @@ despercebido.
 | 13 | 3 | Guarda em GET /cargos, mais rota enxuta para o seletor | 12 | **feito** |
 | 14 | 3 | Telefone fechado em GET /users | 13 | **feito** |
 | 15 | 3 | executar-agora exige escrita | 14 | **feito** |
-| 16 | 4 | Gaveta do celular: transform e Esc | | aberto |
+| 16 | 4 | Gaveta do celular: transform e Esc | | **feito** |
 | 17 | 4 | Typecheck da API no mesmo comando do lint | | **feito** |
 | 18 | 4 | datetime-local padronizado | | aberto |
 | 19 | 4 | Content-Type fora dos GET | | aberto |
@@ -1276,7 +1325,7 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 
-**23 abertos, 14 fechados, 1 esperando o Nícolas.**
+**22 abertos, 15 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1298,3 +1347,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 26 | 39 | item 14: telefone sai de /users só para quem gerencia e para o dono, medido com dois tokens e nas duas telas |
 | 10/08/2026 | 27 | 39 | item 28: raiz do Turbopack fixada. O `npm run dev` estava servindo 404 em toda página autenticada desde 08/08 |
 | 10/08/2026 | 28 | 40 | item 3: o aviso diário existe e sai por pessoa, mais 1 checagem nova cobrando o laço entre cron e motor |
+| 10/08/2026 | 30 | 40 | item 16: animação parou de decidir visibilidade, e a gaveta parou de entrar de fora da tela |

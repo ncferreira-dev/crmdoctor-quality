@@ -100,6 +100,30 @@ body {
   }
 }
 
+/* A gaveta do celular entra com um deslocamento CURTO, e a distância é a regra.
+ *
+ * Ela deslizava de `-100%`, ou seja, de fora da tela. Medido em 390px em
+ * 10/08/2026, com a aba em segundo plano: com o motion a gaveta parava em
+ * `translateX(-130px)`, metade fora da tela; trocando para CSS com o mesmo
+ * `-100%`, parava em `-256px`, inteira fora da tela, com o fundo escuro por
+ * cima e clicável. Trocar de motor não resolveu nada, porque o problema nunca
+ * foi o motor.
+ *
+ * É a mesma classe do defeito de `opacity`: uma animação que decide se o
+ * elemento está na tela. Toda animação segura o estado inicial enquanto não
+ * avança, e ela não avança com a aba em segundo plano. Por isso o estado
+ * inicial precisa ser um estado ACEITÁVEL: 16px de deslocamento, como o resto
+ * deste arquivo, e não a largura inteira da gaveta. */
+@keyframes gaveta-entra {
+  from {
+    transform: translateX(-16px);
+  }
+}
+
+.gaveta-entra {
+  animation: gaveta-entra 200ms ease-out;
+}
+
 .overlay-painel {
   animation: surgir-painel 180ms ease-out;
 }
@@ -123,6 +147,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .overlay-painel,
   .surgir,
+  .gaveta-entra,
   .surgir-cascata > * {
     animation: none;
   }

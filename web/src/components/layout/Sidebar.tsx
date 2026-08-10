@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
@@ -189,6 +189,19 @@ interface SidebarProps {
 // Desktop: coluna fixa. Mobile: gaveta — 224px fixos numa tela de 375px
 // comeriam 60% do espaço útil.
 export function Sidebar({ aberta, onFechar }: SidebarProps) {
+  // Esc fecha a gaveta, como já fechava o Modal. Não é só teclado de mesa: no
+  // celular a gaveta cobre a tela inteira, e quem chega nela por engano precisa
+  // de mais de uma saída. O ouvinte só existe enquanto ela está aberta, senão
+  // seria um Esc global capturado por um menu que nem está na tela.
+  useEffect(() => {
+    if (!aberta) return;
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') onFechar();
+    };
+    document.addEventListener('keydown', aoTeclar);
+    return () => document.removeEventListener('keydown', aoTeclar);
+  }, [aberta, onFechar]);
+
   return (
     <>
       <aside className="hidden h-screen w-60 shrink-0 flex-col bg-night lg:flex">
@@ -198,25 +211,31 @@ export function Sidebar({ aberta, onFechar }: SidebarProps) {
       {/* Sem AnimatePresence, pelo mesmo motivo documentado em ui/Modal.tsx: a
           saída animava até o fim e o nó ficava no DOM com opacity 0 e
           pointer-events auto. No celular isso matava a tela inteira depois da
-          primeira vez que o menu abrisse, e o consultor usa isto em campo. */}
+          primeira vez que o menu abrisse, e o consultor usa isto em campo.
+
+          O fundo NÃO tem mais entrada em opacity. Ele já nasce com a cor final:
+          quem entra deslizando é a gaveta, por transform. O fade custava 150ms
+          de risco pelo qual esta base já pagou duas vezes, e o pior caso dele é
+          exatamente o defeito de 04/08: um retângulo invisível cobrindo a tela
+          inteira e comendo todo toque. Um scrim que aparece de uma vez é o
+          preço barato de nunca mais ter isso. */}
       {aberta && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+        <div
           onClick={onFechar}
           className="fixed inset-0 z-50 bg-night/50 lg:hidden"
         >
-          <motion.aside
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+          {/* O deslize é CSS (.gaveta-entra), não motion. Medido em 390px com a
+              aba em segundo plano: com o motion a gaveta parava em
+              translateX(-130px) e ficava assim, metade fora da tela, porque o
+              motion escreve o transform quadro a quadro e o laço não avança.
+              Por CSS o pior caso é não animar, e aí ela aparece inteira. */}
+          <aside
             onClick={(e) => e.stopPropagation()}
-            className="h-full w-64 bg-night"
+            className="gaveta-entra h-full w-64 bg-night"
           >
             <ConteudoMenu aoNavegar={onFechar} />
-          </motion.aside>
-        </motion.div>
+          </aside>
+        </div>
       )}
     </>
   );
