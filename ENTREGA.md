@@ -974,7 +974,38 @@ continua sendo o resultado depois do conserto e não o estado do código.
 
 ### 18. datetime-local padronizado
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> Nasceu `CampoDataHora`, no mesmo arquivo do `CampoData` e pelo mesmo motivo:
+> `datetime-local` é desenhado pelo navegador, dentro do shadow DOM, e num Mac
+> em português ele escreve a data por extenso enquanto o resto do CRM escreve
+> 16/08/2026. Era o último campo nativo do sistema, e estava na tela mais usada
+> em campo.
+>
+> **São dois campos e não um**: quem marca visita sabe o dia antes de saber a
+> hora, e digitar "16/08/2026" e "14:30" em campos separados é mais rápido do
+> que caçar cursor dentro de um campo único. Cada um com máscara própria, e o
+> formulário continua lendo `aaaa-mm-ddThh:mm` num campo oculto, então a agenda
+> não mudou uma linha de como envia os dados.
+>
+> **A sincronia com o valor de fora é feita durante a renderização, não em
+> effect.** A agenda empurra o fim quando o início muda ("uma hora depois"), e a
+> regra `react-hooks/set-state-in-effect` proíbe o caminho preguiçoso. A
+> comparação é contra o que o texto atual representa, e não contra o valor
+> anterior: enquanto a pessoa digita "16/0" o campo emite vazio, e sem essa
+> guarda o vazio voltaria e apagaria o que ela escreveu.
+>
+> **Um defeito de largura apareceu e foi consertado no mesmo item:** `w-full` e
+> `w-24` têm a mesma especificidade, então quem vence é a ordem da folha de
+> estilo, não a ordem da string. O campo de hora ganhava `w-full` e espremia o
+> de data até sobrar só o ícone do calendário. Agora cada input declara a
+> própria largura, uma vez.
+>
+> Medido na tela: digitando `16082026` e `1430` no início, o campo mostra
+> `16/08/2026` e `14:30`, o oculto vale `2026-08-16T14:30`, e o fim é empurrado
+> sozinho para `15:30`. Digitando só `160`, o campo mostra `16/0` e o oculto
+> fica vazio, sem apagar o que foi digitado. `datetime-local` no `web/src`:
+> zero.
 
 O `CampoData` unificou todo campo de data, menos o modal de visita, que usa dois
 `datetime-local` nativos. É o navegador desenhando a data, e num Mac em
@@ -1032,7 +1063,16 @@ Administrador.
 
 ### 23. Vocabulário do botão Evento
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> O botão virou "Nova visita", igual ao título do formulário que ele abre.
+>
+> O argumento de quem escreveu "Evento" está registrado no código: a agenda
+> mostra prazo de projeto junto com visita, então o botão nomearia o que a tela
+> comporta. Só que **o nome do botão promete o que ele CRIA**, e ele só cria
+> visita: prazo de compliance nasce no projeto, não na agenda. Prometia uma
+> coisa e entregava outra, e foi anotado em duas sessões diferentes sem nunca
+> ser resolvido.
 
 O botão do topo da Agenda diz "Evento" e abre um formulário chamado "Nova
 visita". Anotado em duas sessões diferentes e nunca resolvido. A recomendação
@@ -1303,12 +1343,12 @@ despercebido.
 | 15 | 3 | executar-agora exige escrita | 14 | **feito** |
 | 16 | 4 | Gaveta do celular: transform e Esc | | **feito** |
 | 17 | 4 | Typecheck da API no mesmo comando do lint | | **feito** |
-| 18 | 4 | datetime-local padronizado | | aberto |
+| 18 | 4 | datetime-local padronizado | | **feito** |
 | 19 | 4 | Content-Type fora dos GET | | aberto |
 | 20 | 4 | 401, 403 e 500 distintos e sem jargão | | aberto |
 | 21 | 4 | Alvos de toque de 36px | | aberto |
 | 22 | 4 | Membros não oferece o que dá 403 | | aberto |
-| 23 | 4 | Vocabulário do botão Evento | | aberto |
+| 23 | 4 | Vocabulário do botão Evento | | **feito** |
 | 24 | 4 | Dia civil no front | 32 | aberto |
 | 25 | 4 | Formatação de moeda centralizada | | aberto |
 | 26 | 4 | forbidNonWhitelisted | 12 | aberto |
@@ -1325,7 +1365,7 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 
-**22 abertos, 15 fechados, 1 esperando o Nícolas.**
+**20 abertos, 17 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1348,3 +1388,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 27 | 39 | item 28: raiz do Turbopack fixada. O `npm run dev` estava servindo 404 em toda página autenticada desde 08/08 |
 | 10/08/2026 | 28 | 40 | item 3: o aviso diário existe e sai por pessoa, mais 1 checagem nova cobrando o laço entre cron e motor |
 | 10/08/2026 | 30 | 40 | item 16: animação parou de decidir visibilidade, e a gaveta parou de entrar de fora da tela |
+| 10/08/2026 | 31 | 40 | itens 18 e 23: nasce o CampoDataHora e some o último campo de data nativo, e o botão da agenda passa a dizer o que cria |

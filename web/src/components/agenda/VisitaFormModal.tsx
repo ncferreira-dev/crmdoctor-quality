@@ -18,6 +18,7 @@ import {
   validarObrigatorios,
 } from '../../lib/formulario';
 import { Modal } from '../ui/Modal';
+import { CampoDataHora } from '../ui/CampoData';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
@@ -277,22 +278,24 @@ export function VisitaFormModal({
         </Select>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
+          {/* Era `datetime-local` nativo nos dois, o último lugar do sistema
+              com campo de data desenhado pelo navegador, e na tela mais usada
+              em campo. Num Mac em português ele escrevia a data por extenso
+              enquanto o resto do CRM escreve 16/08/2026. */}
+          <CampoDataHora
             id="inicio"
             name="inicio"
             label="Início"
-            type="datetime-local"
             value={inicio}
-            onChange={(evento) => trocarInicio(evento.target.value)}
+            onChange={trocarInicio}
             erro={erros.inicio}
           />
-          <Input
+          <CampoDataHora
             id="fim"
             name="fim"
             label="Fim"
-            type="datetime-local"
             value={fim}
-            onChange={(evento) => setFim(evento.target.value)}
+            onChange={setFim}
             erro={erros.fim}
           />
         </div>

@@ -276,11 +276,15 @@ export function AgendaCalendar() {
             ))}
           </div>
           {podeEditar && (
-            // "Evento" e não "Nova visita": a agenda passou a mostrar prazo de
-            // projeto junto com visita, e o botão nomeia o que a tela comporta.
+            // "Nova visita", e não "Evento". O botão dizia Evento porque a
+            // agenda mostra prazo de projeto junto com visita, mas o nome do
+            // botão promete o que ele CRIA, e ele só cria visita: prazo nasce
+            // no projeto, não aqui. O formulário que ele abre já se chamava
+            // "Nova visita", então o botão prometia uma coisa e entregava
+            // outra. Anotado em duas sessões e nunca resolvido até 10/08/2026.
             <Button onClick={() => abrirNovo()}>
               <Plus />
-              Evento
+              Nova visita
             </Button>
           )}
         </div>
