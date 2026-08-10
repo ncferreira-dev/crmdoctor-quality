@@ -1289,7 +1289,37 @@ diferente do seu próprio `trim()`.
 
 ### 30. Responsável do marco preenchível em tela
 
-**Bloco:** 5 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 5 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> O campo existia no banco e no DTO desde sempre, e **nenhuma tela o
+> preenchia**: os 8 responsáveis de produção tinham sido gravados por script.
+>
+> Agora ele está em dois lugares: no formulário de novo marco e na própria linha
+> do marco, num seletor compacto ao lado do status. Trocar o dono não exige
+> abrir formulário, porque é o campo que decide para quem o alerta de prazo vai.
+>
+> **A lista é a equipe do projeto, e isso é decisão.** Escolher qualquer pessoa
+> da empresa exigiria `USUARIOS_READ`, que quem toca projeto nem sempre tem. É
+> também a mesma escada da regra de destinatário: responsável do marco, senão a
+> equipe.
+>
+> **Um defeito apareceu na primeira medição e foi consertado junto:** o marco
+> "Mapeamento térmico" tinha dona no banco (Juliana) e a tela dizia "Sem
+> responsável", porque ela não está na equipe do projeto e o `value` do seletor
+> não casava com nenhuma opção. O navegador caía na primeira, e salvar qualquer
+> outra coisa na linha teria apagado a dona de verdade. Quem está fora da equipe
+> mas é o dono atual agora aparece como opção, marcado "(fora da equipe)".
+>
+> **Medido de ponta a ponta, na tela:**
+>
+> | Passo | Resultado |
+> |---|---|
+> | criar marco pela tela com Diego escolhido | gravado com responsável Diego |
+> | dashboard, "Carga por responsável" | Diego passou de 1 para 2 marcos abertos |
+> | excluir o marco de teste | Diego voltou para 1 |
+>
+> O marco de teste foi apagado. O banco local voltou ao estado anterior,
+> inclusive a dona original do "Mapeamento térmico".
 
 `EtapaProjeto.responsavelId` existe no banco e no DTO, e **nenhuma tela permite
 preenchê-lo**. Os 8 responsáveis que existem em produção foram gravados por
@@ -1301,7 +1331,23 @@ o nome aparecer na carga por responsável.
 
 ### 31. Estado vazio com ação no bloco Equipe
 
-**Bloco:** 5 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 5 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> O bloco aparece mesmo vazio, com a frase e o botão "Definir equipe".
+>
+> Escondido, projeto sem equipe parecia projeto sem o campo, e o único jeito de
+> descobrir que dava para preencher era abrir a edição por acaso. Pior: **equipe
+> vazia é justamente o estado que precisa ser visto**, porque é ele que faz o
+> alerta de prazo cair no último recurso e ir para todo mundo que enxerga
+> projetos. O texto do vazio diz isso, em vez de só dizer "nenhum registro".
+>
+> Conferido na tela, no projeto "Adequação BPF linha de sólidos", que não tem
+> equipe: o bloco aparece com a frase e o botão.
+>
+> A checagem do verificador foi reescrita junto. Ela caçava o texto exato do
+> `&&` que escondia o bloco, e passaria a acusar ou a perdoar por causa de uma
+> refatoração de nome de variável. Agora mede a regra: existe a ação de definir
+> equipe, e o bloco não está inteiro atrás de uma condição de tamanho.
 
 O bloco Equipe da tela do projeto some por completo quando não há ninguém, e
 some junto o caminho para atribuir. É o mesmo defeito que já foi corrigido no
@@ -1393,7 +1439,18 @@ continua respondendo para quem digitar o endereço.
 
 ### 37. Carga por responsável: decidido pelo item 30
 
-**Bloco:** 6 · **Depende de:** 30 e 35 · **Estado:** aberto
+**Bloco:** 6 · **Depende de:** 30 e 35 · **Estado:** **decidido em 10/08/2026:
+FICA**
+
+> O item 30 foi feito, então a condição registrada aqui se cumpriu: o dado passa
+> a ser mantido por quem usa, e o gráfico deixa de contar um campo que nenhuma
+> tela preenche.
+>
+> **Conferido de onde o número sai:** `cargaPorConsultor` agrupa
+> `EtapaProjeto` por `responsavelId`, com `status != CONCLUIDA`. É exatamente o
+> campo que o item 30 tornou preenchível. Medido na mesma sessão: criar um marco
+> pela tela com responsável escolhido moveu a barra da pessoa no dashboard, e
+> excluir o marco moveu de volta.
 
 **Fica** se o item 30 estiver feito, porque aí o dado passa a ser mantido por
 quem usa. **Sai** se o item 30 não tiver sido feito, porque um gráfico que conta
@@ -1413,6 +1470,40 @@ o documenta como pendência.
 produção tem 0 leads. Registrado aqui, sem trabalho agendado. O verificador
 continua acusando de propósito, para o dia em que Leads voltar isso não passar
 despercebido.
+
+---
+
+### 39. Include de relação com soft delete devolvia linha apagada
+
+**Bloco:** 2 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> **Item que nasceu de uma medição, e não de uma revisão de código.** Fazendo o
+> item 30, excluí pela tela o marco de teste e ele continuou aparecendo na tela
+> do projeto. O `DELETE` funcionou: a linha ficou com `excluidoEm` preenchido.
+> Quem não filtrava era a leitura.
+>
+> **A causa vale guardar:** a extensão do Prisma que implementa o soft delete
+> injeta `excluidoEm: null` na consulta DE CIMA. O que vem por `include` passa
+> intocado, e `include: { interacoes: true }` não tem onde filtrar nada. Quem
+> escreveu a extensão não errou; o que faltava era saber que ela não alcança
+> relação incluída.
+>
+> **Varredura, porque é defeito de padrão:** quatro pontos, três serviços.
+>
+> | Onde | Relação | O que aparecia |
+> |---|---|---|
+> | `projetos.service` (findOne) | `etapas` | marco excluído na tela do projeto |
+> | `projetos.service` (findOne) | `interacoes` | contato excluído no histórico |
+> | `leads.service` (findOne) | `interacoes` | idem, na tela do lead |
+> | `users.service` (4 consultas) | `competencias` | competência excluída colada no membro |
+>
+> Medido antes e depois no mesmo marco: antes o `GET /projetos/:id` devolvia
+> duas etapas, uma delas com `excluidoEm` preenchido; depois devolve uma.
+>
+> Checagem nova no verificador, a de número 41: relação com soft delete incluída
+> como `true` não passa. Ela pega o defeito na forma em que ele é impossível de
+> consertar (`relacao: true` não tem onde pôr filtro), e não numa string
+> específica.
 
 ---
 
@@ -1449,17 +1540,18 @@ despercebido.
 | 27 | 4 | CNPJ com máscara, dígito e unicidade | | **feito** |
 | 28 | 4 | turbopack.root fixado | | **feito** |
 | 29 | 4 | Nomes com espaço limpos **(parada)** | 6 | aberto |
-| 30 | 5 | Responsável do marco preenchível | | aberto |
-| 31 | 5 | Estado vazio com ação no bloco Equipe | | aberto |
+| 30 | 5 | Responsável do marco preenchível | | **feito** |
+| 31 | 5 | Estado vazio com ação no bloco Equipe | | **feito** |
 | 32 | 5 | Executor de teste no front | | aberto |
 | 33 | 5 | e2e rodando ou removido | | aberto |
 | 34 | 5 | Tour guiado: relatado, não existe | | **feito** |
 | 35 | 6 | Esconder três blocos do dashboard | 1, 2, 3, 4 | aberto |
 | 36 | 6 | Esconder Competências do menu | 1, 2, 3, 4 | aberto |
-| 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
+| 37 | 6 | Carga por responsável: decidir | 30, 35 | **decidido: fica** |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
+| 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 
-**16 abertos, 21 fechados, 1 esperando o Nícolas.**
+**14 abertos, 24 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1485,3 +1577,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 31 | 40 | itens 18 e 23: nasce o CampoDataHora e some o último campo de data nativo, e o botão da agenda passa a dizer o que cria |
 | 10/08/2026 | 33 | 40 | itens 19 e 25: cabeçalho só quando há corpo, preflight com cache de 2h, e moeda num lugar só |
 | 10/08/2026 | 35 | 40 | itens 26 e 27: campo fora do DTO vira 400, e CNPJ passa a ter dígito verificador, máscara e conflito tratado |
+| 10/08/2026 | 38 | 41 | itens 30, 31 e 39: marco ganha dono pela tela, bloco Equipe aparece vazio, e `include` para de devolver linha apagada (1 checagem nova) |

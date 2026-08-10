@@ -490,6 +490,19 @@ registrar(
   sidebarFechaComEsc ? 'trata Esc' : 'não trata Esc',
 );
 
+// A extensão do Prisma filtra soft delete na consulta DE CIMA, e não no que vem
+// por `include`. Uma relação incluída com `true` não tem como filtrar nada:
+// linha apagada volta junto. Medido em 10/08/2026, fazendo o item 30: um marco
+// excluído pela tela continuava aparecendo na tela do projeto.
+deveVoltarVazio({
+  nome: 'include de relação com soft delete não volta linha apagada',
+  padrao:
+    /\b(etapas|interacoes|competencias|tarefas|visitas|tickets|projetos|leads)\s*:\s*true\b/,
+  arquivos: arquivosApi,
+  procurou:
+    'relação com soft delete incluída como `true` em api/src (só `where: { excluidoEm: null }` filtra)',
+});
+
 // ===========================================================================
 titulo('5. Pela metade (Bloco 5)');
 // ===========================================================================
@@ -505,12 +518,23 @@ registrar(
     : 'o campo existe no banco e no DTO, e nenhuma tela permite preenchê-lo',
 );
 
+// Procura a REGRA e não o formato, pelo mesmo motivo do telefone e do CNPJ: a
+// primeira versão desta checagem caçava o texto exato do `&&` que escondia o
+// bloco, e passaria a acusar (ou a perdoar) por causa de uma refatoração de
+// nome de variável. O que o item pede é que o bloco apareça vazio E ofereça a
+// saída, então é isso que se mede: existe a ação de definir equipe, e o bloco
+// não está inteiro atrás de uma condição de tamanho.
 const projetoDetalhe = ler(join(RAIZ, 'web/src/app/(app)/projetos/[id]/page.tsx'));
-const equipeSomeVazia = /\(projeto\.equipe\?\.length \?\? 0\) > 0 &&/.test(projetoDetalhe);
+const temAcaoDeEquipe = /Definir equipe/.test(projetoDetalhe);
+const equipeSomeVazia =
+  !temAcaoDeEquipe ||
+  /\{\s*\(?\s*(projeto\.equipe\?\.length \?\? 0|naEquipe)\s*\)?\s*>\s*0\s*&&\s*\(\s*\n\s*<div className="rounded-card/.test(
+    projetoDetalhe,
+  );
 registrar(
   'bloco Equipe aparece mesmo vazio, com ação',
   !equipeSomeVazia,
-  '(projeto.equipe?.length ?? 0) > 0 && em projetos/[id]/page.tsx',
+  'a ação "Definir equipe" na tela do projeto, e o bloco fora de uma condição de tamanho',
   equipeSomeVazia
     ? 'o bloco some quando não há ninguém, e some junto o caminho para atribuir'
     : 'bloco sempre visível',

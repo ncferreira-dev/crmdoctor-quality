@@ -128,7 +128,9 @@ export interface EtapaProjeto {
   nome: string;
   ordem: number;
   responsavelId: string | null;
-  responsavel?: Usuario;
+  // Só id e nome: é o que a API manda junto do marco, e é tudo que a tela
+  // precisa para dizer de quem ele é.
+  responsavel?: { id: string; nome: string } | null;
   prazo: string | null;
   status: StatusEtapa;
   concluidaEm: string | null;

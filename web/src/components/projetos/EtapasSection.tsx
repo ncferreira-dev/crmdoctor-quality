@@ -17,14 +17,35 @@ const STATUS = Object.keys(STATUS_ETAPA_LABEL) as StatusEtapa[];
 interface EtapasSectionProps {
   projetoId: string;
   etapas: EtapaProjeto[];
+  // A equipe do projeto, que é de onde sai o responsável do marco. Vem de fora
+  // porque quem já carregou o projeto tem a lista, e porque responsável de
+  // marco tem que ser gente que está no projeto: escolher qualquer pessoa da
+  // empresa exigiria USUARIOS_READ, que quem toca projeto nem sempre tem.
+  equipe: { id: string; nome: string }[];
   onMudou: () => void;
 }
 
-export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps) {
+export function EtapasSection({ projetoId, etapas, equipe, onMudou }: EtapasSectionProps) {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const podeEditar = usePermissao('PROJETOS_WRITE');
+
+  // Quem pode aparecer como responsável DESTE marco: a equipe do projeto, mais
+  // o dono atual quando ele já não está mais nela.
+  //
+  // Sem a segunda parte, o `value` do select não casava com nenhuma opção e o
+  // navegador caía na primeira, "Sem responsável". Medido: o marco "Mapeamento
+  // térmico" tinha dona no banco e a tela dizia que não tinha, e salvar
+  // qualquer outra coisa na linha teria apagado a dona de verdade.
+  function opcoesDe(etapa: EtapaProjeto) {
+    const naEquipe = equipe.some((pessoa) => pessoa.id === etapa.responsavelId);
+    if (naEquipe || !etapa.responsavel) return equipe;
+    return [
+      ...equipe,
+      { id: etapa.responsavel.id, nome: `${etapa.responsavel.nome} (fora da equipe)` },
+    ];
+  }
 
   const concluidas = etapas.filter((e) => e.status === 'CONCLUIDA').length;
   const progresso = etapas.length === 0 ? 0 : Math.round((concluidas / etapas.length) * 100);
@@ -41,6 +62,7 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
         nome: String(form.get('nome')),
         // Próxima ordem livre: etapas são uma sequência, não um conjunto.
         ordem: etapas.length + 1,
+        responsavelId: String(form.get('responsavelId')) || undefined,
         prazo: prazo ? `${prazo}T12:00:00.000Z` : undefined,
       });
       setModalAberto(false);
@@ -59,6 +81,23 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
       onMudou();
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível mudar o status');
+    }
+  }
+
+  // Trocar o dono do marco na própria linha, sem abrir formulário. É o campo
+  // que decide para quem o alerta de prazo vai: sem responsável, o aviso cai
+  // para a equipe inteira do projeto.
+  async function mudarResponsavel(etapa: EtapaProjeto, responsavelId: string) {
+    setErro(null);
+    try {
+      await api.patch(`/etapas/${etapa.id}`, {
+        // null e não undefined: é assim que se TIRA o responsável. undefined
+        // significaria "não mexi neste campo" e o dono antigo continuaria lá.
+        responsavelId: responsavelId || null,
+      });
+      onMudou();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Não foi possível mudar o responsável');
     }
   }
 
@@ -133,6 +172,11 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
                   >
                     {etapa.nome}
                   </p>
+                  {/* Quem responde pelo marco. Sem isto, o alerta de prazo cai
+                      para a equipe inteira e ninguém se sente cobrado. */}
+                  <p className="mt-0.5 truncate text-[11px] text-ink/45">
+                    {etapa.responsavel?.nome ?? 'Sem responsável'}
+                  </p>
                   {/* Prazo vencido de etapa concluída não é problema: só mostra
                       o selo de urgência no que ainda está aberto. */}
                   {etapa.status !== 'CONCLUIDA' && etapa.prazo && (
@@ -146,6 +190,22 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
               <div className="flex shrink-0 items-center gap-2">
                 {podeEditar ? (
                   <>
+                    <Select
+                      tamanho="compacto"
+                      value={etapa.responsavelId ?? ''}
+                      onChange={(e) => mudarResponsavel(etapa, e.target.value)}
+                      disabled={opcoesDe(etapa).length === 0}
+                      aria-label={`Responsável por ${etapa.nome}`}
+                    >
+                      <option value="">
+                        {opcoesDe(etapa).length === 0 ? 'Sem equipe' : 'Sem responsável'}
+                      </option>
+                      {opcoesDe(etapa).map((pessoa) => (
+                        <option key={pessoa.id} value={pessoa.id}>
+                          {pessoa.nome}
+                        </option>
+                      ))}
+                    </Select>
                     <Select
                       tamanho="compacto"
                       value={etapa.status}
@@ -196,6 +256,24 @@ export function EtapasSection({ projetoId, etapas, onMudou }: EtapasSectionProps
             required
             autoFocus
           />
+          <Select
+            id="responsavelId"
+            name="responsavelId"
+            label="Responsável"
+            disabled={equipe.length === 0}
+            ajuda={
+              equipe.length === 0
+                ? 'Este projeto ainda não tem equipe. Adicione alguém ao projeto para poder definir um responsável.'
+                : 'Sem responsável, o alerta de prazo vai para a equipe inteira.'
+            }
+          >
+            <option value="">Sem responsável</option>
+            {equipe.map((pessoa) => (
+              <option key={pessoa.id} value={pessoa.id}>
+                {pessoa.nome}
+              </option>
+            ))}
+          </Select>
           <CampoData id="prazo" name="prazo" label="Prazo" />
           <p className="text-[11px] text-ink/45">
             Marcos com prazo entram no alerta automático quando faltarem 15 dias.

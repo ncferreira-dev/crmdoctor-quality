@@ -71,6 +71,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
   }
 
   const proximo = proximoEstagio(projeto.estagio);
+  const naEquipe = projeto.equipe?.length ?? 0;
   // Com centavos: a ficha do contrato existe para dar o número exato.
   const valor = projeto.valor
     ? formatarMoeda(Number(projeto.valor), { comCentavos: true })
@@ -214,17 +215,36 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
 
       {/* Quem toca o projeto. Uma pessoa é responsável; duas ou mais são a
           equipe, e o título muda junto para a palavra não mentir. */}
-      {(projeto.equipe?.length ?? 0) > 0 && (
-        <div className="rounded-card border border-ink/10 bg-white p-5 shadow-card">
-          <div className="mb-3 flex items-baseline justify-between gap-3">
-            <p className="text-xs font-light uppercase tracking-wide text-ink/60">
-              {(projeto.equipe?.length ?? 0) > 1 ? 'Equipe' : 'Responsável'}
-            </p>
+      {/* O bloco aparece MESMO VAZIO, e essa é a decisão do item 31.
+          Escondido, projeto sem equipe parecia projeto sem o campo, e o único
+          jeito de descobrir que dava para preencher era abrir a edição por
+          acaso. Pior: equipe vazia é o que faz o alerta de prazo cair no último
+          recurso e ir para todo mundo, então o vazio é justamente o estado que
+          precisa ser visto. */}
+      <div className="rounded-card border border-ink/10 bg-white p-5 shadow-card">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <p className="text-xs font-light uppercase tracking-wide text-ink/60">
+            {naEquipe > 1 ? 'Equipe' : 'Responsável'}
+          </p>
+          {naEquipe > 0 && (
             <span className="dado text-xs text-ink/45">
-              {projeto.equipe?.length}{' '}
-              {(projeto.equipe?.length ?? 0) > 1 ? 'pessoas' : 'pessoa'}
+              {naEquipe} {naEquipe > 1 ? 'pessoas' : 'pessoa'}
             </span>
+          )}
+        </div>
+        {naEquipe === 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-ink/45">
+              Ninguém neste projeto ainda. Sem equipe, o alerta de prazo é
+              enviado para todo mundo que enxerga projetos.
+            </p>
+            {podeEditar && (
+              <Button variante="secondary" onClick={() => setEditando(true)}>
+                Definir equipe
+              </Button>
+            )}
           </div>
+        ) : (
           <div className="flex flex-wrap gap-2">
             {projeto.equipe?.map((pessoa) => (
               <span
@@ -236,10 +256,15 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
               </span>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <EtapasSection projetoId={id} etapas={projeto.etapas ?? []} onMudou={carregar} />
+      <EtapasSection
+        projetoId={id}
+        etapas={projeto.etapas ?? []}
+        equipe={projeto.equipe ?? []}
+        onMudou={carregar}
+      />
 
       {/* Histórico deste projeto, separado do da empresa: quando o prazo
           aperta, a conversa que interessa é a do projeto. */}

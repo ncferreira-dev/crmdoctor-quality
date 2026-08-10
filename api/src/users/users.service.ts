@@ -15,6 +15,15 @@ import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { AuthUser } from '../common/types/auth-user';
 import { exigirNivelMenor } from '../common/rbac/exigir-nivel-menor';
 
+// Competência tem soft delete, e a extensão do Prisma filtra a consulta de
+// cima, não o que vem por `include`. Sem o `where` aqui, uma competência
+// apagada continuaria colada no cadastro de quem a tinha. Um lugar só, porque
+// são quatro consultas com a mesma necessidade.
+const COM_CARGO_E_COMPETENCIAS = {
+  cargo: true,
+  competencias: { where: { excluidoEm: null } },
+} as const;
+
 // Código de 8 dígitos legível por telefone/WhatsApp. randomInt é do crypto:
 // Math.random seria previsível e isso aqui dá acesso a uma conta.
 function gerarCodigoConvite(): string {
@@ -66,7 +75,7 @@ export class UsersService {
   private async buscarComCargoOuFalhar(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { cargo: true, competencias: true },
+      include: COM_CARGO_E_COMPETENCIAS,
     });
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
@@ -84,7 +93,7 @@ export class UsersService {
 
   async findAll(quemPede: AuthUser) {
     const users = await this.prisma.user.findMany({
-      include: { cargo: true, competencias: true },
+      include: COM_CARGO_E_COMPETENCIAS,
       orderBy: { nome: 'asc' },
     });
     return users.map((u) => this.semSegredos(u, quemPede));
@@ -128,7 +137,7 @@ export class UsersService {
           ? { connect: dto.competenciaIds.map((id) => ({ id })) }
           : undefined,
       },
-      include: { cargo: true, competencias: true },
+      include: COM_CARGO_E_COMPETENCIAS,
     });
 
     // O código volta UMA vez, na resposta da criação: é o que quem cadastrou
@@ -286,7 +295,7 @@ export class UsersService {
             }
           : undefined,
       },
-      include: { cargo: true, competencias: true },
+      include: COM_CARGO_E_COMPETENCIAS,
     });
 
     return this.semSegredos(user, requestUser);

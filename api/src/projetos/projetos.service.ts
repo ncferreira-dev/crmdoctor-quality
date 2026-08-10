@@ -71,8 +71,19 @@ export class ProjetosService {
       where: { id },
       include: {
         empresa: true,
-        interacoes: true,
-        etapas: { orderBy: { ordem: 'asc' } },
+        // `where: { excluidoEm: null }` em toda relação que tem soft delete, e
+        // isto NÃO é redundante: a extensão do Prisma filtra a consulta de
+        // cima, e não o que vem por `include`. Medido em 10/08/2026: um marco
+        // apagado pela tela continuava aparecendo na tela do projeto.
+        interacoes: { where: { excluidoEm: null } },
+        // O responsável vem junto porque a tela do projeto mostra o nome, e
+        // sem isto ela teria só o id: um marco com dono viraria "sem dono" na
+        // leitura, e é justamente esse campo que alimenta a carga por pessoa.
+        etapas: {
+          where: { excluidoEm: null },
+          orderBy: { ordem: 'asc' },
+          include: { responsavel: { select: { id: true, nome: true } } },
+        },
         equipe: EQUIPE_ENXUTA,
       },
     });

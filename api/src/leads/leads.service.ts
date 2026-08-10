@@ -45,7 +45,9 @@ export class LeadsService {
   async findOne(id: string) {
     const lead = await this.prisma.lead.findUnique({
       where: { id },
-      include: { interacoes: true },
+      // Relação com soft delete precisa do filtro aqui: a extensão do Prisma
+      // limpa a consulta de cima, e não o que vem por include.
+      include: { interacoes: { where: { excluidoEm: null } } },
     });
     if (!lead) {
       throw new NotFoundException('Lead não encontrado');
