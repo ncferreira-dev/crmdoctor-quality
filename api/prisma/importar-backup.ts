@@ -96,17 +96,26 @@ function ordemDeInsercao(): string[] {
 // Prisma recusa string onde espera DateTime. Converte pelo tipo declarado no
 // schema, não por adivinhação de formato.
 //
-// Também descarta qualquer chave que não seja campo escalar do model. Hoje o
-// exportador não produz nenhuma, mas um arquivo editado à mão produziria, e o
-// erro do Prisma para campo desconhecido não diz qual linha o trouxe.
+// Também descarta qualquer chave que não seja campo escalar do model, e ANUNCIA
+// o que descartou. O erro do Prisma para campo desconhecido não diz qual linha o
+// trouxe, então descartar é o caminho certo; descartar calado não é.
+//
+// Isto deixou de ser hipótese em 10/08/2026: o exportador passou a ler por SQL
+// cru, e um backup de um banco atrasado traz colunas que o schema novo não tem
+// mais (a produção ainda guarda `codigoConvite` em texto puro). Restaurar esse
+// arquivo aqui apaga essa coluna, e quem restaura precisa ler isso na tela, e
+// não descobrir depois.
 function prepararLinha(
   model: Prisma.DMMF.Model,
   linha: Record<string, unknown>,
+  descartadas: Set<string>,
 ): Record<string, unknown> {
   const saida: Record<string, unknown> = {};
+  const conhecidos = new Set<string>();
 
   for (const campo of model.fields) {
     if (campo.kind !== 'scalar' && campo.kind !== 'enum') continue;
+    conhecidos.add(campo.name);
     if (!(campo.name in linha)) continue;
 
     const valor = linha[campo.name];
@@ -114,6 +123,10 @@ function prepararLinha(
       campo.type === 'DateTime' && typeof valor === 'string'
         ? new Date(valor)
         : valor;
+  }
+
+  for (const chave of Object.keys(linha)) {
+    if (!conhecidos.has(chave)) descartadas.add(chave);
   }
 
   return saida;
@@ -209,11 +222,16 @@ async function main() {
     const model = modelsPorNome.get(nome);
     if (!model) continue;
 
+    const descartadas = new Set<string>();
     const { count } = await delegateDo(nome).createMany({
-      data: linhas.map((linha) => prepararLinha(model, linha)),
+      data: linhas.map((linha) => prepararLinha(model, linha, descartadas)),
     });
     total += count;
-    console.log(`  ${nome}: ${count} registro(s)`);
+    const aviso =
+      descartadas.size > 0
+        ? `   [coluna(s) do arquivo que este schema não tem, DESCARTADA(S): ${[...descartadas].join(', ')}]`
+        : '';
+    console.log(`  ${nome}: ${count} registro(s)${aviso}`);
   }
 
   // As tabelas de ligação entram por último: os dois lados já precisam existir.

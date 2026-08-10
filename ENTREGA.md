@@ -514,7 +514,82 @@ abrir o arquivo de ids.
 
 ### 10. Backup com rotina, cópia fora da máquina e restauração testada
 
-**Bloco:** 2 · **Depende de:** 7 · **Estado:** aberto
+**Bloco:** 2 · **Depende de:** 7 · **Estado:** **dois terços feitos em
+10/08/2026. Segue aberto: falta a rotina e a cópia fora do Mac, que são escolha
+do Nícolas**
+
+> **O mecanismo estava quebrado contra a produção, e ninguém sabia.** Ao começar
+> o item 8 o backup foi o primeiro passo, e ele abortou:
+>
+> ```
+> npm run backup:producao
+>   Cargo: 4 registro(s)
+>   ERRO: The column `users.codigoConviteHash` does not exist
+> ```
+>
+> A produção está três migrations atrás do repositório, e o exportador lia pelos
+> delegates do Prisma, que pedem as colunas que o SCHEMA declara. Ou seja: o
+> backup parava de funcionar exatamente na situação em que ele é mais
+> necessário, que é quando código e banco estão fora de sincronia. E parava
+> depois de já ter lido uma tabela, então quem só olhasse o começo da saída
+> acharia que tinha rodado.
+>
+> **O exportador passou a ler por SQL cru.** `SELECT *` não sabe o que o schema
+> espera: traz o que a tabela tem. Coluna que existe no banco e não no schema
+> entra no arquivo, coluna que existe no schema e não no banco não é procurada,
+> e tabela que não existe é pulada com aviso em vez de derrubar tudo.
+>
+> **A diferença virou a informação mais importante da saída:**
+>
+> ```
+> User: 8 registro(s)   [só no banco: codigoConvite | só no schema: codigoConviteHash]
+> NotificacaoDestinatario: TABELA NÃO EXISTE neste banco
+> ...
+> ATENÇÃO: este banco não bate com o schema do repositório.
+> ```
+>
+> **O importador parou de descartar coluna em silêncio.** Ele já ignorava chave
+> desconhecida, o que é certo; agora ele diz qual descartou. Isso deixou de ser
+> hipótese no mesmo dia: um backup da produção traz `codigoConvite` em texto
+> puro, e restaurar esse arquivo num banco com o schema novo apaga essa coluna.
+> Quem restaura precisa ler isso na tela.
+>
+> **Restauração do formato novo, testada num banco descartável.** Origem: o
+> banco local, que está em dia com o schema. Destino: `crm_restore_teste`,
+> criado, usado e apagado.
+>
+> | Tabela | Origem | Restaurado |
+> |---|---|---|
+> | cargos | 5 | 5 |
+> | users | 8 | 8 |
+> | leads | 3 | 3 |
+> | empresas_clientes | 4 | 4 |
+> | projetos | 5 | 5 |
+> | tarefas | 4 | 4 |
+> | interacoes | 2 | 2 |
+> | tickets | 4 | 4 |
+> | competencias | 5 | 5 |
+> | etapas_projeto | 6 | 6 |
+> | visitas | 7 | 7 |
+> | cron_execucoes | 1 | 1 |
+> | notificacoes | 7 | 7 |
+> | notificacao_destinatarios | 15 | 15 |
+> | audit_logs | 59 | 59 |
+> | _CompetenciaToUser | 5 | 5 |
+> | _EquipeDoProjeto | 2 | 2 |
+>
+> 17 tabelas, 142 registros, tudo batendo, incluindo as duas de ligação que já
+> tinham sumido calado uma vez.
+>
+> **E o backup da produção existe de novo**, com 249 registros, em
+> `~/Desktop/backups-crm/backup-crm-2026-08-10-producao.json`, com permissão 600
+> como os `.env`. É ele que destrava o passo 1 do item 8.
+>
+> **O que continua faltando, e é decisão dele:** a rotina rodando sozinha e a
+> cópia fora deste Mac. As duas viraram passo a passo em `CHAVES-PENDENTES.md`,
+> com a recomendação registrada: ligar o backup contínuo do próprio Neon é o
+> backup de verdade, e este script agendado é segunda cópia, porque só roda com
+> o Mac ligado.
 
 O mecanismo existe e a restauração já foi provada uma vez contra um banco
 descartável. O que não existe é a prática: um único arquivo, de 07/08, morando

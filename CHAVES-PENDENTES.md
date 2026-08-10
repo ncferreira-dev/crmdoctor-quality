@@ -137,9 +137,59 @@ inteira.
 
 ---
 
+## 3. Cópia do backup fora deste Mac
+
+O backup da produção existe e funciona: hoje ele mora em
+`~/Desktop/backups-crm/`. O que falta é ele existir em **outro lugar**, porque
+um arquivo único num Mac único não é backup, é uma cópia com sorte.
+
+O arquivo tem nome, telefone e hash de senha de 8 pessoas. Trate como senha.
+
+### Passo 1: gerar o arquivo do dia
+
+No Terminal, dentro da pasta `crm-doctorquality/api`:
+
+```
+npm run backup:producao -- ~/Desktop/backups-crm/backup-crm-$(date +%F).json
+```
+
+Ele imprime uma linha por tabela e termina com "Backup gravado em ...".
+Se aparecer "ATENÇÃO: este banco não bate com o schema do repositório", o backup
+está completo do mesmo jeito: o aviso é sobre migration que falta aplicar na
+produção, e é assunto meu.
+
+### Passo 2: subir para um lugar que não é este Mac
+
+Escolha UM, e me diga qual:
+
+- **Google Drive ou iCloud**: arraste o arquivo para uma pasta chamada
+  `Backups CRM`. É o caminho mais curto e resolve hoje.
+- **1Password ou Bitwarden**: anexe o arquivo a um item chamado "Backup CRM".
+  É o mais seguro dos três, porque o arquivo fica criptografado.
+- **Pen drive**: só vale se ele ficar fora do escritório.
+
+O que NÃO serve: outra pasta deste Mac, e-mail para você mesmo, ou WhatsApp.
+
+### Passo 3: a rotina, quando você escolher onde
+
+Rodar o comando à mão toda semana funciona e ninguém faz. Existem dois caminhos
+para ele rodar sozinho, e a escolha é sua porque muda o custo:
+
+1. **Neon** (o banco): o próprio provedor guarda cópia contínua e permite voltar
+   o banco para um instante do passado. É o backup de verdade, e é o que eu
+   recomendo ligar primeiro. Precisa conferir se o seu plano inclui, e me dizer.
+2. **Este script, agendado**: dá para agendar no seu Mac, mas ele só roda com o
+   Mac ligado e acordado. Serve como segunda cópia, não como a principal.
+
+Me diga qual dos dois e eu monto.
+
+---
+
 ## Estado
 
 | Chave | Para quê | Estado |
 |---|---|---|
 | `RESEND_API_KEY` | o sistema conseguir enviar e-mail | **esperando você** |
 | Verificação do domínio | o e-mail chegar em quem não é você | depois do item 2 |
+| Cópia do backup fora do Mac | o backup existir em mais de um lugar | **esperando você** |
+| Onde a rotina de backup roda | não depender de alguém lembrar | **esperando sua escolha** |
