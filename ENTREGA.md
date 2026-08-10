@@ -558,6 +558,15 @@ Segue aberto: faltam 3 contas que são de pessoas de verdade**
 >
 > O critério original do item ("nenhuma conta `@teste.com` aparece como ativa")
 > segue **não cumprido**, e por escolha, não por esquecimento.
+>
+> **"Depois a gente apaga" não é um caminho disponível para estas três**, e vale
+> saber antes de contar com ele. A API recusa: "Este membro é responsável por
+> tarefas, etapas ou visitas. Reatribua esse trabalho ou apenas desative o
+> membro." São 9 tarefas, 6 marcos e 14 visitas somadas. Excluir levaria esse
+> histórico junto, e em compliance o histórico é o produto. As duas saídas reais
+> são trocar o e-mail (um comando, mantém tudo) ou reatribuir o trabalho para
+> outra pessoa antes de excluir (mais caro, e o histórico passa a ter o nome de
+> quem não fez).
 
 Seis das oito contas de produção são `@teste.com`. Duas entram agora
 (`coordenador@teste.com` e `analista@teste.com`), e a de Coordenador tem
