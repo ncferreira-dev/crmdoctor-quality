@@ -459,13 +459,26 @@ registrar(
     : 'cabeçalho condicional',
 );
 
+// Duas condições, e as duas importam. O DTO precisa chamar um validador de
+// CNPJ, e o validador precisa CONFERIR O DÍGITO. Só o nome não basta: um
+// decorador chamado EhCnpj que só medisse o tamanho passaria por aqui e
+// deixaria entrar um número com um dígito trocado, que é justamente o erro que
+// ninguém percebe na hora.
 const cnpjDto = ler(join(RAIZ, 'api/src/empresas/dto/create-empresa.dto.ts'));
-const cnpjValidado = /Matches|IsCnpj|validarCnpj|@Length\(14/.test(cnpjDto);
+const cnpjNoDto = /Matches|IsCnpj|EhCnpj|validarCnpj|@Length\(14/.test(cnpjDto);
+const validadorCnpj = join(RAIZ, 'api/src/common/validadores/cnpj.ts');
+const confereDigito =
+  existsSync(validadorCnpj) && /%\s*11|resto/.test(ler(validadorCnpj));
+const cnpjValidado = cnpjNoDto && confereDigito;
 registrar(
   'CNPJ tem validação de formato',
   cnpjValidado,
-  'Matches, Length(14) ou validador próprio no CreateEmpresaDto',
-  cnpjValidado ? 'validado' : 'só @IsString: qualquer texto entra como CNPJ',
+  'validador de CNPJ no CreateEmpresaDto, e conta de dígito verificador no validador',
+  cnpjValidado
+    ? 'formato e dígito verificador'
+    : cnpjNoDto
+      ? 'o DTO valida, mas o validador não confere dígito'
+      : 'só @IsString: qualquer texto entra como CNPJ',
 );
 
 const sidebar = ler(join(RAIZ, 'web/src/components/layout/Sidebar.tsx'));

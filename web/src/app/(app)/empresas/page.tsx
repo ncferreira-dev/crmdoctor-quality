@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
 import { EmpresaCliente, ResultadoPaginado } from '../../../types';
-import { SEGMENTO_LABEL } from '../../../lib/formato';
+import { SEGMENTO_LABEL, formatarCnpj } from '../../../lib/formato';
 import { Button } from '../../../components/ui/Button';
 import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { Input } from '../../../components/ui/Input';
@@ -80,7 +80,7 @@ export default function EmpresasPage() {
             >
               <div>
                 <p className="font-black leading-none text-ink">{empresa.nome}</p>
-                <p className="mt-1 text-xs text-ink/60">{empresa.cnpj ?? 'Sem CNPJ'}</p>
+                <p className="mt-1 text-xs text-ink/60">{empresa.cnpj ? formatarCnpj(empresa.cnpj) : 'Sem CNPJ'}</p>
               </div>
               <Badge tom="destaque">{SEGMENTO_LABEL[empresa.segmento]}</Badge>
             </Link>

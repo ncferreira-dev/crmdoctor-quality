@@ -13,7 +13,24 @@ async function bootstrap() {
   // forjar a cadeia inteira.
   app.set('trust proxy', 1);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // forbidNonWhitelisted: campo que não existe no DTO devolve 400 em vez de ser
+  // descartado em silêncio.
+  //
+  // Só `whitelist` fazia a API responder 200 a uma requisição que ela ignorou
+  // por inteiro. Medido antes: `PATCH /tickets/:id` com `{status}` respondia
+  // 200 e não mudava nada. Isso é fábrica de "cliquei e não aconteceu nada", e
+  // o custo de descobrir é sempre de quem está na frente do cliente.
+  //
+  // Ligar isto muda o contrato de TODAS as rotas de uma vez, e por isso o item
+  // dependia do teste de tabela do item 12: ele é a rede que mostra o que
+  // quebrou.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // Faz o SIGTERM do deploy chegar no onModuleDestroy do PrismaService, senão

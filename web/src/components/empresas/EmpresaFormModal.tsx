@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { api } from '../../lib/api';
 import { EmpresaCliente, Segmento } from '../../types';
-import { SEGMENTO_LABEL } from '../../lib/formato';
+import { SEGMENTO_LABEL, formatarCnpj, mascararCnpj } from '../../lib/formato';
 import {
   ErrosForm,
   focarPrimeiroErro,
@@ -29,6 +29,8 @@ export function EmpresaFormModal({ aberto, empresa, onFechar, onSalvo }: Empresa
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [erros, setErros] = useState<ErrosForm>({});
+  // Nasce com a máscara aplicada: o que vem da API é só dígito.
+  const [cnpj, setCnpj] = useState(() => formatarCnpj(empresa?.cnpj));
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -82,7 +84,20 @@ export function EmpresaFormModal({ aberto, empresa, onFechar, onSalvo }: Empresa
             </option>
           ))}
         </Select>
-        <Input id="cnpj" name="cnpj" label="CNPJ" defaultValue={empresa?.cnpj ?? ''} />
+        {/* Máscara na digitação, e o valor sai daqui como a pessoa vê. Quem
+            normaliza para 14 dígitos é a API, porque o formulário é cliente e
+            cliente não é para confiar: guardar com máscara faria o mesmo CNPJ
+            entrar duas vezes no índice único. */}
+        <Input
+          id="cnpj"
+          name="cnpj"
+          label="CNPJ"
+          inputMode="numeric"
+          placeholder="00.000.000/0000-00"
+          value={cnpj}
+          onChange={(evento) => setCnpj(mascararCnpj(evento.target.value))}
+          erro={erros.cnpj}
+        />
         <Input id="contatoNome" name="contatoNome" label="Contato" defaultValue={empresa?.contatoNome ?? ''} />
         <Input id="email" name="email" label="E-mail" type="email" defaultValue={empresa?.email ?? ''} />
         <Input id="telefone" name="telefone" label="Telefone" defaultValue={empresa?.telefone ?? ''} />

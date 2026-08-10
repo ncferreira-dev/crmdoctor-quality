@@ -137,6 +137,27 @@ export function textoPrazo(prazoIso: string | null): string {
 // O sino e o painel do dashboard chamam esta função, e não montam o texto cada
 // um do seu jeito: duas cópias da mesma regra é como as duas telas passariam a
 // discordar de novo.
+// CNPJ guardado é só dígito (a API normaliza antes de gravar, senão o mesmo
+// cliente entraria duas vezes no índice único). Quem lê a tela precisa da
+// máscara, e ela mora aqui, do lado do resto da formatação.
+export function formatarCnpj(bruto: string | null | undefined): string {
+  if (!bruto) return '';
+  const d = bruto.replace(/\D/g, '');
+  if (d.length !== 14) return bruto;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+// Vai pondo a pontuação conforme a pessoa digita. Recalculada do zero a cada
+// tecla, então apagar continua funcionando.
+export function mascararCnpj(bruto: string): string {
+  const d = bruto.replace(/\D/g, '').slice(0, 14);
+  if (d.length <= 2) return d;
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
 // Dinheiro, num lugar só.
 //
 // Estava escrito à mão no dashboard e na tela do projeto, e as duas cópias já

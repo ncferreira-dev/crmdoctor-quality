@@ -8,6 +8,7 @@ import { EmpresaCliente, Projeto, ResultadoPaginado } from '../../../../types';
 import {
   ESTAGIO_PROJETO_LABEL,
   SEGMENTO_LABEL,
+  formatarCnpj,
   formatarDataHora,
 } from '../../../../lib/formato';
 import { Badge } from '../../../../components/ui/Badge';
@@ -109,7 +110,7 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
           <p className="text-xs font-light uppercase tracking-wide text-ink/60">CNPJ</p>
           {empresa.cnpj ? (
-            <p className="dado mt-2 text-sm leading-none text-ink">{empresa.cnpj}</p>
+            <p className="dado mt-2 text-sm leading-none text-ink">{formatarCnpj(empresa.cnpj)}</p>
           ) : (
             <>
               <p className="mt-2 text-sm leading-snug text-ink/45">Sem CNPJ cadastrado</p>

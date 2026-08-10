@@ -1146,7 +1146,29 @@ em `lib/formato.ts`".
 
 ### 26. forbidNonWhitelisted no ValidationPipe
 
-**Bloco:** 4 · **Depende de:** 12 · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** 12 · **Estado:** **feito em 10/08/2026**
+
+> Campo que não existe no DTO agora devolve 400 em vez de ser descartado em
+> silêncio. O caso exato que a fila registrou:
+>
+> ```
+> PATCH /tickets/:id  { "status": "RESOLVIDO" }
+> antes:  200, e nada mudou
+> agora:  400, "property status should not exist"
+> ```
+>
+> **Ligar isto muda o contrato de todas as rotas de uma vez**, e é por isso que
+> o item dependia do 12. A rede do teste de tabela segurou, e além dela foi
+> feita uma varredura direta: as **25 rotas de escrita** foram chamadas com
+> exatamente o conjunto de chaves que cada tela monta, lido componente por
+> componente. Nenhuma teve campo recusado.
+>
+> | O que foi medido | Resultado |
+> |---|---|
+> | rotas de escrita testadas com o payload real das telas | 25 |
+> | rotas com campo recusado | **0** |
+> | `PATCH /tickets/:id` com `{status}` | 400, como deve |
+> | 202 testes da API | verdes |
 
 Hoje campo fora do DTO é descartado em silêncio com resposta 200. Medido:
 `PATCH /tickets/:id` com `{status}` responde 200 e não muda nada. Nenhuma tela
@@ -1160,7 +1182,39 @@ recusa campo fora do DTO", e os 78 testes continuam verdes.
 
 ### 27. CNPJ com máscara, dígito verificador e unicidade
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> Três coisas, e a ordem entre elas é o que faz a unicidade funcionar.
+>
+> **Guardado só com dígitos.** É a decisão que sustenta o resto: com máscara,
+> "12.345.678/0001-90" e "12345678000190" seriam duas empresas diferentes para o
+> índice único, e o mesmo cliente entraria duas vezes. A tela manda como a
+> pessoa digitou e a API normaliza, porque formulário é cliente e cliente não é
+> para confiar.
+>
+> **Dígito verificador conferido** em `common/validadores/cnpj.ts`, com 6 testes:
+> aceita Petrobras e Banco do Brasil com e sem máscara, recusa um dígito
+> trocado, recusa tamanho errado e recusa os 14 dígitos iguais. Tamanho certo
+> com dígito errado é o erro que ninguém percebe na hora e todo mundo descobre
+> no dia de emitir documento.
+>
+> **Unicidade já existia no banco e não chegava na tela:** o `@unique` estava lá
+> desde o começo, mas o erro subia cru do Prisma e a tela dizia "Internal server
+> error" para o caso mais comum de todos, que é recadastrar um cliente que já
+> está lá. Agora é 409 com a frase certa.
+>
+> **Máscara na digitação e na leitura**, com as duas funções em
+> `lib/formato.ts`, junto do resto da formatação. Campo apagado vira `undefined`
+> e não string vazia: `''` passaria pelo `@IsOptional` e gravaria vazio, que no
+> índice único é um valor como outro qualquer e impediria a segunda empresa sem
+> CNPJ.
+>
+> **A checagem do verificador foi reescrita, e a razão vale registrar.** Ela
+> procurava os nomes `Matches|IsCnpj|validarCnpj|@Length(14)`, e o validador
+> novo se chama `EhCnpj`: passaria a falhar por causa do NOME, não do estado.
+> É a mesma armadilha do falso positivo do telefone em 09/08. Agora ela cobra
+> duas coisas: o DTO chama um validador de CNPJ, e o validador contém a conta do
+> dígito. Um `EhCnpj` que só medisse tamanho não passa.
 
 `CreateEmpresaDto` valida CNPJ com `@IsOptional() @IsString()`. Sem formato, sem
 dígito, sem unicidade, sem `@Transform` para aparar espaço (o DTO de usuário
@@ -1391,8 +1445,8 @@ despercebido.
 | 23 | 4 | Vocabulário do botão Evento | | **feito** |
 | 24 | 4 | Dia civil no front | 32 | aberto |
 | 25 | 4 | Formatação de moeda centralizada | | **feito** |
-| 26 | 4 | forbidNonWhitelisted | 12 | aberto |
-| 27 | 4 | CNPJ com máscara, dígito e unicidade | | aberto |
+| 26 | 4 | forbidNonWhitelisted | 12 | **feito** |
+| 27 | 4 | CNPJ com máscara, dígito e unicidade | | **feito** |
 | 28 | 4 | turbopack.root fixado | | **feito** |
 | 29 | 4 | Nomes com espaço limpos **(parada)** | 6 | aberto |
 | 30 | 5 | Responsável do marco preenchível | | aberto |
@@ -1405,7 +1459,7 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 
-**18 abertos, 19 fechados, 1 esperando o Nícolas.**
+**16 abertos, 21 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1430,3 +1484,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 30 | 40 | item 16: animação parou de decidir visibilidade, e a gaveta parou de entrar de fora da tela |
 | 10/08/2026 | 31 | 40 | itens 18 e 23: nasce o CampoDataHora e some o último campo de data nativo, e o botão da agenda passa a dizer o que cria |
 | 10/08/2026 | 33 | 40 | itens 19 e 25: cabeçalho só quando há corpo, preflight com cache de 2h, e moeda num lugar só |
+| 10/08/2026 | 35 | 40 | itens 26 e 27: campo fora do DTO vira 400, e CNPJ passa a ter dígito verificador, máscara e conflito tratado |
