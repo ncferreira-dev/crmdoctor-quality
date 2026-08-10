@@ -14,10 +14,23 @@ export interface AlertaDoResumo {
   criadoEm: Date;
 }
 
+// Chamado sem primeira resposta e fora do prazo (item 4). Não é uma
+// `Notificacao`: o SLA é um estado que dura até alguém responder, e não um fato
+// datado com baixa por pessoa. Ver o comentário em
+// `acrescentarTicketsSemResposta`.
+export interface TicketSemResposta {
+  titulo: string;
+  empresa: string;
+  prioridade: number;
+  abertoEm: Date;
+  prazoLimite: Date;
+}
+
 export interface SecoesDoResumo {
   venceu: AlertaDoResumo[];
   venceEmBreve: AlertaDoResumo[];
   desdeOntem: AlertaDoResumo[];
+  ticketsSemResposta: TicketSemResposta[];
 }
 
 // As três seções são MUTUAMENTE EXCLUSIVAS, e essa é a decisão que mais importa
@@ -40,6 +53,9 @@ export function separarEmSecoes(
     venceu: [],
     venceEmBreve: [],
     desdeOntem: [],
+    // Preenchida pelo serviço, que é quem conhece os chamados. Fica aqui para o
+    // e-mail continuar sendo montado por um lugar só.
+    ticketsSemResposta: [],
   };
 
   for (const alerta of alertas) {
@@ -68,7 +84,10 @@ export function separarEmSecoes(
 
 export function totalDeAlertas(secoes: SecoesDoResumo): number {
   return (
-    secoes.venceu.length + secoes.venceEmBreve.length + secoes.desdeOntem.length
+    secoes.venceu.length +
+    secoes.venceEmBreve.length +
+    secoes.desdeOntem.length +
+    secoes.ticketsSemResposta.length
   );
 }
 
@@ -90,29 +109,42 @@ function linhaDoPrazo(alerta: AlertaDoResumo, hoje: Date): string {
 function assuntoDo(secoes: SecoesDoResumo): string {
   const vencidos = secoes.venceu.length;
   const aVencer = secoes.venceEmBreve.length + secoes.desdeOntem.length;
+  const chamados = secoes.ticketsSemResposta.length;
 
   // O assunto diz o número antes de a pessoa abrir, e põe o vencido na frente.
   // Assunto igual todo dia vira assunto que ninguém lê.
-  if (vencidos > 0 && aVencer > 0) {
-    return `Compliance: ${vencidos} prazo(s) vencido(s) e ${aVencer} a vencer`;
-  }
-  if (vencidos > 0) {
-    return `Compliance: ${vencidos} prazo(s) vencido(s)`;
-  }
-  return `Compliance: ${aVencer} prazo(s) a vencer`;
+  const partes: string[] = [];
+  if (vencidos > 0) partes.push(`${vencidos} prazo(s) vencido(s)`);
+  if (aVencer > 0) partes.push(`${aVencer} a vencer`);
+  if (chamados > 0) partes.push(`${chamados} chamado(s) sem resposta`);
+
+  return `Compliance: ${partes.join(' e ')}`;
 }
 
-const TITULOS: Record<keyof SecoesDoResumo, string> = {
+type SecaoDePrazo = 'venceu' | 'venceEmBreve' | 'desdeOntem';
+
+const TITULOS: Record<SecaoDePrazo, string> = {
   venceu: 'Já venceu',
   venceEmBreve: 'Vence',
   desdeOntem: 'Em aberto desde ontem',
 };
 
-const ORDEM: (keyof SecoesDoResumo)[] = [
-  'venceu',
-  'venceEmBreve',
-  'desdeOntem',
-];
+const ORDEM: SecaoDePrazo[] = ['venceu', 'venceEmBreve', 'desdeOntem'];
+
+// Quantas horas o chamado tem para a primeira resposta, por prioridade. É a
+// mesma régua de `tickets.constants.ts`, e aqui só serve para o e-mail dizer
+// qual prazo foi estourado.
+const NOME_DA_PRIORIDADE: Record<number, string> = {
+  1: 'alta',
+  2: 'média',
+  3: 'baixa',
+};
+
+function horasDeAtraso(prazoLimite: Date, agora: Date): number {
+  return Math.floor(
+    (agora.getTime() - prazoLimite.getTime()) / (60 * 60 * 1000),
+  );
+}
 
 /**
  * Monta o e-mail de uma pessoa. Só é chamado quando ela tem algo: quem não tem
@@ -122,38 +154,69 @@ export function montarResumo(
   nome: string,
   secoes: SecoesDoResumo,
   hoje: Date,
+  // `hoje` é a meia-noite do dia civil, que é a régua dos prazos de compliance.
+  // O SLA de chamado é contado em HORAS, então ele precisa do instante, e não
+  // do dia. Duas réguas porque são duas unidades, e misturá-las é como o
+  // sistema já errou um dia inteiro antes.
+  agora: Date = new Date(),
 ): MensagemEmail {
   const linhasTexto: string[] = [`Bom dia, ${nome}.`, ''];
   const partesHtml: string[] = [
     `<p style="font-size:15px">Bom dia, ${escapar(nome)}.</p>`,
   ];
 
-  for (const chave of ORDEM) {
-    const alertas = secoes[chave];
-    if (alertas.length === 0) continue;
+  // Uma seção do e-mail: título com a contagem, e uma linha por item. Existe
+  // como função para as quatro seções saírem iguais, inclusive a de chamados,
+  // que veio depois.
+  const escreverSecao = (
+    titulo: string,
+    itens: { principal: string; detalhe: string }[],
+  ) => {
+    if (itens.length === 0) return;
 
-    linhasTexto.push(`${TITULOS[chave].toUpperCase()} (${alertas.length})`);
+    linhasTexto.push(`${titulo.toUpperCase()} (${itens.length})`);
     partesHtml.push(
       `<h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#6E1C24;margin:24px 0 8px">` +
-        `${escapar(TITULOS[chave])} (${alertas.length})</h2>`,
+        `${escapar(titulo)} (${itens.length})</h2>`,
       '<ul style="margin:0;padding-left:18px">',
     );
 
-    for (const alerta of alertas) {
-      const prazo = linhaDoPrazo(alerta, hoje);
-      linhasTexto.push(`  - ${alerta.mensagem} (${prazo})`);
+    for (const item of itens) {
+      linhasTexto.push(`  - ${item.principal} (${item.detalhe})`);
       partesHtml.push(
-        `<li style="margin:4px 0">${escapar(alerta.mensagem)} ` +
-          `<span style="color:#767676">(${escapar(prazo)})</span></li>`,
+        `<li style="margin:4px 0">${escapar(item.principal)} ` +
+          `<span style="color:#767676">(${escapar(item.detalhe)})</span></li>`,
       );
     }
 
     linhasTexto.push('');
     partesHtml.push('</ul>');
+  };
+
+  for (const chave of ORDEM) {
+    escreverSecao(
+      TITULOS[chave],
+      secoes[chave].map((alerta) => ({
+        principal: alerta.mensagem,
+        detalhe: linhaDoPrazo(alerta, hoje),
+      })),
+    );
   }
 
+  // A quarta seção, do item 4. Vem por último de propósito: prazo de compliance
+  // é obrigação com data marcada, chamado sem resposta é obrigação de hoje.
+  escreverSecao(
+    'Chamados sem primeira resposta',
+    secoes.ticketsSemResposta.map((ticket) => ({
+      principal: `${ticket.titulo}, da empresa ${ticket.empresa}`,
+      detalhe:
+        `prioridade ${NOME_DA_PRIORIDADE[ticket.prioridade] ?? ticket.prioridade}, ` +
+        `${horasDeAtraso(ticket.prazoLimite, agora)}h além do prazo`,
+    })),
+  );
+
   const rodape =
-    'Você recebeu este aviso porque é responsável pelo marco ou está na equipe do projeto.';
+    'Você recebeu este aviso porque é responsável pelo marco, está na equipe do projeto ou registrou o chamado.';
   linhasTexto.push(rodape);
   partesHtml.push(
     `<p style="font-size:12px;color:#767676;margin-top:24px">${escapar(rodape)}</p>`,

@@ -276,7 +276,48 @@ contagens.
 
 ### 4. SLA de ticket vencido entra no mesmo disparo
 
-**Bloco:** 1 · **Depende de:** 3 · **Estado:** aberto
+**Bloco:** 1 · **Depende de:** 3 · **Estado:** **feito em 10/08/2026**
+
+> **Quarta seção do mesmo e-mail, e não um e-mail novo.** Duas mensagens por dia
+> seria a mesma pessoa aprendendo a ignorar as duas.
+>
+> **O chamado NÃO vira linha em `notificacoes`, e isso é decisão.** Aquela
+> tabela guarda fato datado com baixa por pessoa. SLA estourado não é fato de um
+> dia: é um estado que dura até alguém responder. Persistir criaria um alerta
+> que precisa ser "lido" enquanto o chamado segue sem resposta. Do jeito que
+> ficou, a seção some sozinha quando a primeira resposta é registrada, e isso
+> foi medido.
+>
+> **Destinatário segue a MESMA escada da regra de prazo**, que já existia neste
+> código: quem registrou o chamado, se ainda estiver apto; senão todo mundo que
+> consegue responder, que é quem tem `TICKETS_WRITE`. Ticket não tem responsável
+> no modelo; no dia em que tiver, ele vira o primeiro degrau.
+>
+> **Medido contra o banco local, com um chamado criado para o teste e apagado
+> depois** (`npm run resumo:teste`):
+>
+> | Momento | Marcos (registrou) | Os outros 5 |
+> |---|---|---|
+> | antes do chamado de teste | nenhum chamado | 2 chamados (os que já existiam) |
+> | com o chamado aberto há 30h, prioridade alta | **1 chamado: o dele** | continuam com 2, sem o dele |
+> | depois de registrar a primeira resposta | volta a nenhum | continuam com 2 |
+>
+> A linha que ele recebeu: "TESTE ITEM 4, da empresa Laboratório Vitalis
+> (prioridade alta, 28h além do prazo)". As horas são contadas na hora do envio,
+> pela mesma régua de `tickets.utils.ts`.
+>
+> Os dois chamados que já existiam caíram para os 4 cargos com `TICKETS_WRITE`,
+> que é a escada funcionando: eles não têm quem registrou apto, e mesmo assim
+> não sumiram do radar.
+>
+> Contagem de tickets no banco local antes e depois: 4 e 4. O chamado de teste
+> foi apagado.
+>
+> 4 testes novos, incluindo o caso de quem registrou ter saído da empresa.
+>
+> **Duas réguas no mesmo e-mail, de propósito:** prazo de compliance é contado
+> em dias civis, SLA de chamado é contado em horas. Misturar as duas é como este
+> sistema já errou um dia inteiro antes.
 
 O prazo de primeira resposta já é calculado (`tickets.utils.ts`: alta 2h, média
 8h, baixa 24h) e hoje só existe como selo na tela. Entra como quarta seção do
@@ -1199,7 +1240,7 @@ despercebido.
 | 1 | 1 | Notificação vira aviso de uma pessoa | | **feito** |
 | 2 | 1 | Motor de envio de e-mail | | **esperando a chave** |
 | 3 | 1 | Disparo diário por destinatário | 1, 2 | **feito (entrega depende da chave)** |
-| 4 | 1 | SLA de ticket no mesmo disparo | 3 | aberto |
+| 4 | 1 | SLA de ticket no mesmo disparo | 3 | **feito** |
 | 5 | 1 | Verificação do domínio (Nícolas) | | aberto |
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
@@ -1235,7 +1276,7 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 
-**24 abertos, 13 fechados, 1 esperando o Nícolas.**
+**23 abertos, 14 fechados, 1 esperando o Nícolas.**
 
 ---
 

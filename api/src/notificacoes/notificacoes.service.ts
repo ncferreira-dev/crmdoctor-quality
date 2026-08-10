@@ -12,10 +12,27 @@ import { inicioDoDiaCivil } from '../common/utils/dia-civil';
 import { Permissao } from '../common/constants/permissoes';
 import {
   AlertaDoResumo,
+  TicketSemResposta,
   montarResumo,
   separarEmSecoes,
   totalDeAlertas,
 } from './resumo-diario';
+import {
+  calcularPrazoLimite,
+  whereEmAberto,
+  whereEmAtraso,
+} from '../tickets/tickets.utils';
+
+// O que uma pessoa tem para receber hoje: os alertas de prazo dela e os
+// chamados fora do SLA que são dela. As duas listas vivem juntas porque o
+// e-mail é um só: duas mensagens por dia seria a mesma pessoa aprendendo a
+// ignorar as duas.
+interface PessoaDoResumo {
+  nome: string;
+  email: string;
+  alertas: AlertaDoResumo[];
+  tickets: TicketSemResposta[];
+}
 
 // Chave do heartbeat na tabela cron_execucoes. /health/cron lê pela mesma
 // constante (exportada) para os dois lados nunca divergirem.
@@ -200,46 +217,50 @@ export class NotificacoesService implements OnApplicationBootstrap {
 
     // Conta desativada e conta com convite pendente ficam de fora pelo mesmo
     // motivo da regra de destinatário: as duas não conseguem entrar no sistema,
-    // e o aviso mandaria a pessoa para uma porta fechada.
+    // e o aviso mandaria a pessoa para uma porta fechada. Esta lista também é a
+    // terceira contagem que o item 3 pede: quem está apto e não recebe nada.
+    const aptos = await this.prisma.user.findMany({
+      where: { ativo: true, codigoConviteHash: null },
+      select: { id: true, nome: true, email: true },
+    });
+    const porPessoa = new Map<string, PessoaDoResumo>();
+    const paraPessoa = (id: string): PessoaDoResumo | null => {
+      const apto = aptos.find((usuario) => usuario.id === id);
+      if (!apto) return null;
+      const atual = porPessoa.get(id) ?? {
+        nome: apto.nome,
+        email: apto.email,
+        alertas: [],
+        tickets: [],
+      };
+      porPessoa.set(id, atual);
+      return atual;
+    };
+
     const pendentes = await this.prisma.notificacaoDestinatario.findMany({
       where: {
         lidaEm: null,
         usuario: { ativo: true, codigoConviteHash: null },
       },
       select: {
-        usuario: { select: { id: true, nome: true, email: true } },
+        usuarioId: true,
         notificacao: {
           select: { mensagem: true, dataReferencia: true, criadoEm: true },
         },
       },
     });
-
-    const porPessoa = new Map<
-      string,
-      { nome: string; email: string; alertas: AlertaDoResumo[] }
-    >();
     for (const linha of pendentes) {
-      const atual = porPessoa.get(linha.usuario.id) ?? {
-        nome: linha.usuario.nome,
-        email: linha.usuario.email,
-        alertas: [],
-      };
-      atual.alertas.push(linha.notificacao);
-      porPessoa.set(linha.usuario.id, atual);
+      paraPessoa(linha.usuarioId)?.alertas.push(linha.notificacao);
     }
 
-    // Quem está apto a receber e não tem nada. É a terceira contagem que o item
-    // 3 pede, e ela vale medir: se um dia ela zerar sozinha, é sinal de que o
-    // aviso virou correio da empresa inteira de novo.
-    const elegiveis = await this.prisma.user.count({
-      where: { ativo: true, codigoConviteHash: null },
-    });
+    await this.acrescentarTicketsSemResposta(paraPessoa);
 
     let enviados = 0;
     let falhas = 0;
 
     for (const pessoa of porPessoa.values()) {
       const secoes = separarEmSecoes(pessoa.alertas, hoje);
+      secoes.ticketsSemResposta = pessoa.tickets;
       // Alerta sem data de referência não entra em seção nenhuma, então uma
       // pessoa pode ter linha pendente e mesmo assim nada a receber.
       if (totalDeAlertas(secoes) === 0) continue;
@@ -251,6 +272,8 @@ export class NotificacoesService implements OnApplicationBootstrap {
       if (resultado.enviado) enviados += 1;
       else falhas += 1;
     }
+
+    const elegiveis = aptos.length;
 
     // Carimba o dia, MENOS quando tudo falhou. Se nada saiu (motor desligado,
     // provedor fora, chave vencida), carimbar transformaria o problema em
@@ -289,6 +312,74 @@ export class NotificacoesService implements OnApplicationBootstrap {
       falhas,
       semNadaPendente,
     };
+  }
+
+  // A QUARTA SEÇÃO: chamado sem primeira resposta e fora do prazo (item 4).
+  //
+  // O prazo já era calculado desde antes (`tickets.utils.ts`: alta 2h, média
+  // 8h, baixa 24h) e vivia só como selo na tela, ou seja, só era visto por quem
+  // já tinha aberto a tela de Tickets. Um SLA que só aparece para quem foi
+  // olhar não é SLA.
+  //
+  // Não vira linha em `notificacoes`, e isso é decisão, não economia: aquela
+  // tabela guarda FATO datado com baixa por pessoa, e SLA estourado não é um
+  // fato de um dia, é um estado que dura até alguém responder. Persistir viraria
+  // um alerta que precisa ser "lido" enquanto o chamado segue sem resposta.
+  // Aqui a seção some sozinha no dia em que a primeira resposta é registrada.
+  //
+  // Destinatário segue a MESMA escada da regra de destinatário de prazo: quem
+  // registrou o chamado, se ainda estiver apto; senão todo mundo que consegue
+  // responder, que é quem tem TICKETS_WRITE. Ticket não tem responsável no
+  // modelo; no dia em que tiver, o primeiro degrau desta escada passa a ser ele.
+  private async acrescentarTicketsSemResposta(
+    paraPessoa: (id: string) => PessoaDoResumo | null,
+  ) {
+    const agora = new Date();
+    const atrasados = await this.prisma.ticket.findMany({
+      where: {
+        ...whereEmAberto(),
+        ...whereEmAtraso(agora),
+        excluidoEm: null,
+      },
+      select: {
+        titulo: true,
+        prioridade: true,
+        abertoEm: true,
+        criadoPorId: true,
+        empresa: { select: { nome: true } },
+      },
+      orderBy: { abertoEm: 'asc' },
+    });
+
+    if (atrasados.length === 0) return;
+
+    let quemResponde: string[] | null = null;
+    const carregarQuemResponde = async (): Promise<string[]> => {
+      quemResponde ??= await this.usuariosComPermissao('TICKETS_WRITE');
+      return quemResponde;
+    };
+
+    for (const ticket of atrasados) {
+      const linha: TicketSemResposta = {
+        titulo: ticket.titulo,
+        empresa: ticket.empresa.nome,
+        prioridade: ticket.prioridade,
+        abertoEm: ticket.abertoEm,
+        prazoLimite: calcularPrazoLimite(ticket),
+      };
+
+      const registrou = ticket.criadoPorId
+        ? paraPessoa(ticket.criadoPorId)
+        : null;
+      if (registrou) {
+        registrou.tickets.push(linha);
+        continue;
+      }
+
+      for (const id of await carregarQuemResponde()) {
+        paraPessoa(id)?.tickets.push(linha);
+      }
+    }
   }
 
   async verificarPrazosCompliance() {

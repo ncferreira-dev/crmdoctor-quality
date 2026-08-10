@@ -24,6 +24,7 @@ function criarMockPrisma() {
       update: metodoPrisma(),
       count: metodoPrisma(),
     },
+    ticket: { findMany: metodoPrisma() },
     user: { findMany: metodoPrisma(), count: metodoPrisma() },
     cronExecucao: { upsert: metodoPrisma(), findUnique: metodoPrisma() },
   };
@@ -63,6 +64,7 @@ function semNada(prisma: MockPrisma) {
   prisma.notificacao.createMany.mockResolvedValue({ count: 0 });
   prisma.notificacaoDestinatario.createMany.mockResolvedValue({ count: 0 });
   prisma.notificacaoDestinatario.findMany.mockResolvedValue([]);
+  prisma.ticket.findMany.mockResolvedValue([]);
   prisma.user.findMany.mockResolvedValue([]);
   prisma.user.count.mockResolvedValue(0);
   prisma.cronExecucao.findUnique.mockResolvedValue(null);
@@ -481,7 +483,7 @@ describe('NotificacoesService — aviso diário', () => {
       criadoEm: Date;
     },
   ) {
-    return { usuario, notificacao };
+    return { usuarioId: usuario.id, notificacao };
   }
 
   const RENATA = {
@@ -494,15 +496,23 @@ describe('NotificacoesService — aviso diário', () => {
     nome: 'Marcos',
     email: 'marcos@exemplo.com',
   };
+  const SEM_NADA = {
+    id: 'u-sem-nada',
+    nome: 'Fabrício',
+    email: 'fabricio@exemplo.com',
+  };
 
+  // `elegiveis` é a lista de quem está apto a receber, e não um número: é dela
+  // que saem nome e e-mail de quem vai ser avisado, inclusive de quem só entra
+  // no aviso por causa de um chamado.
   function comPendencias(
     prisma: MockPrisma,
     linhas: unknown[],
-    elegiveis: number,
+    elegiveis: { id: string; nome: string; email: string }[],
   ) {
     semNada(prisma);
     prisma.notificacaoDestinatario.findMany.mockResolvedValue(linhas);
-    prisma.user.count.mockResolvedValue(elegiveis);
+    prisma.user.findMany.mockResolvedValue(elegiveis);
   }
 
   it('manda um e-mail por pessoa, com o conteúdo dela, e não manda para quem não tem nada', async () => {
@@ -524,7 +534,7 @@ describe('NotificacoesService — aviso diário', () => {
       ],
       // Três pessoas aptas, duas com pendência: a terceira é o caso que o item
       // 3 pede para medir.
-      3,
+      [RENATA, MARCOS, SEM_NADA],
     );
 
     const resultado = await servicoCom(prisma, email).dispararResumoDiario();
@@ -554,12 +564,12 @@ describe('NotificacoesService — aviso diário', () => {
   it('não manda nada quando ninguém tem pendência', async () => {
     const prisma = criarMockPrisma();
     const email = criarMockEmail();
-    comPendencias(prisma, [], 4);
+    comPendencias(prisma, [], [RENATA, MARCOS, SEM_NADA]);
 
     const resultado = await servicoCom(prisma, email).dispararResumoDiario();
 
     expect(email.enviar).not.toHaveBeenCalled();
-    expect(resultado).toMatchObject({ enviados: 0, semNadaPendente: 4 });
+    expect(resultado).toMatchObject({ enviados: 0, semNadaPendente: 3 });
   });
 
   // O cron roda no boot, e o boot acontece a cada deploy. Sem esta trava, três
@@ -576,7 +586,7 @@ describe('NotificacoesService — aviso diário', () => {
           criadoEm: HOJE,
         }),
       ],
-      1,
+      [RENATA],
     );
     prisma.cronExecucao.findUnique.mockResolvedValue({
       executadoEm: new Date(),
@@ -607,7 +617,7 @@ describe('NotificacoesService — aviso diário', () => {
           criadoEm: HOJE,
         }),
       ],
-      1,
+      [RENATA],
     );
 
     await servicoCom(prisma, email).dispararResumoDiario();
@@ -640,7 +650,7 @@ describe('NotificacoesService — aviso diário', () => {
           criadoEm: HOJE,
         }),
       ],
-      2,
+      [RENATA, MARCOS],
     );
 
     const resultado = await servicoCom(prisma, email).dispararResumoDiario();
@@ -669,11 +679,115 @@ describe('NotificacoesService — aviso diário', () => {
           criadoEm: HOJE,
         }),
       ],
-      1,
+      [RENATA],
     );
 
     const resultado = await servicoCom(prisma, email).dispararResumoDiario();
 
     expect(resultado).toMatchObject({ enviados: 0, falhas: 1 });
+  });
+});
+
+// Item 4 do ENTREGA.md. O prazo de primeira resposta já era calculado desde
+// antes e vivia só como selo na tela, ou seja, só era visto por quem já tinha
+// aberto a tela de Tickets. Um SLA que só aparece para quem foi olhar não é SLA.
+describe('NotificacoesService — chamado sem primeira resposta no aviso diário', () => {
+  const RENATA = {
+    id: 'u-renata',
+    nome: 'Renata',
+    email: 'renata@exemplo.com',
+  };
+  const MARCOS = {
+    id: 'u-marcos',
+    nome: 'Marcos',
+    email: 'marcos@exemplo.com',
+  };
+
+  function ticketAtrasado(criadoPorId: string | null) {
+    return {
+      titulo: 'Desvio no lote 4471',
+      prioridade: 1,
+      // Aberto há muito mais que as 2h da prioridade alta.
+      abertoEm: new Date(Date.now() - 30 * 60 * 60 * 1000),
+      criadoPorId,
+      empresa: { nome: 'Laboratório Vitalis' },
+    };
+  }
+
+  it('o chamado vai para quem o registrou, e só para ela', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    semNada(prisma);
+    prisma.user.findMany.mockResolvedValue([RENATA, MARCOS]);
+    prisma.ticket.findMany.mockResolvedValue([ticketAtrasado(RENATA.id)]);
+
+    const resultado = await servicoCom(prisma, email).dispararResumoDiario();
+
+    expect(resultado).toMatchObject({ enviados: 1, semNadaPendente: 1 });
+    const mensagem = email.enviar.mock.calls[0][0];
+    expect(mensagem.para).toBe(RENATA.email);
+    expect(mensagem.assunto).toContain('1 chamado(s) sem resposta');
+    expect(mensagem.texto).toContain('CHAMADOS SEM PRIMEIRA RESPOSTA (1)');
+    expect(mensagem.texto).toContain('Desvio no lote 4471');
+    expect(mensagem.texto).toContain('prioridade alta');
+  });
+
+  // Chamado importado, ou registrado por quem saiu da empresa, não pode sumir
+  // do radar: cai para quem consegue responder.
+  it('sem quem registrou, cai para quem tem TICKETS_WRITE', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    semNada(prisma);
+    prisma.user.findMany
+      .mockResolvedValueOnce([RENATA, MARCOS])
+      .mockResolvedValueOnce([{ id: MARCOS.id }]);
+    prisma.ticket.findMany.mockResolvedValue([ticketAtrasado(null)]);
+
+    await servicoCom(prisma, email).dispararResumoDiario();
+
+    const destinos = email.enviar.mock.calls.map((c) => c[0].para);
+    expect(destinos).toEqual([MARCOS.email]);
+  });
+
+  // Quem já saiu da empresa não vira destinatário só porque registrou o chamado
+  // um dia: a escada tem que continuar descendo.
+  it('quem registrou mas está inapto não segura o chamado', async () => {
+    const prisma = criarMockPrisma();
+    const email = criarMockEmail();
+    semNada(prisma);
+    prisma.user.findMany
+      .mockResolvedValueOnce([MARCOS])
+      .mockResolvedValueOnce([{ id: MARCOS.id }]);
+    prisma.ticket.findMany.mockResolvedValue([ticketAtrasado('u-que-saiu')]);
+
+    await servicoCom(prisma, email).dispararResumoDiario();
+
+    const destinos = email.enviar.mock.calls.map((c) => c[0].para);
+    expect(destinos).toEqual([MARCOS.email]);
+  });
+
+  it('a busca de chamado pede em aberto, sem primeira resposta e não excluído', async () => {
+    const prisma = criarMockPrisma();
+    semNada(prisma);
+    prisma.user.findMany.mockResolvedValue([RENATA]);
+
+    await servicoCom(prisma).dispararResumoDiario();
+
+    const where = (
+      prisma.ticket.findMany.mock.calls[0][0] as {
+        where: {
+          status: unknown;
+          primeiraRespostaEm: null;
+          excluidoEm: null;
+          OR: unknown[];
+        };
+      }
+    ).where;
+    expect(where.status).toEqual({ not: 'RESOLVIDO' });
+    expect(where.primeiraRespostaEm).toBeNull();
+    expect(where.excluidoEm).toBeNull();
+    // Um ramo por prioridade: o prazo varia por linha, então não dá para
+    // comparar com uma data só.
+    expect(where.OR).toHaveLength(3);
   });
 });
