@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api } from '../../../../lib/api';
+import { api, statusDoErro } from '../../../../lib/api';
 import { usePermissao } from '../../../../hooks/useSessao';
 import { EstagioProjeto, Projeto } from '../../../../types';
 import {
@@ -24,6 +24,9 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [editando, setEditando] = useState(false);
   const podeEditar = usePermissao('PROJETOS_WRITE');
   const podeVerValor = usePermissao('FINANCEIRO_READ');
@@ -34,7 +37,10 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
     api
       .get<Projeto>(`/projetos/${id}`)
       .then(setProjeto)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }, [id]);
 
   useEffect(() => {
@@ -58,6 +64,7 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
       <EstadoErro
         oQue="o projeto"
         detalhe={erro}
+        status={statusErro}
         onTentarDeNovo={() => {
           setErro(null);
           carregar();

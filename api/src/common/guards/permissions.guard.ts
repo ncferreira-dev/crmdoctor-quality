@@ -26,9 +26,15 @@ export class PermissionsGuard implements CanActivate {
     const user = request.user;
 
     if (!user?.permissoes?.includes(permissaoRequerida)) {
-      throw new ForbiddenException(
-        `Permissão necessária: ${permissaoRequerida}`,
-      );
+      // A mensagem é para quem lê a tela, e o nome interno da permissão não é
+      // texto de interface: `USUARIOS_READ` na cara do usuário é jargão de
+      // quem escreveu o código. Ele continua saindo, mas num campo à parte, que
+      // serve para o suporte e não é o que a tela mostra.
+      throw new ForbiddenException({
+        statusCode: 403,
+        message: 'Seu cargo não tem acesso a esta parte do sistema.',
+        permissaoNecessaria: permissaoRequerida,
+      });
     }
 
     return true;

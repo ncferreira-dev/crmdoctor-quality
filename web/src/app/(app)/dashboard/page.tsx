@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { marcarAlertaLido } from '../../../lib/alertas';
 import { usePermissao } from '../../../hooks/useSessao';
 import { useAlertas } from '../../../hooks/useAlertas';
@@ -34,6 +34,9 @@ function num(valor: number | undefined): number {
 export default function DashboardPage() {
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [marcando, setMarcando] = useState<string | null>(null);
   const podeVerAlertas = usePermissao('NOTIFICACOES_READ');
   const podeVerValor = usePermissao('FINANCEIRO_READ');
@@ -46,7 +49,10 @@ export default function DashboardPage() {
     api
       .get<DashboardResumo>('/dashboard/resumo')
       .then(setResumo)
-      .catch((error: Error) => setErro(error.message));
+      .catch((error: Error) => {
+        setErro(error.message);
+        setStatusErro(statusDoErro(error));
+      });
   }
 
   useEffect(() => {
@@ -69,6 +75,7 @@ export default function DashboardPage() {
       <EstadoErro
         oQue="o dashboard"
         detalhe={erro}
+        status={statusErro}
         onTentarDeNovo={() => {
           setErro(null);
           carregar();

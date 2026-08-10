@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\" \"scripts/**/*.ts\"",
     "comentario:bancos": "Tres arquivos, tres bancos, e um deles nao e mais alcancavel. .env aponta para a branch vercel-dev do Neon (ep-rapid-dew) e a credencial dele esta MORTA desde antes de 09/08/2026: conferido, responde 'password authentication failed'. Ele fica porque e o arquivo que a CLI do Prisma carrega sozinha, e um padrao morto e uma rede de protecao: um 'npx prisma migrate dev' distraido bate num banco que nao existe em vez de bater na producao. .env.local e o Postgres da sua maquina, e e o unico jeito de rodar a API aqui: use start:local. .env.producao tem a producao (ep-sweet-salad) e NENHUM script o carrega sozinho: quem quer a producao invoca de proposito.",
     "comentario:start": "start:dev e start:debug foram removidos em 09/08/2026 (item 11 do ENTREGA.md). Os dois rodavam 'nest start' sem carregar .env.local, entao pegavam o .env e tentavam o Neon remoto: quando a credencial ainda valia, isso era mexer em banco remoto achando que era a maquina, e depois que ela morreu virou um comando documentado que so falha. Para rodar a API aqui: npm run start:local.",
     "start": "nest start",
@@ -22,13 +22,13 @@
     "comentario:resumo": "resumo:teste roda o aviso diário do item 3 contra o banco do .env.local. Sem argumento é ENSAIO: imprime o e-mail de cada pessoa e NÃO carimba a execução do dia, então pode repetir à vontade. Com -- --enviar manda de verdade e respeita a trava de um por dia.",
     "resumo:teste": "set -a && . ./.env.local && set +a && ts-node scripts/disparar-resumo-teste.ts",
     "comentario:lint": "lint roda o typecheck ANTES do eslint, e sem --fix, e as duas coisas sao correcao de defeito medido. O --fix fazia o comando consertar e sair verde, entao o zero era o estado DEPOIS do conserto e nao o do codigo commitado. E o typecheck ficou quebrado de 07/08 a 09/08/2026 sem ninguem ver, porque nest build exclui os *.spec.ts e ninguem rodava tsc sozinho: dava para ter lint verde com a compilacao quebrada. Quem quiser o conserto automatico chama lint:fix de proposito. prisma/ entrou na lista em 07/08/2026 e scripts/ em 09/08/2026: e onde moram os comandos que rodam contra banco real.",
-    "lint": "npm run typecheck && eslint \"{src,apps,libs,test,prisma,scripts}/**/*.ts\"",
-    "lint:fix": "eslint \"{src,apps,libs,test,prisma,scripts}/**/*.ts\" --fix",
+    "lint": "npm run typecheck && eslint \"{src,apps,libs,prisma,scripts}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,apps,libs,prisma,scripts}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "comentario:e2e": "O e2e do boilerplate (GET / responde \"Hello World!\") foi removido em 10/08/2026, item 33 do ENTREGA.md. Ele nunca rodava (o jest padrao tem rootDir src) e testava o unico endpoint que nao e do produto. Um e2e que valha a pena sobe a API contra um banco descartavel e ja semeado, e isso e o item 10: enquanto nao existir, um arquivo de teste que ninguem executa da falsa sensacao de rede."
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

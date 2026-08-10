@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { GRUPOS_PERMISSAO } from '../../../lib/permissoes';
 import { Cargo, Usuario } from '../../../types';
@@ -14,6 +14,9 @@ export default function CargosPage() {
   const [cargos, setCargos] = useState<Cargo[] | null>(null);
   const [membros, setMembros] = useState<Usuario[]>([]);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [modal, setModal] = useState<{ aberto: boolean; cargo: Cargo | null }>({
     aberto: false,
     cargo: null,
@@ -26,7 +29,10 @@ export default function CargosPage() {
     api
       .get<Cargo[]>('/cargos')
       .then(setCargos)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
     // Contagem de pessoas por cargo. Serve para dois avisos: mostrar quantos
     // usam cada cargo, e explicar por que a exclusão vai ser recusada.
     api
@@ -91,6 +97,7 @@ export default function CargosPage() {
         <EstadoErro
           oQue="os cargos"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar();

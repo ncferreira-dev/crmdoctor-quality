@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { agruparPorUrgencia } from '../../../lib/tarefas';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { Projeto, StatusTarefa, Tarefa } from '../../../types';
@@ -27,6 +27,9 @@ export default function TarefasPage() {
   const [projetoFiltro, setProjetoFiltro] = useState('');
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [modalAberto, setModalAberto] = useState(false);
 
   const carregar = useCallback(() => {
@@ -47,7 +50,10 @@ export default function TarefasPage() {
         setTarefas(lista);
         setErro(null);
       })
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }, [escopo, projetoFiltro, usuario, podeVer]);
 
   useEffect(() => {
@@ -170,6 +176,7 @@ export default function TarefasPage() {
           <EstadoErro
             oQue="as suas tarefas"
             detalhe={erro}
+            status={statusErro}
             onTentarDeNovo={() => {
               setErro(null);
               carregar();

@@ -18,6 +18,17 @@ function limparSessaoERedirecionar() {
   window.location.href = de && de !== '/' ? `/login?de=${encodeURIComponent(de)}` : '/login';
 }
 
+// Erro com status, para a tela poder distinguir "não posso" de "deu ruim".
+export class ErroDaApi extends Error {
+  constructor(
+    mensagem: string,
+    readonly status: number,
+  ) {
+    super(mensagem);
+    this.name = 'ErroDaApi';
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
 
@@ -50,7 +61,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!response.ok) {
     const corpo = await response.json().catch(() => null);
     const mensagem = Array.isArray(corpo?.message) ? corpo.message.join(', ') : (corpo?.message ?? response.statusText);
-    throw new Error(mensagem);
+    // O status vem junto porque a tela precisa dele: 403 e 500 pedem frases
+    // diferentes e desfechos diferentes. Antes tudo virava `new Error(texto)` e
+    // a tela tratava falta de permissão como falha passageira, oferecendo um
+    // "Tentar de novo" que nunca ia funcionar.
+    throw new ErroDaApi(mensagem, response.status);
   }
 
   if (response.status === 204) {
@@ -93,6 +108,13 @@ async function getTodos<T>(path: string): Promise<T[]> {
     ),
   );
   return restantes.reduce((tudo, r) => tudo.concat(r.data), primeira.data);
+}
+
+// O status do erro, quando ele veio da API. Existe para a tela não precisar
+// conhecer a classe: `statusDoErro(e)` devolve undefined para falha de rede e
+// para qualquer coisa que não seja resposta HTTP.
+export function statusDoErro(erro: unknown): number | undefined {
+  return erro instanceof ErroDaApi ? erro.status : undefined;
 }
 
 export const api = {

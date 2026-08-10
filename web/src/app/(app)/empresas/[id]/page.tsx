@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api } from '../../../../lib/api';
+import { api, statusDoErro } from '../../../../lib/api';
 import { usePermissao } from '../../../../hooks/useSessao';
 import { EmpresaCliente, Projeto, ResultadoPaginado } from '../../../../types';
 import {
@@ -24,6 +24,9 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
   const [empresa, setEmpresa] = useState<EmpresaCliente | null>(null);
   const [projetos, setProjetos] = useState<Projeto[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [editando, setEditando] = useState(false);
   const podeEditar = usePermissao('EMPRESAS_WRITE');
 
@@ -33,7 +36,10 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
     api
       .get<EmpresaCliente>(`/empresas/${id}`)
       .then(setEmpresa)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }, [id]);
 
   useEffect(() => {
@@ -49,6 +55,7 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
       <EstadoErro
         oQue="a empresa"
         detalhe={erro}
+        status={statusErro}
         onTentarDeNovo={() => {
           setErro(null);
           carregarEmpresa();

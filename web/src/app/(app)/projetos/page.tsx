@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
 import { EstagioProjeto, Projeto } from '../../../types';
 import {
@@ -29,6 +29,9 @@ const PESO_URGENCIA: Record<string, number> = {
 export default function ProjetosPage() {
   const [projetos, setProjetos] = useState<Projeto[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [filtroEstagio, setFiltroEstagio] = useState<EstagioProjeto | ''>('');
   const [modal, setModal] = useState<{ aberto: boolean; projeto: Projeto | null }>({
     aberto: false,
@@ -40,7 +43,10 @@ export default function ProjetosPage() {
     api
       .getTodos<Projeto>('/projetos')
       .then(setProjetos)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }
 
   useEffect(() => {
@@ -121,6 +127,7 @@ export default function ProjetosPage() {
         <EstadoErro
           oQue="os projetos"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar();

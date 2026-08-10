@@ -1056,7 +1056,33 @@ aparece duas vezes.
 
 ### 20. 401, 403 e 500 com mensagens distintas e sem jargão
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> **A diferença entre os três não é de redação, é de o que fazer.** Era esse o
+> defeito: falta de permissão aparecia com a mesma frase de falha passageira e
+> o mesmo botão "Tentar de novo", que ali nunca ia funcionar. Botão que só dá
+> erro ensina que o sistema está quebrado.
+>
+> | Caso | O que a tela diz | Oferece "Tentar de novo" |
+> |---|---|---|
+> | 403 | "Seu cargo não tem acesso a esta parte do sistema." mais uma linha dizendo que não é erro, é permissão | **não** |
+> | 401 | "Sua sessão expirou." e o caminho de entrar de novo | **não** |
+> | 500 e demais | "Isso costuma ser passageiro. Tente de novo..." | sim |
+> | sem conexão | "O sistema não conseguiu falar com o servidor..." | sim |
+>
+> **O nome interno da permissão saiu da tela.** O guard da API mandava
+> `Permissão necessária: USUARIOS_READ` como mensagem, e a tela imprimia isso.
+> Agora a mensagem é humana e o nome da permissão vai num campo à parte
+> (`permissaoNecessaria`), que serve para suporte e não é o que a tela mostra.
+>
+> **O status precisou chegar até a tela para isso ser possível.** `lib/api.ts`
+> lançava `new Error(texto)` e o status se perdia no caminho: nasceu `ErroDaApi`
+> com `status`, e as 11 telas que usam `EstadoErro` passaram a guardá-lo.
+>
+> Medido na tela, logado como Analista abrindo `/membros` pelo endereço: aparece
+> "Seu cargo não tem acesso a esta parte do sistema", sem nome de permissão e
+> sem botão. O 401 é o que já aparecia no login ("Sua sessão expirou"), e o
+> caminho de 500 é o mesmo de antes, agora só para falha de verdade.
 
 Hoje um 403 aparece como "Não foi possível carregar a equipe. Isso costuma ser
 passageiro. Tente de novo", com um botão que nunca vai funcionar, e imprime
@@ -1079,7 +1105,26 @@ telas principais e o número de alvos abaixo de 36px registrado aqui.
 
 ### 22. Membros não oferece o que devolve 403
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> A tela passou a usar a MESMA regra da API (`exigirNivelMenor`): só oferece
+> Editar, Resetar senha, Desativar e Excluir para quem tem cargo de nível
+> **menor** que o seu. Comparação por nível, nunca por nome de cargo.
+>
+> "Enviar tarefa" continua aparecendo para todo mundo, e isso é de propósito:
+> ela depende de `TAREFAS_WRITE`, não de hierarquia. Quem coordena a equipe
+> distribui trabalho para quem está no mesmo nível.
+>
+> Medido na tela, logado como CEO (nível 100):
+>
+> | Linha | O que a tela oferece |
+> |---|---|
+> | Administrador (nível 100) | só "Enviar tarefa" |
+> | o próprio CEO | só "Enviar tarefa" |
+> | Coordenador, Analista, Consultores (níveis 60, 30, 20) | tudo |
+>
+> Antes, as três primeiras linhas ofereciam Editar, Resetar senha e Desativar, e
+> os três devolviam 403.
 
 Na lista de Membros, a linha de alguém do mesmo nível hierárquico oferece
 Editar, Resetar senha e Desativar. Medido: os três devolvem 403. O cadastro já
@@ -1416,7 +1461,28 @@ casos acima existem e passam.
 
 ### 33. e2e rodando ou removido
 
-**Bloco:** 5 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 5 · **Depende de:** nada · **Estado:** **feito em 10/08/2026:
+removido, com a condição de volta registrada**
+
+> Saiu do repositório: `api/test/` inteiro, mais o script `test:e2e`.
+>
+> **Por que remover e não consertar.** O arquivo testava `GET /` respondendo
+> "Hello World!", que é o único endpoint que não é do produto, e nunca rodava
+> (o jest tem `rootDir: "src"`). Fazer ele rodar seria dar rede a um teste que
+> não cobre nada.
+>
+> **E um e2e que valha a pena depende de outra coisa antes.** Ele sobe a API
+> contra um banco de verdade, e para isso precisa de um banco descartável e já
+> semeado, que é o item 10. Ligar um e2e com banco no verificador faria o
+> `npm run entrega:check` falhar toda vez que o Postgres local estivesse
+> desligado: alarme falso é como se desaprende a olhar para o verde.
+>
+> **A condição de volta, para não virar decisão esquecida:** quando o item 10
+> entregar restauração testada em banco descartável, o e2e volta usando esse
+> mesmo caminho, cobrindo login, uma rota por permissão e o cron.
+>
+> O `lint` e o `format` da API pararam de apontar para `test/`, que não existe
+> mais.
 
 `api/test/app.e2e-spec.ts` é o boilerplate do NestJS: testa se `GET /` responde
 "Hello World!". O `jest` padrão tem `rootDir: "src"` e não o alcança, então ele
@@ -1596,9 +1662,9 @@ despercebido.
 | 17 | 4 | Typecheck da API no mesmo comando do lint | | **feito** |
 | 18 | 4 | datetime-local padronizado | | **feito** |
 | 19 | 4 | Content-Type fora dos GET | | **feito** |
-| 20 | 4 | 401, 403 e 500 distintos e sem jargão | | aberto |
+| 20 | 4 | 401, 403 e 500 distintos e sem jargão | | **feito** |
 | 21 | 4 | Alvos de toque de 36px | | aberto |
-| 22 | 4 | Membros não oferece o que dá 403 | | aberto |
+| 22 | 4 | Membros não oferece o que dá 403 | | **feito** |
 | 23 | 4 | Vocabulário do botão Evento | | **feito** |
 | 24 | 4 | Dia civil no front | 32 | **feito** |
 | 25 | 4 | Formatação de moeda centralizada | | **feito** |
@@ -1609,7 +1675,7 @@ despercebido.
 | 30 | 5 | Responsável do marco preenchível | | **feito** |
 | 31 | 5 | Estado vazio com ação no bloco Equipe | | **feito** |
 | 32 | 5 | Executor de teste no front | | **feito** |
-| 33 | 5 | e2e rodando ou removido | | aberto |
+| 33 | 5 | e2e rodando ou removido | | **feito (removido)** |
 | 34 | 5 | Tour guiado: relatado, não existe | | **feito** |
 | 35 | 6 | Esconder três blocos do dashboard | 1, 2, 3, 4 | aberto |
 | 36 | 6 | Esconder Competências do menu | 1, 2, 3, 4 | aberto |
@@ -1618,7 +1684,7 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**12 abertos, 27 fechados, 1 esperando o Nícolas.**
+**9 abertos, 30 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1646,3 +1712,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 35 | 40 | itens 26 e 27: campo fora do DTO vira 400, e CNPJ passa a ter dígito verificador, máscara e conflito tratado |
 | 10/08/2026 | 38 | 41 | itens 30, 31 e 39: marco ganha dono pela tela, bloco Equipe aparece vazio, e `include` para de devolver linha apagada (1 checagem nova) |
 | 10/08/2026 | 40 | 41 | itens 32 e 24: o front ganha executor de teste rodando em TZ=UTC, e o cálculo de dia passa a ser civil de Brasília |
+| 10/08/2026 | **41** | **42** | itens 20, 22, 33 e 40: erro sabe distinguir permissão de falha, Membros para de oferecer o que dá 403, o e2e de mentira sai, e a marca de tarefa abre. Só o limit fixo do item 38 segue vermelho, de propósito |

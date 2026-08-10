@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { api } from '../../lib/api';
+import { api, statusDoErro } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import { Interacao } from '../../types';
 import {
@@ -54,6 +54,9 @@ function quando(iso: string): string {
 export function Timeline({ empresaId, projetoId, vazio }: TimelineProps) {
   const [interacoes, setInteracoes] = useState<Interacao[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [aberto, setAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState<string | null>(null);
@@ -73,7 +76,10 @@ export function Timeline({ empresaId, projetoId, vazio }: TimelineProps) {
         setInteracoes(lista);
         setErro(null);
       })
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }, [query, podeLer]);
 
   useEffect(() => {
@@ -141,6 +147,7 @@ export function Timeline({ empresaId, projetoId, vazio }: TimelineProps) {
         <EstadoErro
           oQue="o histórico"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar();

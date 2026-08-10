@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { StatusTarefa, Tarefa, Usuario } from '../../../types';
 import { STATUS_TAREFA_LABEL } from '../../../lib/formato';
@@ -19,6 +19,9 @@ export default function MembrosPage() {
   const [membros, setMembros] = useState<Usuario[] | null>(null);
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [modalMembro, setModalMembro] = useState<{ aberto: boolean; membro: Usuario | null }>({
     aberto: false,
     membro: null,
@@ -38,7 +41,10 @@ export default function MembrosPage() {
     api
       .get<Usuario[]>('/users')
       .then(setMembros)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
     api
       .getTodos<Tarefa>('/tarefas')
       .then(setTarefas)
@@ -162,6 +168,7 @@ export default function MembrosPage() {
         <EstadoErro
           oQue="a equipe"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar();
@@ -182,6 +189,19 @@ export default function MembrosPage() {
           {membros.map((membro) => {
             const suasTarefas = tarefasDe(membro.id);
             const pendenteDeAcesso = membro.acessoPendente;
+            // A MESMA regra da API: só gerencia quem tem cargo de nível MENOR
+            // que o seu (exigirNivelMenor). A tela oferecia Editar, Resetar
+            // senha e Desativar na linha de quem está no mesmo nível, e os três
+            // devolviam 403. Botão que só dá erro é pior que botão ausente: ele
+            // ensina que o sistema está quebrado.
+            //
+            // Comparação por NÍVEL, nunca por nome de cargo, que é a regra
+            // escrita no CLAUDE.md. Enquanto a sessão não carregou, `eu` é
+            // null e nada é oferecido: errar para menos aqui só esconde botão
+            // por um instante, errar para mais mostra botão que dá erro.
+            const noMeuAlcance =
+              eu != null && membro.cargo != null && membro.cargo.nivel < eu.cargo.nivel;
+            const podeMexerNele = podeGerenciar && noMeuAlcance;
 
             return (
               <div
@@ -213,14 +233,14 @@ export default function MembrosPage() {
                       membros: quem coordena a equipe (só vê membros) ainda
                       distribui trabalho. O resto é gestão de conta e exige
                       USUARIOS_MANAGE. */}
-                  {(podeGerenciar || podeEnviarTarefa) && (
+                  {(podeMexerNele || podeEnviarTarefa) && (
                     <div className="flex flex-wrap gap-2">
-                      {podeGerenciar && (
+                      {podeMexerNele && (
                         <Button variante="ghost" onClick={() => gerarCodigo(membro)}>
                           {pendenteDeAcesso ? 'Gerar código' : 'Resetar senha'}
                         </Button>
                       )}
-                      {podeGerenciar && (
+                      {podeMexerNele && (
                         <Button
                           variante="ghost"
                           onClick={() => setModalMembro({ aberto: true, membro })}
@@ -240,7 +260,7 @@ export default function MembrosPage() {
                           hierarquia pede nível maior, e ninguém tem nível maior
                           que o próprio), mas oferecer um botão que só dá erro é
                           pior do que não oferecer. */}
-                      {podeGerenciar && membro.id !== eu?.id && (
+                      {podeMexerNele && membro.id !== eu?.id && (
                         <Button
                           variante={membro.ativo ? 'danger' : 'secondary'}
                           onClick={() => alternarAtivo(membro)}
@@ -250,7 +270,7 @@ export default function MembrosPage() {
                       )}
                       {/* Excluir só aparece em conta já desativada: força passar
                           pelo desativar (reversível) antes do apagar (definitivo). */}
-                      {podeGerenciar && membro.id !== eu?.id && !membro.ativo && (
+                      {podeMexerNele && membro.id !== eu?.id && !membro.ativo && (
                         <Button variante="ghost" onClick={() => excluir(membro)}>
                           Excluir
                         </Button>

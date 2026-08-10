@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
 import { Competencia } from '../../../types';
 import { Button } from '../../../components/ui/Button';
@@ -11,6 +11,9 @@ import { CompetenciaFormModal } from '../../../components/competencias/Competenc
 export default function CompetenciasPage() {
   const [competencias, setCompetencias] = useState<Competencia[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [modal, setModal] = useState<{ aberto: boolean; competencia: Competencia | null }>({
     aberto: false,
     competencia: null,
@@ -21,7 +24,10 @@ export default function CompetenciasPage() {
     api
       .getTodos<Competencia>('/competencias')
       .then(setCompetencias)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }
 
   useEffect(() => {
@@ -67,6 +73,7 @@ export default function CompetenciasPage() {
         <EstadoErro
           oQue="as competências"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar();

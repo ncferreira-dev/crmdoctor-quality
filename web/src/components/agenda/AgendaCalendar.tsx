@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api } from '../../lib/api';
+import { api, statusDoErro } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
 import {
   ConsultorDaVisita,
@@ -68,6 +68,9 @@ export function AgendaCalendar() {
   const [refDate, setRefDate] = useState(new Date());
   const [visitas, setVisitas] = useState<Visita[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
 
   const [consultores, setConsultores] = useState<Pick<ConsultorDaVisita, 'id' | 'nome'>[]>([]);
   const [empresas, setEmpresas] = useState<EmpresaCliente[]>([]);
@@ -97,7 +100,10 @@ export function AgendaCalendar() {
     api
       .getTodos<Visita>(`/visitas?de=${de}&ate=${ate}`)
       .then(setVisitas)
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }, [view, refDate]);
 
   useEffect(() => {
@@ -367,6 +373,7 @@ export function AgendaCalendar() {
         <EstadoErro
           oQue="a agenda"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar();

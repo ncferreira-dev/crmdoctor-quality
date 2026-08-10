@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api } from '../../../lib/api';
+import { api, statusDoErro } from '../../../lib/api';
 import { usePermissao } from '../../../hooks/useSessao';
 import { EmpresaCliente, ResultadoPaginado } from '../../../types';
 import { SEGMENTO_LABEL, formatarCnpj } from '../../../lib/formato';
@@ -15,6 +15,9 @@ import { EmpresaFormModal } from '../../../components/empresas/EmpresaFormModal'
 export default function EmpresasPage() {
   const [empresas, setEmpresas] = useState<EmpresaCliente[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // O status vem junto do texto: é ele que separa "seu cargo não tem acesso"
+  // de "deu erro, tente de novo". Ver EstadoErro.
+  const [statusErro, setStatusErro] = useState<number | undefined>(undefined);
   const [busca, setBusca] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
   const podeEditar = usePermissao('EMPRESAS_WRITE');
@@ -24,7 +27,10 @@ export default function EmpresasPage() {
     api
       .get<ResultadoPaginado<EmpresaCliente>>(`/empresas${query}`)
       .then((r) => setEmpresas(r.data))
-      .catch((e: Error) => setErro(e.message));
+      .catch((e: Error) => {
+        setErro(e.message);
+        setStatusErro(statusDoErro(e));
+      });
   }
 
   useEffect(() => {
@@ -57,6 +63,7 @@ export default function EmpresasPage() {
         <EstadoErro
           oQue="as empresas"
           detalhe={erro}
+          status={statusErro}
           onTentarDeNovo={() => {
             setErro(null);
             carregar(busca);
