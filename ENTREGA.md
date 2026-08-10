@@ -1517,7 +1517,39 @@ fixada", e `npm run dev` sobe com um `package-lock.json` de mentira criado em
 
 ### 29. Nomes com espaço sobrando limpos **(parada)**
 
-**Bloco:** 4 · **Depende de:** 6 · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** 6 · **Estado:** **feito em 10/08/2026**
+
+> **A varredura foi de tudo, não dos dois nomes que alguém notou.** A regra da
+> classe do `CLAUDE.md` diz que defeito de padrão só fecha com varredura
+> provando que sobrou zero, então o script olha TODO campo de texto de TODO
+> model: **61 campos varridos**, em 15 tabelas.
+>
+> Achou exatamente os dois que o item registrava, e mais nada:
+>
+> ```
+> User.nome: "Giovanna " -> "Giovanna"
+> User.nome: "Erica "    -> "Erica"
+> ```
+>
+> Medido depois, com leitura independente do script: **0 nomes diferentes do
+> próprio `trim()`** na produção, e a varredura de 61 campos volta vazia. As duas
+> linhas de auditoria saíram assinadas.
+>
+> **Por que só dois:** o DTO apara na entrada desde 05/08, então o defeito era
+> só o que ficou gravado antes. O espaço vazava para onde o nome vira chave: o
+> filtro de consultor da agenda e a carga por responsável do dashboard, onde
+> "Giovanna " e "Giovanna" eram duas pessoas.
+>
+> **O que a varredura ensinou de brinde:** `Cargo.permissoes` é lista de texto e
+> ficou de fora com um comentário explicando, porque `btrim` não recebe array e
+> porque ali é constante do sistema, não texto digitado por gente. O primeiro
+> ensaio quebrou nisso, e é a razão de o ensaio existir.
+>
+> Nasceu `prisma/aparar-nomes.ts` (`npm run nomes:aparar:producao`), com as
+> mesmas quatro travas do script de contas, e com uma a mais que vale copiar: ao
+> terminar, ele **refaz a varredura inteira** e só diz CONFERIDO se ela voltar
+> vazia. A prova é a segunda medição, não a contagem do que ele achou que
+> corrigiu.
 
 O DTO já apara desde 05/08, mas os dois nomes gravados antes continuam errados
 em produção: "Giovanna " e "Erica ". O espaço vazou para o filtro de consultor
@@ -1879,7 +1911,7 @@ despercebido.
 | 26 | 4 | forbidNonWhitelisted | 12 | **feito** |
 | 27 | 4 | CNPJ com máscara, dígito e unicidade | | **feito** |
 | 28 | 4 | turbopack.root fixado | | **feito** |
-| 29 | 4 | Nomes com espaço limpos **(parada)** | 6 | aberto |
+| 29 | 4 | Nomes com espaço limpos **(parada)** | 6 | **feito** |
 | 30 | 5 | Responsável do marco preenchível | | **feito** |
 | 31 | 5 | Estado vazio com ação no bloco Equipe | | **feito** |
 | 32 | 5 | Executor de teste no front | | **feito** |
@@ -1892,7 +1924,7 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**4 abertos, 35 fechados, 1 esperando o Nícolas.** Nenhum dos abertos é item de
+**3 abertos, 36 fechados, 1 esperando o Nícolas.** Nenhum dos abertos é item de
 código: dependem de decisão do Nícolas ou de acesso que só ele tem.
 
 ---
