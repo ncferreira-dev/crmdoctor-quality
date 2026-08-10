@@ -83,11 +83,35 @@ export function formatarDataCivil(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
-// Mesma data civil, como Date à meia-noite LOCAL, para poder comparar com hoje
-// sem que o fuso empurre a conta para o dia vizinho.
-function dataCivilLocal(iso: string): Date {
+// O fuso do prazo de compliance, e a razão de ele ser fixo.
+//
+// O prazo é uma data civil brasileira: "vence em 16/08" vale para a empresa
+// toda, não para o relógio de quem abriu a tela. `new Date()` com
+// `setHours(0,0,0,0)` dava a meia-noite da MÁQUINA: numa em Brasília a conta
+// batia, numa em UTC, depois das 21h, ela andava um dia inteiro. É a mesma
+// classe de defeito que a API já pagou para consertar com `inicioDoDiaCivil`, e
+// a regra não tinha sido estendida ao front.
+const FUSO_BRASIL = 'America/Sao_Paulo';
+
+const FORMATO_ISO = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSO_BRASIL,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+// Hoje, em data civil de Brasília, como número de dias desde a época. Vira
+// número de propósito: comparar dois inteiros não tem fuso para errar.
+function diaCivilDeHoje(agora: Date = new Date()): number {
+  return diaDaData(FORMATO_ISO.format(agora));
+}
+
+// "2026-08-16" (ou o ISO completo) vira o número do dia. Lido da string, sem
+// passar por fuso: campo de data não tem hora, e converter para o fuso local
+// joga o instante para o dia anterior.
+function diaDaData(iso: string): number {
   const [ano, mes, dia] = iso.slice(0, 10).split('-').map(Number);
-  return new Date(ano, mes - 1, dia);
+  return Math.floor(Date.UTC(ano, mes - 1, dia) / 86_400_000);
 }
 
 export type UrgenciaPrazo = 'vencido' | 'critico' | 'proximo' | 'tranquilo' | 'sem-prazo';
@@ -95,10 +119,13 @@ export type UrgenciaPrazo = 'vencido' | 'critico' | 'proximo' | 'tranquilo' | 's
 // A régua de urgência do compliance. O cron alerta a 15 dias, então a UI usa a
 // MESMA janela: o que o sistema considera "avisar" é o que a tela pinta de
 // alerta. Divergir aqui faria a tela contradizer a notificação.
-export function urgenciaDoPrazo(prazoIso: string | null): UrgenciaPrazo {
+export function urgenciaDoPrazo(
+  prazoIso: string | null,
+  agora: Date = new Date(),
+): UrgenciaPrazo {
   if (!prazoIso) return 'sem-prazo';
 
-  const dias = diasAteOPrazo(prazoIso);
+  const dias = diasAteOPrazo(prazoIso, agora);
 
   if (dias < 0) return 'vencido';
   if (dias <= 7) return 'critico';
@@ -106,37 +133,23 @@ export function urgenciaDoPrazo(prazoIso: string | null): UrgenciaPrazo {
   return 'tranquilo';
 }
 
-export function diasAteOPrazo(prazoIso: string): number {
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  // Meia-noite local dos dois lados: a conta dá dias inteiros exatos, sem
-  // depender de Math.round para compensar as 3h de diferença de fuso.
-  const diff = dataCivilLocal(prazoIso).getTime() - hoje.getTime();
-  return Math.round(diff / (24 * 60 * 60 * 1000));
+// `agora` é argumento para o teste poder fixar o instante sem mexer no relógio
+// da máquina. Em produção ninguém passa nada.
+export function diasAteOPrazo(prazoIso: string, agora: Date = new Date()): number {
+  // Dois inteiros na mesma régua: dia civil de Brasília dos dois lados.
+  return diaDaData(prazoIso) - diaCivilDeHoje(agora);
 }
 
 // Texto humano do prazo, já com o sinal de urgência embutido.
-export function textoPrazo(prazoIso: string | null): string {
+export function textoPrazo(prazoIso: string | null, agora: Date = new Date()): string {
   if (!prazoIso) return 'Sem prazo definido';
-  const dias = diasAteOPrazo(prazoIso);
+  const dias = diasAteOPrazo(prazoIso, agora);
   if (dias < 0) return `Vencido há ${Math.abs(dias)} ${Math.abs(dias) === 1 ? 'dia' : 'dias'}`;
   if (dias === 0) return 'Vence hoje';
   if (dias === 1) return 'Vence amanhã';
   return `Vence em ${dias} dias`;
 }
 
-// Linha de prazo de um alerta de compliance, calculada na hora.
-//
-// Existe porque a mensagem gravada na notificação guarda só o FATO ("Etapa X do
-// projeto Y"). A contagem de dias mora aqui de propósito: no banco ela ficava
-// dentro do texto, era escrita uma vez e o índice único impedia regravar, então
-// um alerta criado com "vence em 9 dias" continuava dizendo 9 uma semana
-// depois. Em 09/08/2026 o dashboard anunciava 9 dias ao lado de uma data que
-// faltavam 4, e a tela do projeto, que sempre calculou na hora, dizia 4.
-//
-// O sino e o painel do dashboard chamam esta função, e não montam o texto cada
-// um do seu jeito: duas cópias da mesma regra é como as duas telas passariam a
-// discordar de novo.
 // CNPJ guardado é só dígito (a API normaliza antes de gravar, senão o mesmo
 // cliente entraria duas vezes no índice único). Quem lê a tela precisa da
 // máscara, e ela mora aqui, do lado do resto da formatação.
@@ -182,6 +195,18 @@ export function formatarMoeda(
   });
 }
 
+// Linha de prazo de um alerta de compliance, calculada na hora.
+//
+// Existe porque a mensagem gravada na notificação guarda só o FATO ("Etapa X do
+// projeto Y"). A contagem de dias mora aqui de propósito: no banco ela ficava
+// dentro do texto, era escrita uma vez e o índice único impedia regravar, então
+// um alerta criado com "vence em 9 dias" continuava dizendo 9 uma semana
+// depois. Em 09/08/2026 o dashboard anunciava 9 dias ao lado de uma data que
+// faltavam 4, e a tela do projeto, que sempre calculou na hora, dizia 4.
+//
+// O sino e o painel do dashboard chamam esta função, e não montam o texto cada
+// um do seu jeito: duas cópias da mesma regra é como as duas telas passariam a
+// discordar de novo.
 export function textoPrazoDoAlerta(dataReferencia: string | null): string {
   if (!dataReferencia) return 'Sem prazo definido';
   return `${textoPrazo(dataReferencia)} · ${formatarDataCivil(dataReferencia)}`;

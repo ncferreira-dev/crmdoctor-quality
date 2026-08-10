@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
-import { diasAteOPrazo } from '../../../lib/formato';
+import { agruparPorUrgencia } from '../../../lib/tarefas';
 import { usePermissao, useSessaoUsuario } from '../../../hooks/useSessao';
 import { Projeto, StatusTarefa, Tarefa } from '../../../types';
 import { Button } from '../../../components/ui/Button';
@@ -12,46 +12,6 @@ import { ItemTarefa } from '../../../components/tarefas/ItemTarefa';
 import { TarefaFormModal } from '../../../components/membros/TarefaFormModal';
 
 type Escopo = 'minhas' | 'equipe';
-
-// A tela responde "o que eu preciso fazer", e a resposta muda conforme o prazo.
-// Por isso os grupos são por urgência, e não por status: uma tarefa atrasada e
-// uma para semana que vem estão as duas "pendentes", mas não cobram a mesma
-// coisa de quem abre a tela de manhã.
-interface Grupo {
-  chave: string;
-  titulo: string;
-  tarefas: Tarefa[];
-  destaque?: boolean;
-}
-
-function agrupar(tarefas: Tarefa[]): Grupo[] {
-  const abertas = tarefas.filter((t) => t.status !== 'CONCLUIDA');
-  const concluidas = tarefas.filter((t) => t.status === 'CONCLUIDA');
-
-  const atrasadas: Tarefa[] = [];
-  const hoje: Tarefa[] = [];
-  const proximas: Tarefa[] = [];
-  const semPrazo: Tarefa[] = [];
-
-  for (const tarefa of abertas) {
-    if (!tarefa.prazo) {
-      semPrazo.push(tarefa);
-      continue;
-    }
-    const dias = diasAteOPrazo(tarefa.prazo);
-    if (dias < 0) atrasadas.push(tarefa);
-    else if (dias === 0) hoje.push(tarefa);
-    else proximas.push(tarefa);
-  }
-
-  return [
-    { chave: 'atrasadas', titulo: 'Atrasadas', tarefas: atrasadas, destaque: true },
-    { chave: 'hoje', titulo: 'Para hoje', tarefas: hoje },
-    { chave: 'proximas', titulo: 'A caminho', tarefas: proximas },
-    { chave: 'sem-prazo', titulo: 'Sem prazo', tarefas: semPrazo },
-    { chave: 'concluidas', titulo: 'Concluídas', tarefas: concluidas },
-  ].filter((grupo) => grupo.tarefas.length > 0);
-}
 
 export default function TarefasPage() {
   const usuario = useSessaoUsuario();
@@ -117,7 +77,7 @@ export default function TarefasPage() {
     }
   }
 
-  const grupos = agrupar(tarefas ?? []);
+  const grupos = agruparPorUrgencia(tarefas ?? []);
   const abertas = (tarefas ?? []).filter((t) => t.status !== 'CONCLUIDA').length;
 
   if (!podeVer) {

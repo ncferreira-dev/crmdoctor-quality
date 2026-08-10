@@ -1109,7 +1109,23 @@ registrada é voltar para "Nova visita", porque é a única coisa que o botão c
 
 ### 24. Dia civil no front
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> A conta passou a ser feita em dia civil de Brasília, com `Intl`, igual ao
+> `inicioDoDiaCivil` da API. Nada de `-3` fixo: quem sabe horário de verão e
+> mudança de fuso é o `Intl`, não a gente.
+>
+> **Vira comparação de dois inteiros** (número do dia desde a época, dos dois
+> lados), porque data com hora sempre acha um jeito de escorregar um dia.
+>
+> **`diasAteOPrazo`, `urgenciaDoPrazo` e `textoPrazo` ganharam o instante como
+> argumento**, com `new Date()` como padrão. Sem isso não havia teste possível:
+> a função lia o relógio da máquina por dentro. Em produção ninguém passa nada.
+>
+> Provado pelo item 32, com a suíte rodando em `TZ=UTC`: às 21h30 de Brasília,
+> quando o relógio UTC já virou o dia, o prazo de amanhã continua dizendo
+> "Vence amanhã" e o de hoje continua dizendo "Vence hoje". Antes, nessa mesma
+> hora, os dois andavam um dia.
 
 `diasAteOPrazo` em `lib/formato.ts` usa `new Date()` com `setHours(0,0,0,0)`, ou
 seja, a meia-noite **local do navegador**. Numa máquina em Brasília está certo.
@@ -1360,7 +1376,31 @@ mesmo vazio, com ação".
 
 ### 32. Executor de teste no front
 
-**Bloco:** 5 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 5 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> **Vitest, e o fuso do executor é fixado em UTC.** Essa é a parte que importa:
+> `TZ=UTC` é o oposto da máquina do Nícolas, e é exatamente onde o cálculo de
+> dia civil quebrava. Rodar a suíte em `America/Sao_Paulo` esconderia o defeito
+> que ela existe para pegar.
+>
+> Vitest e não Jest porque a `web/` é ESM e TypeScript puro, e o Vitest lê o
+> mesmo tsconfig sem transpiler no meio. A API segue com Jest, que já vem
+> pronto no NestJS.
+>
+> **Duas regras saíram de dentro de componente para poder existir teste:**
+> `agruparPorUrgencia` (estava em `tarefas/page.tsx`) e `prazosPorDia` (estava
+> dentro de um `useMemo` no `AgendaCalendar`). Dentro do componente elas só
+> eram exercitadas abrindo a tela e olhando.
+>
+> **22 testes, cobrindo o que a fila pediu:**
+>
+> | O que | Casos |
+> |---|---|
+> | `diasAteOPrazo` com relógio em UTC, incluindo virada de dia e de mês | 6 |
+> | `urgenciaDoPrazo`, na mesma régua de 15 dias do cron | 2 |
+> | `formatarDataCivil`, `formatarMoeda`, CNPJ | 5 |
+> | `agruparPorUrgencia` | 4 |
+> | `prazosPorDia`, incluindo o filtro de empresa que o prazo ignorava | 5 |
 
 A `web/` não tem nenhum teste e nem executor instalado. Toda a rede automatizada
 do projeto está na API, enquanto a lógica de urgência, cálculo de dias,
@@ -1534,7 +1574,7 @@ despercebido.
 | 21 | 4 | Alvos de toque de 36px | | aberto |
 | 22 | 4 | Membros não oferece o que dá 403 | | aberto |
 | 23 | 4 | Vocabulário do botão Evento | | **feito** |
-| 24 | 4 | Dia civil no front | 32 | aberto |
+| 24 | 4 | Dia civil no front | 32 | **feito** |
 | 25 | 4 | Formatação de moeda centralizada | | **feito** |
 | 26 | 4 | forbidNonWhitelisted | 12 | **feito** |
 | 27 | 4 | CNPJ com máscara, dígito e unicidade | | **feito** |
@@ -1542,7 +1582,7 @@ despercebido.
 | 29 | 4 | Nomes com espaço limpos **(parada)** | 6 | aberto |
 | 30 | 5 | Responsável do marco preenchível | | **feito** |
 | 31 | 5 | Estado vazio com ação no bloco Equipe | | **feito** |
-| 32 | 5 | Executor de teste no front | | aberto |
+| 32 | 5 | Executor de teste no front | | **feito** |
 | 33 | 5 | e2e rodando ou removido | | aberto |
 | 34 | 5 | Tour guiado: relatado, não existe | | **feito** |
 | 35 | 6 | Esconder três blocos do dashboard | 1, 2, 3, 4 | aberto |
@@ -1551,7 +1591,7 @@ despercebido.
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 
-**14 abertos, 24 fechados, 1 esperando o Nícolas.**
+**12 abertos, 26 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1578,3 +1618,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 33 | 40 | itens 19 e 25: cabeçalho só quando há corpo, preflight com cache de 2h, e moeda num lugar só |
 | 10/08/2026 | 35 | 40 | itens 26 e 27: campo fora do DTO vira 400, e CNPJ passa a ter dígito verificador, máscara e conflito tratado |
 | 10/08/2026 | 38 | 41 | itens 30, 31 e 39: marco ganha dono pela tela, bloco Equipe aparece vazio, e `include` para de devolver linha apagada (1 checagem nova) |
+| 10/08/2026 | 40 | 41 | itens 32 e 24: o front ganha executor de teste rodando em TZ=UTC, e o cálculo de dia passa a ser civil de Brasília |

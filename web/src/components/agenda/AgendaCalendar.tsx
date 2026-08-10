@@ -17,6 +17,7 @@ import { EstadoErro } from '../ui/EstadoErro';
 import { Select } from '../ui/Select';
 import { ChevronLeft, ChevronRight, FiltroIcon, Plus, SearchIcon } from '../ui/icons';
 import { agruparPorDia, intervaloDaVisao } from './agendaUtils';
+import { prazosPorDia } from '../../lib/tarefas';
 import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
 import { DayView } from './DayView';
@@ -124,36 +125,19 @@ export function AgendaCalendar() {
   // Prazo de compliance por dia. É informação diferente de visita: ninguém
   // "comparece" a um prazo, ele só vence. Por isso vai num mapa separado, com
   // desenho separado, em vez de virar mais um bloco na grade.
-  const prazosPorDia = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    const mapa = new Map<string, Projeto[]>();
-
-    // Os filtros valem para o prazo também, senão a agenda continua mostrando
-    // compromisso de empresa que a pessoa acabou de tirar da tela, e o filtro
-    // passa a parecer quebrado. Foi medido: filtrando por uma empresa, as
-    // visitas caíam de 7 para 2 e as três marcas de prazo continuavam lá,
-    // inclusive de outras duas empresas.
-    //
-    // Consultor e status são filtros que um prazo não tem como responder:
-    // ninguém é responsável por uma data vencer, e prazo não fica "confirmado"
-    // nem "cancelado". Quando um deles está ativo, a pessoa pediu uma lista de
-    // visitas, então o prazo sai de cena em vez de fingir que se encaixa.
-    if (filtroConsultor || filtroStatus) return mapa;
-
-    for (const projeto of projetos) {
-      if (!projeto.dataLimiteCompliance || projeto.estagio === 'CONCLUIDO') continue;
-      if (filtroEmpresa && projeto.empresaId !== filtroEmpresa) continue;
-      if (termo) {
-        const alvo = `${projeto.titulo} ${projeto.empresa?.nome ?? ''}`.toLowerCase();
-        if (!alvo.includes(termo)) continue;
-      }
-      // Data civil (@db.Date): fatiar a string evita o fuso jogar o prazo para
-      // o dia anterior, que é o bug que a tela já teve com esses campos.
-      const chave = projeto.dataLimiteCompliance.slice(0, 10);
-      mapa.set(chave, [...(mapa.get(chave) ?? []), projeto]);
-    }
-    return mapa;
-  }, [projetos, filtroEmpresa, filtroConsultor, filtroStatus, busca]);
+  //
+  // A conta mora em lib/tarefas.ts para poder ser testada: dentro do componente
+  // ela só era exercitada abrindo a tela e olhando.
+  const prazosPorDiaMapa = useMemo(
+    () =>
+      prazosPorDia(projetos, {
+        empresaId: filtroEmpresa,
+        consultorId: filtroConsultor,
+        status: filtroStatus,
+        busca,
+      }),
+    [projetos, filtroEmpresa, filtroConsultor, filtroStatus, busca],
+  );
 
   const tarefasPorDia = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -390,7 +374,7 @@ export function AgendaCalendar() {
         <MonthView
           refDate={refDate}
           visitasPorDia={visitasPorDia}
-          prazosPorDia={prazosPorDia}
+          prazosPorDia={prazosPorDiaMapa}
           tarefasPorDia={tarefasPorDia}
           onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
           onSelecionarDia={abrirNovo}

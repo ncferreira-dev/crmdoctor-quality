@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "comentario:test": "TZ=UTC de proposito: e o oposto do fuso do Brasil, e e onde o calculo de dia civil quebrava antes do item 24. Rodar em America/Sao_Paulo esconderia o defeito.",
+    "test": "TZ=UTC vitest run",
+    "test:watch": "TZ=UTC vitest",
     "lint": "npm run typecheck && eslint"
   },
   "dependencies": {
@@ -23,6 +26,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
