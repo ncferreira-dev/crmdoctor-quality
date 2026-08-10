@@ -479,7 +479,71 @@ a ponta no banco local: cadastra, copia o código, define a senha, entra.
 
 ### 8. Contas @teste.com saem do ar **(parada)**
 
-**Bloco:** 2 · **Depende de:** 6 e 7 · **Estado:** aberto
+**Bloco:** 2 · **Depende de:** 6 e 7 · **Estado:** **metade feita em 10/08/2026.
+Segue aberto: faltam 3 contas que são de pessoas de verdade**
+
+> **Três contas desativadas na produção, com rastro.** A medição mudou o plano
+> do item, e ela veio antes de qualquer escrita: contando o trabalho vinculado a
+> cada conta `@teste.com`, as seis se partiram em dois grupos que não têm nada a
+> ver um com o outro.
+>
+> | Conta | Tarefas | Marcos | Visitas | Equipes | O que foi feito |
+> |---|---|---|---|---|---|
+> | `analista@teste.com` | 0 | 0 | 0 | 0 | **desativada** |
+> | `joao@teste.com` | 0 | 0 | 0 | 0 | **desativada** |
+> | `coordenador@teste.com` | 2 | 2 | 1 | 3 | **desativada** |
+> | `analista2@teste.com` (Giovanna) | 4 | 2 | 4 | 1 | fica, é pessoa |
+> | `analista3@teste.com` (Erica) | 2 | 2 | 3 | 2 | fica, é pessoa |
+> | `analista4@teste.com` (Aline) | 3 | 2 | 7 | 2 | fica, é pessoa |
+>
+> As três de baixo têm 9 tarefas, 6 marcos e 14 visitas atribuídas entre elas.
+> Isso não é conta de teste com nome de gente: é gente com e-mail provisório. O
+> caminho para elas não é desativar, é **trocar o e-mail**, e aí saem desta lista
+> sozinhas. Continua dependendo da conversa com o Fabrício, como o próprio item
+> já dizia.
+>
+> A `coordenador@teste.com` entrou mesmo tendo trabalho vinculado, porque é a
+> que apaga empresa e projeto de cliente real. Desativar não solta o trabalho:
+> tarefa, marco e visita seguem atribuídos a ela.
+>
+> **Medido, antes e depois:** 8 contas ativas viraram 5, e as três somem da lista
+> de ativas. Nada foi excluído.
+>
+> **A trilha de auditoria tem 9 linhas, e as 3 primeiras são um erro meu.**
+>
+> ```
+> 22:25 | autor: (SEM AUTOR) | analista@teste.com     | ativo: true -> false
+> 22:25 | autor: (SEM AUTOR) | joao@teste.com         | ativo: true -> false
+> 22:25 | autor: (SEM AUTOR) | coordenador@teste.com  | ativo: true -> false
+> 22:29 | autor: nícolas     | (as três)              | ativo: false -> true
+> 22:29 | autor: nícolas     | (as três)              | ativo: true -> false
+> ```
+>
+> O script chamava `runWith(store, () => prisma.user.update(...))`. A
+> `PrismaPromise` é **preguiçosa**: a promessa nasce dentro do contexto e
+> executa fora dele, porque o `await` só acontece depois que o `runWith` já
+> voltou. A extensão então lia contexto vazio e gravava `usuarioId` nulo, **sem
+> erro nenhum**, que é o pior jeito de errar. O conserto é o `await` dentro do
+> callback.
+>
+> Como auditoria não se reescreve, a correção foi reativar e desativar de novo,
+> com autor. As seis linhas novas contam a história inteira, inclusive o erro, e
+> é assim que tem que ser.
+>
+> **A rota da aplicação NÃO tinha esse defeito**, e isso foi conferido em vez de
+> suposto: as 163 linhas de auditoria anteriores, todas vindas de requisição
+> HTTP, têm autor. O interceptor envolve o `next.handle()`, e a assinatura do
+> RxJS acontece dentro do contexto.
+>
+> Nasceu `prisma/desativar-contas.ts` (`npm run contas:desativar:producao`), com
+> quatro travas: `--destino` conferido contra a `DATABASE_URL`, `--como`
+> obrigatório para a linha de auditoria ter dono, só e-mail `@teste.com`, e
+> ensaio por padrão. Ele também reativa (`--reativar`), que é como esta correção
+> foi feita.
+>
+> **O que falta para fechar:** as três contas de pessoas de verdade. Enquanto
+> elas existirem como `@teste.com`, o critério do item ("nenhuma conta
+> `@teste.com` aparece como ativa") não está cumprido.
 
 Seis das oito contas de produção são `@teste.com`. Duas entram agora
 (`coordenador@teste.com` e `analista@teste.com`), e a de Coordenador tem
@@ -1771,7 +1835,7 @@ despercebido.
 | 5 | 1 | Verificação do domínio (Nícolas) | | aberto |
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
-| 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | aberto |
+| 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **metade feita, 3 contas dependem do Fabrício** |
 | 9 | 2 | Dado de demonstração separado do real | 8 | aberto |
 | 10 | 2 | Backup com rotina, cópia fora, restauração testada | 7 | aberto |
 | 11 | 2 | Higiene de ambiente e endereços | | **feito** |
