@@ -103,7 +103,7 @@ export default function ProjetosPage() {
         <button
           type="button"
           onClick={() => setFiltroEstagio('')}
-          className={`rounded-md px-3 py-1 text-sm transition-colors ${
+          className={`min-h-9 rounded-md px-3 text-sm transition-colors ${
             filtroEstagio === '' ? 'bg-brand text-white' : 'text-ink/60 hover:bg-white'
           }`}
         >
@@ -114,7 +114,7 @@ export default function ProjetosPage() {
             key={estagio}
             type="button"
             onClick={() => setFiltroEstagio(estagio)}
-            className={`rounded-md px-3 py-1 text-sm transition-colors ${
+            className={`min-h-9 rounded-md px-3 text-sm transition-colors ${
               filtroEstagio === estagio ? 'bg-brand text-white' : 'text-ink/60 hover:bg-white'
             }`}
           >

@@ -99,7 +99,9 @@ export function MonthView({
                       type="button"
                       onClick={() => onSelecionarTarefa(tarefa)}
                       title={`${tarefa.titulo}${tarefa.responsavel ? ` · ${tarefa.responsavel.nome}` : ''}`}
-                      className="truncate rounded-sm border-l-2 border-ink/30 bg-surface px-1 py-0.5 text-left text-[10px] leading-tight text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink focus-visible:bg-ink/10"
+                      // 36px de alvo no celular, como o chip de visita: eram
+                      // 17px, e este é um botão que só existe no toque.
+                      className="flex min-h-9 items-center truncate rounded-sm border-l-2 border-ink/30 bg-surface px-1 py-0.5 text-left text-[10px] leading-tight text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink focus-visible:bg-ink/10 sm:min-h-0"
                     >
                       {tarefa.titulo}
                     </button>
@@ -130,7 +132,7 @@ export function MonthView({
                       key={projeto.id}
                       href={`/projetos/${projeto.id}`}
                       title={`Prazo de compliance: ${projeto.titulo}`}
-                      className="flex items-center gap-1 truncate border-l-2 border-accent bg-accent/5 py-0.5 pl-1 pr-1 text-[10px] text-accent transition-colors hover:bg-accent/10"
+                      className="flex min-h-9 items-center gap-1 truncate border-l-2 border-accent bg-accent/5 py-0.5 pl-1 pr-1 text-[10px] text-accent transition-colors hover:bg-accent/10 sm:min-h-0"
                     >
                       <span className="font-black uppercase tracking-wide">Prazo</span>
                       <span className="truncate">{projeto.titulo}</span>

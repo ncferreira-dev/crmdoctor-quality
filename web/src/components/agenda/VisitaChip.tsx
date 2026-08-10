@@ -39,7 +39,11 @@ export function VisitaChip({ visita, onClick, variante = 'compacto' }: VisitaChi
     <button
       type="button"
       onClick={() => onClick(visita)}
-      className={`flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11px] transition-opacity hover:opacity-90 ${cor}`}
+      // min-h-9 (36px) só no celular: no mês o chip tinha 19px de altura, que
+      // é metade do alvo de toque que este projeto adotou, e é o bloco mais
+      // clicado da tela em campo. No desktop o mouse acerta 19px sem drama e a
+      // célula do mês é apertada, então a altura mínima cai a partir de sm.
+      className={`flex min-h-9 w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11px] transition-opacity hover:opacity-90 sm:min-h-0 ${cor}`}
     >
       <span className="font-black">{horaMinuto(visita.inicio)}</span>
       <span className="truncate">{empresa}</span>

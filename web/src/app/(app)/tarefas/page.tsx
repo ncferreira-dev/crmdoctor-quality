@@ -128,7 +128,7 @@ export default function TarefasPage() {
                   key={opcao.valor}
                   type="button"
                   onClick={() => setEscopo(opcao.valor)}
-                  className={`rounded-md px-3 py-1 text-sm transition-colors ${
+                  className={`min-h-9 rounded-md px-3 text-sm transition-colors ${
                     escopo === opcao.valor
                       ? 'bg-brand text-white'
                       : 'text-ink/60 hover:bg-surface'

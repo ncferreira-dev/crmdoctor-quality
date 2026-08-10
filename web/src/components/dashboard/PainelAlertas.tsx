@@ -62,7 +62,7 @@ export function PainelAlertas({ alertas, onMarcarLida, marcando }: PainelAlertas
                 {alerta.projetoId && (
                   <Link
                     href="/projetos"
-                    className="text-xs font-medium text-brand underline-offset-2 hover:underline"
+                    className="flex min-h-9 items-center text-xs font-medium text-brand underline-offset-2 hover:underline"
                   >
                     Ver projeto
                   </Link>

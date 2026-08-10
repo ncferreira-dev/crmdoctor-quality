@@ -232,7 +232,7 @@ export function AgendaCalendar() {
               <button
                 type="button"
                 onClick={() => navegar(-1)}
-                className="rounded-md border border-ink/15 p-1.5 text-ink/70 hover:bg-surface"
+                className="flex min-h-9 min-w-9 items-center justify-center rounded-md border border-ink/15 text-ink/70 hover:bg-surface"
                 aria-label="Anterior"
               >
                 <ChevronLeft />
@@ -243,7 +243,7 @@ export function AgendaCalendar() {
               <button
                 type="button"
                 onClick={() => navegar(1)}
-                className="rounded-md border border-ink/15 p-1.5 text-ink/70 hover:bg-surface"
+                className="flex min-h-9 min-w-9 items-center justify-center rounded-md border border-ink/15 text-ink/70 hover:bg-surface"
                 aria-label="Próximo"
               >
                 <ChevronRight />
@@ -261,7 +261,11 @@ export function AgendaCalendar() {
                 key={v.valor}
                 type="button"
                 onClick={() => setView(v.valor)}
-                className={`rounded-md px-3 py-1 text-sm transition-colors ${
+                // 36px de altura, que é o alvo de toque do projeto. Estes
+                // quatro tinham 28px, e são os botões que mais se toca na
+                // agenda: trocar de visão é o primeiro gesto de quem abre a
+                // tela no celular.
+                className={`min-h-9 rounded-md px-3 text-sm transition-colors ${
                   view === v.valor ? 'bg-brand text-white' : 'text-ink/60 hover:bg-surface'
                 }`}
               >

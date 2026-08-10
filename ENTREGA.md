@@ -1094,7 +1094,29 @@ casos abertos na tela.
 
 ### 21. Alvos de toque de 36px
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> Medição refeita em 390px, contando todo `button`, `a[href]` e `select` com
+> altura menor que 36px, tela por tela:
+>
+> | Tela | Antes | Depois | Total de alvos |
+> |---|---|---|---|
+> | Agenda | **16** | **0** | 73 |
+> | Projetos | 5 | 0 | 22 |
+> | Minhas tarefas | 2 | 0 | 15 |
+> | Dashboard | 1 | 0 | 20 |
+> | Membros | 0 | 0 | 43 |
+> | Empresas | 0 | 0 | 16 |
+>
+> O que subiu: as quatro visões da agenda e as setas (28px e 30px), os chips de
+> visita no mês (19px), as marcas de tarefa (17px) e de prazo (19px), os filtros
+> de estágio em Projetos e o par Minhas/Da equipe (28px), e o link "Ver projeto"
+> do painel de alertas (16px).
+>
+> **A altura mínima vale só no celular** (`min-h-9 sm:min-h-0`) nos elementos que
+> vivem dentro da célula do mês. No desktop o mouse acerta 19px sem dificuldade,
+> e a célula do mês é apertada: forçar 36px lá empurraria o terceiro
+> compromisso do dia para fora da célula. O alvo de toque é regra de toque.
 
 Medido na Agenda em 390px: 16 alvos abaixo de 36px. Mês, Semana, Dia e Lista com
 28px, as setas com 30px, e os blocos de visita com **19px**. A sessão que
@@ -1687,7 +1709,7 @@ despercebido.
 | 18 | 4 | datetime-local padronizado | | **feito** |
 | 19 | 4 | Content-Type fora dos GET | | **feito** |
 | 20 | 4 | 401, 403 e 500 distintos e sem jargão | | **feito** |
-| 21 | 4 | Alvos de toque de 36px | | aberto |
+| 21 | 4 | Alvos de toque de 36px | | **feito** |
 | 22 | 4 | Membros não oferece o que dá 403 | | **feito** |
 | 23 | 4 | Vocabulário do botão Evento | | **feito** |
 | 24 | 4 | Dia civil no front | 32 | **feito** |
@@ -1708,7 +1730,7 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**7 abertos, 32 fechados, 1 esperando o Nícolas.**
+**6 abertos, 33 fechados, 1 esperando o Nícolas.**
 
 ---
 
