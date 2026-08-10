@@ -23,6 +23,7 @@ import { WeekView } from './WeekView';
 import { DayView } from './DayView';
 import { ListView } from './ListView';
 import { VisitaFormModal } from './VisitaFormModal';
+import { TarefaDetalheModal } from './TarefaDetalheModal';
 
 type View = 'mes' | 'semana' | 'dia' | 'lista';
 
@@ -83,6 +84,9 @@ export function AgendaCalendar() {
     aberto: false,
     visita: null,
   });
+  // A tarefa aberta para leitura. Só leitura: mudar status e prazo é da tela de
+  // tarefas, e duplicar isso aqui seria duas telas para manter em vez de uma.
+  const [tarefaAberta, setTarefaAberta] = useState<Tarefa | null>(null);
   const podeEditar = usePermissao('VISITAS_WRITE');
 
   const carregar = useCallback(() => {
@@ -377,6 +381,7 @@ export function AgendaCalendar() {
           prazosPorDia={prazosPorDiaMapa}
           tarefasPorDia={tarefasPorDia}
           onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
+          onSelecionarTarefa={setTarefaAberta}
           onSelecionarDia={abrirNovo}
         />
       ) : view === 'semana' ? (
@@ -412,6 +417,8 @@ export function AgendaCalendar() {
           carregar();
         }}
       />
+
+      <TarefaDetalheModal tarefa={tarefaAberta} onFechar={() => setTarefaAberta(null)} />
     </div>
   );
 }

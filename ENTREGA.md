@@ -1545,6 +1545,32 @@ despercebido.
 > consertar (`relacao: true` não tem onde pôr filtro), e não numa string
 > específica.
 
+### 40. Marca de tarefa na agenda tinha que abrir
+
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026** ·
+**pedido do Nícolas no chat**
+
+> A marca cinza da tarefa na grade do mês era um `<span>`: cabia uma linha, o
+> título quase nunca cabia inteiro, e não abria nada. A pessoa via "Revisar
+> procedimento d..." e não tinha como saber o que era sem sair da agenda. O
+> prazo de projeto, ao lado, já era um link para o projeto desde antes; a
+> tarefa não era clicável.
+>
+> Agora é botão e abre um painel de leitura com o título inteiro, a descrição,
+> o status, o selo de prazo, o responsável, a data e o projeto vinculado, com
+> link para ele.
+>
+> **O "+N tarefa(s)" também abre.** Era o único aviso de que existia mais coisa
+> naquele dia, e era justamente o que não dizia o que era.
+>
+> **É só leitura, de propósito.** Mudar status, prazo ou responsável continua
+> sendo da tela de tarefas: repetir isso aqui seria duas telas para manter no
+> lugar de uma.
+>
+> **O que ficou de fora, e fica registrado:** só a visão de Mês mostra tarefa.
+> Semana, Dia e Lista não mostram nenhuma, e isso já era assim antes deste
+> pedido. Não entra aqui porque é outro trabalho, com outra decisão de desenho.
+
 ---
 
 ## Painel de estado
@@ -1590,8 +1616,9 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | **decidido: fica** |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
+| 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**12 abertos, 26 fechados, 1 esperando o Nícolas.**
+**12 abertos, 27 fechados, 1 esperando o Nícolas.**
 
 ---
 

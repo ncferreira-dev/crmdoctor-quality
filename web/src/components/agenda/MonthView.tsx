@@ -15,6 +15,11 @@ interface MonthViewProps {
   // sozinha, tarefa é trabalho que alguém precisa fazer até ali.
   tarefasPorDia: Map<string, Tarefa[]>;
   onSelecionarVisita: (visita: Visita) => void;
+  // A marca de tarefa é curta e o título quase sempre não cabe. Sem um jeito de
+  // abrir, a pessoa via "Revisar procedimento d..." e não tinha como saber o
+  // que era sem sair da agenda. O prazo já era clicável (vai para o projeto);
+  // a tarefa não era clicável nada.
+  onSelecionarTarefa: (tarefa: Tarefa) => void;
   onSelecionarDia: (dia: Date) => void;
 }
 
@@ -26,6 +31,7 @@ export function MonthView({
   prazosPorDia,
   tarefasPorDia,
   onSelecionarVisita,
+  onSelecionarTarefa,
   onSelecionarDia,
 }: MonthViewProps) {
   const dias = diasDaGradeDoMes(refDate);
@@ -88,18 +94,26 @@ export function MonthView({
               {tarefas.length > 0 && (
                 <div className="relative flex flex-col gap-0.5 pt-0.5">
                   {tarefas.slice(0, 2).map((tarefa) => (
-                    <span
+                    <button
                       key={tarefa.id}
+                      type="button"
+                      onClick={() => onSelecionarTarefa(tarefa)}
                       title={`${tarefa.titulo}${tarefa.responsavel ? ` · ${tarefa.responsavel.nome}` : ''}`}
-                      className="truncate rounded-sm border-l-2 border-ink/30 bg-surface px-1 py-0.5 text-[10px] leading-tight text-ink/70"
+                      className="truncate rounded-sm border-l-2 border-ink/30 bg-surface px-1 py-0.5 text-left text-[10px] leading-tight text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink focus-visible:bg-ink/10"
                     >
                       {tarefa.titulo}
-                    </span>
+                    </button>
                   ))}
+                  {/* O "+N" também abre: era o único jeito de saber que existia
+                      mais alguma coisa naquele dia, e não dizia o que era. */}
                   {tarefas.length > 2 && (
-                    <span className="px-1 text-[10px] text-ink/50">
+                    <button
+                      type="button"
+                      onClick={() => onSelecionarTarefa(tarefas[2])}
+                      className="px-1 text-left text-[10px] text-ink/50 transition-colors hover:text-ink"
+                    >
                       +{tarefas.length - 2} tarefa(s)
-                    </span>
+                    </button>
                   )}
                 </div>
               )}
