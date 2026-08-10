@@ -21,11 +21,19 @@ function limparSessaoERedirecionar() {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
 
+  // Content-Type só quando existe corpo, e a razão é de rede, não de estilo.
+  //
+  // Mandado em toda requisição, ele torna a chamada "não simples" para o CORS,
+  // e o navegador passa a fazer um OPTIONS antes de CADA uma. Medido na aba de
+  // rede: toda chamada aparecia duas vezes. Num GET sem corpo o cabeçalho ainda
+  // é mentira, porque não há conteúdo nenhum para tipar.
+  const temCorpo = options.body !== undefined;
+
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
     cache: 'no-store',
     headers: {
-      'Content-Type': 'application/json',
+      ...(temCorpo ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },

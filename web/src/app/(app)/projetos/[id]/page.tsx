@@ -10,6 +10,7 @@ import {
   ESTAGIO_PROJETO_DESCRICAO,
   ESTAGIO_PROJETO_LABEL,
   formatarDataCivil,
+  formatarMoeda,
   proximoEstagio,
 } from '../../../../lib/formato';
 import { Button } from '../../../../components/ui/Button';
@@ -70,8 +71,9 @@ export default function ProjetoDetalhePage({ params }: { params: Promise<{ id: s
   }
 
   const proximo = proximoEstagio(projeto.estagio);
+  // Com centavos: a ficha do contrato existe para dar o número exato.
   const valor = projeto.valor
-    ? Number(projeto.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    ? formatarMoeda(Number(projeto.valor), { comCentavos: true })
     : 'Sem valor definido';
 
   return (

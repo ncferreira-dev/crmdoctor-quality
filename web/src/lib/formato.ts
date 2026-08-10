@@ -137,6 +137,30 @@ export function textoPrazo(prazoIso: string | null): string {
 // O sino e o painel do dashboard chamam esta função, e não montam o texto cada
 // um do seu jeito: duas cópias da mesma regra é como as duas telas passariam a
 // discordar de novo.
+// Dinheiro, num lugar só.
+//
+// Estava escrito à mão no dashboard e na tela do projeto, e as duas cópias já
+// discordavam: o dashboard escondia os centavos e a tela do projeto os
+// mostrava, então o mesmo contrato aparecia como "R$ 45.000" num lugar e
+// "R$ 45.000,00" no outro. É a mesma classe de duplicação que fez o card
+// "Tickets abertos" discordar da lista.
+//
+// Centavos são opcionais porque as duas leituras são legítimas: cartão de
+// dashboard existe para dar ordem de grandeza, e ficha de contrato existe para
+// dar o número exato. O que não é legítimo é cada tela decidir isso sozinha.
+export function formatarMoeda(
+  valor: number | null | undefined,
+  opcoes: { comCentavos?: boolean } = {},
+): string {
+  const casas = opcoes.comCentavos ? 2 : 0;
+  return (valor ?? 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: casas,
+    maximumFractionDigits: casas,
+  });
+}
+
 export function textoPrazoDoAlerta(dataReferencia: string | null): string {
   if (!dataReferencia) return 'Sem prazo definido';
   return `${textoPrazo(dataReferencia)} · ${formatarDataCivil(dataReferencia)}`;

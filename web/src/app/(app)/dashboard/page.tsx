@@ -11,6 +11,7 @@ import {
   ESTAGIOS_PROJETO,
   ESTAGIO_PROJETO_LABEL,
   formatarDataCivil,
+  formatarMoeda,
 } from '../../../lib/formato';
 import { EstadoErro } from '../../../components/ui/EstadoErro';
 import { KpiCard } from '../../../components/dashboard/KpiCard';
@@ -21,11 +22,8 @@ import { PainelAlertas } from '../../../components/dashboard/PainelAlertas';
 // afirmaria que não há contrato ativo.
 function moeda(valor: number | null | undefined): string {
   if (valor === null) return 'Restrito';
-  return (valor ?? 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  });
+  // Sem centavos: o cartão do dashboard existe para dar ordem de grandeza.
+  return formatarMoeda(valor);
 }
 
 // Campo numérico que pode não existir se a API estiver numa versão anterior.

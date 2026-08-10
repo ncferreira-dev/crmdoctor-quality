@@ -1017,7 +1017,34 @@ foi arrumado e voltou", ainda vivo na tela mais usada em campo.
 
 ### 19. Content-Type fora dos GET
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026, e o
+diagnóstico da fila estava errado**
+
+> **O `Content-Type` saiu dos GET**, e agora só vai quando existe corpo. Num GET
+> ele era mentira de qualquer jeito: não há conteúdo nenhum para tipar.
+>
+> **Só que o OPTIONS continuou.** Medido na aba de rede logo depois da mudança:
+> cada chamada autenticada seguiu aparecendo duas vezes. A causa não era o
+> `Content-Type`. É o `Authorization`, que também não está na lista de
+> cabeçalhos simples do CORS e sozinho já obriga o preflight. Nenhuma faxina no
+> front tira isso: token no cabeçalho é o desenho da autenticação.
+>
+> **O que dá para fazer é não repetir o preflight a cada chamada**, e é o que
+> foi feito: `maxAge: 7200` no CORS da API. Sem ele o navegador guarda a
+> resposta do OPTIONS por 5 segundos, então uma tela que recarrega lista a cada
+> minuto paga o dobro de requisições para sempre. Medido no cabeçalho da
+> resposta:
+>
+> ```
+> OPTIONS /users/me
+> Access-Control-Max-Age: 7200
+> ```
+>
+> **O que NÃO foi possível medir aqui:** o navegador de automação não reaproveita
+> o cache de preflight, então as três chamadas seguidas continuaram com um
+> OPTIONS cada uma nesta máquina. Num navegador normal a resposta fica guardada
+> por 2 horas por URL. Fica registrado como medido no servidor e não medido no
+> cliente, em vez de virar um "resolvido" que a aba de rede desmentiria.
 
 `lib/api.ts` manda `Content-Type: application/json` em toda requisição,
 inclusive GET sem corpo. Isso torna toda chamada uma requisição não simples e
@@ -1095,7 +1122,20 @@ relógio da máquina em UTC.
 
 ### 25. Formatação de moeda centralizada
 
-**Bloco:** 4 · **Depende de:** nada · **Estado:** aberto
+**Bloco:** 4 · **Depende de:** nada · **Estado:** **feito em 10/08/2026**
+
+> Nasceu `formatarMoeda` em `lib/formato.ts`, e as duas cópias à mão sumiram.
+>
+> **As cópias já discordavam**, que é o motivo de o item existir: o dashboard
+> escondia os centavos e a tela do projeto os mostrava, então o mesmo contrato
+> aparecia como "R$ 45.000" num lugar e "R$ 45.000,00" no outro.
+>
+> Centavos viraram opção em vez de virarem regra única, porque as duas leituras
+> são legítimas: cartão de dashboard existe para dar ordem de grandeza, ficha de
+> contrato existe para dar o número exato. O que não é legítimo é cada tela
+> decidir isso sozinha.
+>
+> `style: 'currency'` fora de `lib/formato.ts`: zero.
 
 Escrita à mão em `dashboard/page.tsx` e em `projetos/[id]/page.tsx`, enquanto
 todo o resto do sistema centraliza formatação em `lib/formato.ts`. É a mesma
@@ -1344,13 +1384,13 @@ despercebido.
 | 16 | 4 | Gaveta do celular: transform e Esc | | **feito** |
 | 17 | 4 | Typecheck da API no mesmo comando do lint | | **feito** |
 | 18 | 4 | datetime-local padronizado | | **feito** |
-| 19 | 4 | Content-Type fora dos GET | | aberto |
+| 19 | 4 | Content-Type fora dos GET | | **feito** |
 | 20 | 4 | 401, 403 e 500 distintos e sem jargão | | aberto |
 | 21 | 4 | Alvos de toque de 36px | | aberto |
 | 22 | 4 | Membros não oferece o que dá 403 | | aberto |
 | 23 | 4 | Vocabulário do botão Evento | | **feito** |
 | 24 | 4 | Dia civil no front | 32 | aberto |
-| 25 | 4 | Formatação de moeda centralizada | | aberto |
+| 25 | 4 | Formatação de moeda centralizada | | **feito** |
 | 26 | 4 | forbidNonWhitelisted | 12 | aberto |
 | 27 | 4 | CNPJ com máscara, dígito e unicidade | | aberto |
 | 28 | 4 | turbopack.root fixado | | **feito** |
@@ -1365,7 +1405,7 @@ despercebido.
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | aberto |
 | 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
 
-**20 abertos, 17 fechados, 1 esperando o Nícolas.**
+**18 abertos, 19 fechados, 1 esperando o Nícolas.**
 
 ---
 
@@ -1389,3 +1429,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 28 | 40 | item 3: o aviso diário existe e sai por pessoa, mais 1 checagem nova cobrando o laço entre cron e motor |
 | 10/08/2026 | 30 | 40 | item 16: animação parou de decidir visibilidade, e a gaveta parou de entrar de fora da tela |
 | 10/08/2026 | 31 | 40 | itens 18 e 23: nasce o CampoDataHora e some o último campo de data nativo, e o botão da agenda passa a dizer o que cria |
+| 10/08/2026 | 33 | 40 | itens 19 e 25: cabeçalho só quando há corpo, preflight com cache de 2h, e moeda num lugar só |

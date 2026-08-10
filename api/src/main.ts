@@ -46,6 +46,18 @@ async function bootstrap() {
       );
     },
     credentials: true,
+    // Quanto tempo o navegador pode guardar a resposta do preflight.
+    //
+    // Toda chamada autenticada manda `Authorization`, que não está na lista de
+    // cabeçalhos simples do CORS. Isso sozinho obriga um OPTIONS antes de cada
+    // requisição, e nenhuma faxina no front tira isso: medido em 10/08/2026,
+    // depois de o `Content-Type` sair dos GET, os OPTIONS continuaram lá.
+    //
+    // O que dá para fazer é não repetir o preflight a cada chamada. Sem este
+    // campo o navegador guarda por 5 segundos, então uma tela que recarrega
+    // lista a cada minuto paga o dobro de requisições para sempre. 7200s é o
+    // teto que o Chrome respeita; mandar mais seria pedir o que ele ignora.
+    maxAge: 7200,
   });
 
   await app.listen(process.env.PORT ?? 3001);
