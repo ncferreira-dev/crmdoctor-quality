@@ -31,7 +31,7 @@ function servicoCom(prisma: MockPrisma) {
 const GESTOR: AuthUser = {
   sub: 'gestor-1',
   nome: 'Gestor',
-  email: 'gestor@doctorquality.com.br',
+  email: 'gestor@drquality.com.br',
   cargoNivel: 100,
   permissoes: ['USUARIOS_MANAGE'],
 };
@@ -42,7 +42,7 @@ const GESTOR: AuthUser = {
 const COORDENADOR: AuthUser = {
   sub: 'coord-1',
   nome: 'Coordenador',
-  email: 'coordenador@doctorquality.com.br',
+  email: 'coordenador@drquality.com.br',
   cargoNivel: 50,
   permissoes: ['USUARIOS_READ', 'VISITAS_WRITE'],
 };
@@ -267,7 +267,7 @@ describe('UsersService — telefone só para quem gerencia e para o dono', () =>
     return {
       id,
       nome: `Pessoa ${id}`,
-      email: `${id}@doctorquality.com.br`,
+      email: `${id}@drquality.com.br`,
       telefone,
       senhaHash: 'hash-que-nunca-sai',
       codigoConviteHash: null,

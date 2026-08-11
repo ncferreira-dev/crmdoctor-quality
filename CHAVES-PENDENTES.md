@@ -28,7 +28,7 @@ e nós vamos usar algo perto de 30 por dia no pior caso.
 3. Crie a conta com **o e-mail que você preferir**, e anote qual foi
 
    O endereço em si não importa; o que importa é lembrar dele. Enquanto o
-   domínio `doctorquality.com.br` não estiver verificado (item 5, mais abaixo),
+   domínio `drquality.com.br` não estiver verificado (item 5, mais abaixo),
    o Resend usa o domínio de teste dele, e esse remetente **só entrega para o
    endereço dono da conta**. O e-mail de teste vai ter que ser mandado para
    esse endereço, e para nenhum outro: mandar para outro devolve um erro
@@ -106,40 +106,96 @@ log, não o que a tela do painel exibe.
 
 ---
 
-## 2. Verificação do domínio doctorquality.com.br no Resend
+## 2. Verificação do domínio drquality.com.br no Resend
 
-**Isto é o item 5 do `ENTREGA.md`, e não é para agora.** Só faça depois que o
-item 2 estiver fechado.
+**Este é o item 5 do `ENTREGA.md`, e virou o gargalo.** Sem ele, o aviso diário
+não chega em ninguém da equipe: com o domínio de teste, o Resend só entrega
+para o e-mail dono da conta.
 
-**Por que vai precisar.** Com a chave do passo 1, o sistema envia do domínio de
-teste do Resend, e ele só entrega para o dono da conta. Ou seja: dá para provar
-que o motor funciona, e não dá para avisar a Renata, o Diego ou o Fabrício.
-Verificar o domínio é o que libera enviar para qualquer pessoa da equipe, com
-remetente `@doctorquality.com.br`.
+**Antes de tudo, uma correção.** Este arquivo mandava verificar
+`doctorquality.com.br`, e esse domínio **não existe**. Conferido em 11/08/2026:
+a consulta de DNS responde `NXDOMAIN`, que quer dizer "não registrado". O
+domínio da empresa é **`drquality.com.br`**, sem o "octor", e é o que aparece no
+próprio e-mail do Fabrício.
 
-**A pergunta que decide se dá para fazer:** você controla o DNS de
-`doctorquality.com.br`? Ou seja, consegue entrar em algum painel (Registro.br,
-GoDaddy, Cloudflare, HostGator, ou onde o domínio foi comprado) e acrescentar
-registros? Se a resposta for não, quem controla precisa fazer isso, e o caminho
-é o mesmo.
+**O que o DNS do domínio verdadeiro diz hoje**, medido em 11/08/2026:
 
-**Caminho, quando for a hora:**
+| Registro | Valor | O que significa |
+|---|---|---|
+| NS | `ns1.dns-parking.com`, `ns2.dns-parking.com` | o DNS é gerenciado na **Hostinger** |
+| MX | `drquality-com-br.mail.protection.outlook.com` | o e-mail da empresa é **Microsoft 365** |
+| A | `147.93.38.107` | o site está na Hostinger |
+
+**A regra de ouro deste procedimento: NÃO MEXA NO REGISTRO MX.** Ele é o que
+faz o e-mail da empresa chegar no Outlook de vocês. O Resend não precisa dele:
+ele pede registros próprios, de tipos diferentes. Se algum passo mandar
+substituir o MX, pare e me chame.
+
+### Passo 1: pedir os registros ao Resend
 
 1. No Resend, menu da esquerda, clique em **Domains**
 2. Clique em **Add Domain**
-3. Digite `doctorquality.com.br` e clique em **Add**
-4. O Resend mostra uma tabela com três ou quatro linhas, cada uma com **Type**,
-   **Name** e **Value**. São registros de DNS
-5. Abra o painel onde o domínio está registrado e crie cada um desses
-   registros, copiando Type, Name e Value exatamente como estão
-6. Volte ao Resend e clique em **Verify DNS Records**
+3. Digite `drquality.com.br`
+4. Em **Region**, escolha a mais perto (`São Paulo` se aparecer, senão
+   `us-east-1`; isso não muda nada para nós)
+5. Clique em **Add**
 
-**O que você deve ver:** cada linha da tabela virando **Verified**, em verde.
-Pode levar de alguns minutos a algumas horas, porque depende do DNS propagar.
+**O que você deve ver:** uma tabela com três ou quatro linhas, cada uma com
+**Type**, **Name/Host** e **Value**. Elas são de dois tipos:
 
-**Quando estiver verde, me avise.** Eu acrescento a variável `EMAIL_REMETENTE`
-apontando para um endereço do domínio, e aí o aviso passa a chegar na equipe
-inteira.
+- Um ou dois **TXT**, para provar que o domínio é seu e assinar a mensagem
+  (DKIM). O nome costuma começar com `resend._domainkey`
+- Um **MX** com nome `send` e valor terminando em `amazonses.com`
+
+**Esse MX não substitui o seu.** Repare no campo **Name**: ele é `send`, ou
+seja, vale para `send.drquality.com.br`, um subdomínio. O MX do Outlook fica no
+domínio raiz e não é tocado. Se o campo Name vier vazio ou com `@`, aí sim pare
+e me chame.
+
+### Passo 2: criar os registros na Hostinger
+
+1. Abra **hpanel.hostinger.com** e entre na sua conta
+2. No menu de cima, clique em **Domínios**
+3. Clique em **drquality.com.br**
+4. No menu da esquerda, clique em **DNS / Nameservers**
+5. Você vai ver a lista de registros que já existem. **Não apague nenhum.**
+6. Para cada linha da tabela do Resend, role até o formulário **Gerenciar
+   registros DNS** e preencha:
+   - **Tipo:** o que o Resend disser (TXT ou MX)
+   - **Nome:** copie do campo Name do Resend. Se o Resend mostrar
+     `resend._domainkey.drquality.com.br`, na Hostinger você digita só
+     `resend._domainkey`, sem o domínio no fim
+   - **Aponta para / Valor:** cole exatamente o que está no campo Value
+   - **TTL:** deixe o padrão
+   - **Prioridade** (só aparece no MX): copie o número que o Resend mostrar,
+     normalmente `10`
+7. Clique em **Adicionar registro**
+8. Repita para cada linha da tabela
+
+**O erro mais comum aqui** é colar o nome completo com o domínio no fim. A
+Hostinger acrescenta o domínio sozinha, então `resend._domainkey.drquality.com.br`
+digitado inteiro vira `resend._domainkey.drquality.com.br.drquality.com.br` e
+nunca verifica.
+
+### Passo 3: verificar
+
+1. Volte ao Resend, na tela do domínio
+2. Clique em **Verify DNS Records**
+
+**O que você deve ver:** cada linha virando **Verified**, em verde. Pode levar
+de 5 minutos a algumas horas, porque depende do DNS propagar. Se der erro na
+primeira tentativa, espere e clique de novo antes de mexer em qualquer coisa.
+
+### Passo 4: me avisar
+
+Escreva **"domínio verificado"**. Eu confiro por fora com uma consulta de DNS,
+acrescento a variável `EMAIL_REMETENTE` na produção e disparo o aviso diário
+para valer, medindo quantos saíram e quantos foram recusados.
+
+**Uma conta que vale saber antes:** mesmo com o domínio verificado, das 5
+pessoas com prazo pendente hoje só **2 recebem** (você e o Fabrício). As outras
+três são a Giovanna, a Erica e a Aline, cujo e-mail cadastrado é `@teste.com` e
+não existe. Isso é o item 8, que você decidiu deixar como está.
 
 ---
 

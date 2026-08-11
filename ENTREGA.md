@@ -359,13 +359,39 @@ apagado depois.
 
 ### 5. Verificação do domínio no provedor
 
-**Bloco:** 1 · **Depende de:** nada · **Estado:** aberto, **tarefa do Nícolas**
+**Bloco:** 1 · **Depende de:** nada · **Estado:** aberto, **tarefa do Nícolas, e
+virou o gargalo do produto**
 
 Não bloqueia os itens 1 a 4, que se provam com o domínio de teste. Bloqueia o
 envio para a equipe de verdade.
 
-**Critério de pronto:** um e-mail enviado de um endereço `@doctorquality.com.br`
-chega sem cair em spam. O passo a passo de onde clicar vai para
+> **O domínio do plano estava errado, e isso foi medido em 11/08/2026.** Este
+> item, o `CHAVES-PENDENTES.md`, o `.env.example` e as telas de login diziam
+> `doctorquality.com.br`. Esse domínio **não existe**: a consulta responde
+> `NXDOMAIN`. O domínio da empresa é `drquality.com.br`, sem o "octor", e está
+> no próprio e-mail do Fabrício, que esteve na tela de Membros esse tempo todo.
+> Seguir o plano teria custado meia hora tentando verificar um domínio de
+> outra pessoa, e o remetente configurado nunca funcionaria.
+>
+> **O que o DNS do domínio verdadeiro diz:** o DNS é gerenciado na Hostinger
+> (`ns1.dns-parking.com`), o e-mail da empresa é Microsoft 365 (o MX aponta
+> para `outlook.com`), e o site está em `147.93.38.107`.
+>
+> Isso muda o procedimento: os registros entram no painel da Hostinger, e o **MX
+> do domínio raiz não pode ser tocado**, senão o e-mail da empresa para de
+> funcionar. O Resend pede um MX próprio, mas no subdomínio `send`, o que não
+> conflita. O passo a passo com o caminho da Hostinger, campo por campo, está em
+> `CHAVES-PENDENTES.md`.
+>
+> **Por que virou gargalo:** com a chave já no ar (item 2 fechado), a produção
+> tenta enviar o aviso diário e o Resend recusa todos, porque com o domínio de
+> teste ele só entrega para o dono da conta. Medido em 11/08/2026: o cron rodou,
+> 5 pessoas tinham alerta pendente, e o dia não foi carimbado, que é o desenho
+> dizendo "nenhum e-mail saiu, vou tentar de novo".
+
+**Critério de pronto:** um e-mail enviado de um endereço `@drquality.com.br`
+chega sem cair em spam, e o aviso diário da produção sai com pelo menos um
+envio aceito, carimbando o dia em `cron_execucoes`. O passo a passo de onde clicar vai para
 `CHAVES-PENDENTES.md` quando o item 2 começar.
 
 ---

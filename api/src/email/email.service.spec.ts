@@ -83,13 +83,13 @@ describe('EmailService', () => {
     enviarNoSdk.mockResolvedValue({ data: { id: 'msg_1' }, error: null });
     const servico = servicoCom({
       RESEND_API_KEY: 're_abc',
-      EMAIL_REMETENTE: 'CRM <avisos@doctorquality.com.br>',
+      EMAIL_REMETENTE: 'CRM <avisos@drquality.com.br>',
     });
 
     await servico.enviar(MENSAGEM);
 
     const argumento = enviarNoSdk.mock.calls[0][0] as { from: string };
-    expect(argumento.from).toBe('CRM <avisos@doctorquality.com.br>');
+    expect(argumento.from).toBe('CRM <avisos@drquality.com.br>');
   });
 
   // O caso que mais importa. O SDK do Resend NÃO lança em erro de domínio não
@@ -99,7 +99,7 @@ describe('EmailService', () => {
   it('erro devolvido no corpo da resposta NÃO conta como enviado', async () => {
     enviarNoSdk.mockResolvedValue({
       data: null,
-      error: { message: 'The doctorquality.com.br domain is not verified' },
+      error: { message: 'The drquality.com.br domain is not verified' },
     });
     const servico = servicoCom({ RESEND_API_KEY: 're_abc' });
 
@@ -108,7 +108,7 @@ describe('EmailService', () => {
     expect(resultado).toEqual({
       enviado: false,
       motivo: 'falhou',
-      erro: 'The doctorquality.com.br domain is not verified',
+      erro: 'The drquality.com.br domain is not verified',
     });
   });
 

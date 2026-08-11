@@ -72,7 +72,7 @@ export default function PrimeiroAcessoPage() {
               label="Seu e-mail"
               type="email"
               autoComplete="email"
-              placeholder="voce@doctorquality.com.br"
+              placeholder="voce@drquality.com.br"
               required
               autoFocus
             />

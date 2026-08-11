@@ -9,7 +9,7 @@
 // Uso, na pasta api/:
 //   npm run email:teste -- voce@exemplo.com
 //
-// Enquanto o domínio doctorquality.com.br não estiver verificado (item 5), o
+// Enquanto o domínio drquality.com.br não estiver verificado (item 5), o
 // remetente é o domínio de teste do Resend, e ele SÓ entrega para o e-mail
 // dono da conta do Resend. Mandar para outro endereço devolve erro, e o erro
 // aparece aqui em vez de sumir.

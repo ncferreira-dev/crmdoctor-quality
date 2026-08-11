@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 // Remetente do domínio de teste do provedor. Ele entrega SEM depender de DNS,
-// e é como o motor se prova antes de doctorquality.com.br estar verificado. A
+// e é como o motor se prova antes de drquality.com.br estar verificado. A
 // limitação vale conhecer: o Resend só aceita entregar deste remetente para o
 // e-mail dono da conta. É suficiente para provar que o motor funciona, e não é
 // suficiente para avisar a equipe: isso depende do item 5 do ENTREGA.md.

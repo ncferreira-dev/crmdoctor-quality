@@ -16,7 +16,7 @@ type UsuarioNoBanco = {
 const ATIVO: UsuarioNoBanco = {
   id: 'u-1',
   nome: 'Fabrício',
-  email: 'fabricio@doctorquality.com.br',
+  email: 'fabricio@drquality.com.br',
   ativo: true,
   codigoConviteHash: null,
   senhaDefinidaEm: null,
@@ -40,7 +40,7 @@ describe('JwtStrategy.validate', () => {
     expect(user).toEqual({
       sub: 'u-1',
       nome: 'Fabrício',
-      email: 'fabricio@doctorquality.com.br',
+      email: 'fabricio@drquality.com.br',
       cargoNivel: 60,
       permissoes: ['LEADS_READ', 'VISITAS_READ'],
     });

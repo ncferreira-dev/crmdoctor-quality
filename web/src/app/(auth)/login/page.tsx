@@ -105,7 +105,7 @@ export default function LoginPage() {
             label="E-mail"
             type="email"
             autoComplete="email"
-            placeholder="voce@doctorquality.com.br"
+            placeholder="voce@drquality.com.br"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required

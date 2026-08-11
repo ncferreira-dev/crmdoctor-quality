@@ -23,11 +23,11 @@ async function main() {
   const senhaHash = await argon2.hash(senha);
 
   await prisma.user.upsert({
-    where: { email: 'admin@doctorquality.com.br' },
+    where: { email: 'admin@drquality.com.br' },
     update: {},
     create: {
       nome: 'Administrador',
-      email: 'admin@doctorquality.com.br',
+      email: 'admin@drquality.com.br',
       senhaHash,
       cargoId: cargoAdmin.id,
     },
