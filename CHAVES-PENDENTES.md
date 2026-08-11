@@ -25,12 +25,17 @@ e nós vamos usar algo perto de 30 por dia no pior caso.
 
 1. Abra o navegador em **resend.com**
 2. Clique em **Sign up**, no canto superior direito
-3. Crie a conta com o e-mail **profissionalncferreira@gmail.com**
+3. Crie a conta com **o e-mail que você preferir**, e anote qual foi
 
-   Este e-mail importa. Enquanto o domínio `doctorquality.com.br` não estiver
-   verificado (item 5, mais abaixo), o Resend só entrega para o endereço dono
-   da conta. Se você criar a conta com outro e-mail, o teste vai falhar e o
-   erro vai dizer exatamente isso.
+   O endereço em si não importa; o que importa é lembrar dele. Enquanto o
+   domínio `doctorquality.com.br` não estiver verificado (item 5, mais abaixo),
+   o Resend usa o domínio de teste dele, e esse remetente **só entrega para o
+   endereço dono da conta**. O e-mail de teste vai ter que ser mandado para
+   esse endereço, e para nenhum outro: mandar para outro devolve um erro
+   dizendo exatamente isso.
+
+   Esta instrução já fixou um e-mail específico e estava errada. O Nícolas
+   criou a conta com o e-mail do GitHub, o que funciona igual.
 
 4. Confirme o e-mail de verificação que chegar na caixa de entrada
 
@@ -74,11 +79,12 @@ RESEND_API_KEY=cole-a-chave-aqui
 
 ### Passo 4: me avisar
 
-Escreva no chat só isto: **"chave colada"**. Não cole a chave.
+Escreva no chat **"chave colada"** e **qual e-mail é o dono da conta do
+Resend**. Não cole a chave.
 
-Eu rodo o teste, e o teste manda um e-mail de verdade para
-`profissionalncferreira@gmail.com`. Você abre a caixa de entrada e me diz se
-chegou. Só aí o item 2 fecha: script dizendo "enviado" não é prova de entrega.
+Eu rodo o teste, e ele manda um e-mail de verdade para esse endereço. Você abre
+a caixa de entrada e me diz se chegou. Só aí o item 2 fecha: script dizendo
+"enviado" não é prova de entrega.
 
 ### Passo 5: a mesma chave em produção, depois
 
