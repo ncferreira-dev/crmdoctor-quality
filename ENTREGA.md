@@ -756,9 +756,9 @@ abrir o arquivo de ids.
 
 ### 10. Backup com rotina, cópia fora da máquina e restauração testada
 
-**Bloco:** 2 · **Depende de:** 7 · **Estado:** **dois terços feitos em
-10/08/2026. Segue aberto: falta a rotina e a cópia fora do Mac, que são escolha
-do Nícolas**
+**Bloco:** 2 · **Depende de:** 7 · **Estado:** **fechado em 11/08/2026: o
+mecanismo está feito e provado, a rotina existe no Neon, e a cópia fora do Mac
+ficou de fora por decisão**
 
 > **O mecanismo estava quebrado contra a produção, e ninguém sabia.** Ao começar
 > o item 8 o backup foi o primeiro passo, e ele abortou:
@@ -827,11 +827,29 @@ do Nícolas**
 > `~/Desktop/backups-crm/backup-crm-2026-08-10-producao.json`, com permissão 600
 > como os `.env`. É ele que destrava o passo 1 do item 8.
 >
-> **O que continua faltando, e é decisão dele:** a rotina rodando sozinha e a
-> cópia fora deste Mac. As duas viraram passo a passo em `CHAVES-PENDENTES.md`,
-> com a recomendação registrada: ligar o backup contínuo do próprio Neon é o
-> backup de verdade, e este script agendado é segunda cópia, porque só roda com
-> o Mac ligado.
+> **A rotina já existe, e não precisou ser construída.** Conferido na
+> documentação do Neon em 11/08/2026: o restore para um instante do passado vem
+> **ligado por padrão** em toda conta, com janela de 6 horas no plano Free e 1
+> dia nos planos pagos, ajustável até 7 ou 30 dias. Não há botão de ativar. Fica
+> a recomendação de subir para 7 dias se o plano permitir: num CRM de
+> compliance, dado apagado por engano costuma ser notado quando alguém procura
+> um projeto antigo, e 6 horas só salvam de erro percebido na mesma manhã.
+>
+> **DECISÃO DO NÍCOLAS, 11/08/2026: a cópia fora do Mac fica de fora.**
+>
+> O risco que sobra, escrito para ninguém redescobrir:
+>
+> | Desastre | Coberto? | Por quê |
+> |---|---|---|
+> | Alguém apaga ou altera demais no banco | **sim**, se notar dentro da janela | restore do Neon |
+> | A conta ou o projeto do Neon se perde | **sim**, com os JSON do Desktop | 4 arquivos, com restauração já testada |
+> | Este Mac se perde | **sim**, com o Neon | o banco continua lá |
+> | **Os dois ao mesmo tempo** | **NÃO** | não existe cópia que sobreviva aos dois |
+>
+> Ou seja: cada desastre isolado está coberto, e a combinação não está. Para
+> fechar esse último buraco bastaria arrastar um arquivo de
+> `~/Desktop/backups-crm/` para o Google Drive, o que leva 30 segundos e pode
+> ser feito em qualquer dia. O passo a passo continua em `CHAVES-PENDENTES.md`.
 
 O mecanismo existe e a restauração já foi provada uma vez contra um banco
 descartável. O que não existe é a prática: um único arquivo, de 07/08, morando
@@ -2047,7 +2065,7 @@ despercebido.
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
 | 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **feito no que foi decidido: 3 desativadas, 3 ficam por escolha** |
 | 9 | 2 | Dado de demonstração separado do real | 8 | **feito** |
-| 10 | 2 | Backup com rotina, cópia fora, restauração testada | 7 | aberto |
+| 10 | 2 | Backup com rotina, cópia fora, restauração testada | 7 | **feito, com a cópia fora do Mac de fora por decisão** |
 | 11 | 2 | Higiene de ambiente e endereços | | **feito** |
 | 12 | 3 | Teste de tabela rota por permissão | | **feito (verde desde 13 e 15)** |
 | 13 | 3 | Guarda em GET /cargos, mais rota enxuta para o seletor | 12 | **feito** |
@@ -2079,11 +2097,12 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**1 aberto, 38 fechados, 1 de fora por decisão.**
+**39 fechados, 1 de fora por decisão, 0 abertos. O programa de entrega acabou.**
 
-O único aberto é o item 10, e o que falta nele não é código: é escolher onde a
-rotina de backup roda e onde mora a cópia fora do Mac. O passo a passo está em
-`CHAVES-PENDENTES.md`.
+Duas decisões do Nícolas ficaram registradas com o custo escrito, e as duas são
+reversíveis em qualquer dia: a verificação do domínio (item 5), que segura o
+aviso diário dentro do servidor, e a cópia do backup fora do Mac (item 10), que
+deixa descoberta só a combinação de perder o Neon e o Mac ao mesmo tempo.
 
 **Estado da produção em 11/08/2026**, medido pelo que a aplicação enxerga (sem
 o que está apagado):
