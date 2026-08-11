@@ -162,7 +162,8 @@ alertas.
 
 ### 2. Motor de envio de e-mail
 
-**Bloco:** 1 · **Depende de:** nada · **Estado:** **construído, esperando a chave**
+**Bloco:** 1 · **Depende de:** nada · **Estado:** **feito em 11/08/2026, com
+e-mail recebido**
 
 Instalar e ligar o provedor de e-mail transacional (Resend é o escolhido no
 contexto). Provar o envio com o domínio de teste do provedor, que entrega sem
@@ -188,8 +189,37 @@ de verdade**, com o print ou o id da mensagem registrado aqui. API respondendo
 > só o `catch` faria os três passarem por sucesso, que é a pior versão da falha
 > silenciosa: o sistema acreditando que avisou. Tem teste para esse caso.
 >
-> **A checagem automática já passa. O critério NÃO está cumprido**, e o que
-> falta não é código: falta a `RESEND_API_KEY`, que só o Nícolas pode gerar. O
+> **PROVADO EM 11/08/2026.** A chave entrou no `.env.local` e o teste rodou
+> contra o Resend de verdade:
+>
+> ```
+> Motor de e-mail ligado, remetente CRM Doctor Quality <onboarding@resend.dev>
+> E-mail enviado para nicolasferreira4223@gmail.com
+> id 64f4bceb-abd0-42e4-b064-d6ebaabaf76e
+> ```
+>
+> E a parte que fecha o item, que não é essa: **o Nícolas confirmou que a
+> mensagem chegou na caixa de entrada.** O critério dizia que API respondendo
+> 200 não conta como prova, e o id do provedor também não: a prova é alguém
+> abrir o e-mail.
+>
+> **Duas coisas que a execução ensinou, e que estão consertadas em
+> `CHAVES-PENDENTES.md`:**
+>
+> 1. A instrução fixava um e-mail específico para criar a conta do Resend, e
+>    isso estava errado. Qualquer endereço serve; o que importa é lembrar qual
+>    foi, porque o remetente de teste só entrega para o dono da conta.
+> 2. A instrução mandava editar o `.env.local` pelo TextEdit, e a chave não
+>    chegou no arquivo na primeira tentativa: nenhum dos quatro `.env` tinha
+>    sido modificado. O caminho que funcionou foi uma linha de Terminal
+>    acrescentando a variável no fim do arquivo, sem abrir editor nenhum.
+>
+> **O que ainda não vale para a equipe:** a chave está só na máquina do Nícolas.
+> Enquanto ela não estiver no EasyPanel, o aviso diário continua sendo montado
+> na produção e morrendo lá dentro. E enquanto o domínio não for verificado
+> (item 5), o Resend só entrega para o dono da conta.
+>
+> Registro do estado anterior, mantido porque explica o desenho: o
 > passo a passo está em `CHAVES-PENDENTES.md`. Enquanto isso, rodar o script
 > devolve, corretamente, "O motor está desligado".
 >
@@ -1952,7 +1982,7 @@ despercebido.
 | # | Bloco | Item | Depende de | Estado |
 |---|---|---|---|---|
 | 1 | 1 | Notificação vira aviso de uma pessoa | | **feito** |
-| 2 | 1 | Motor de envio de e-mail | | **esperando a chave** |
+| 2 | 1 | Motor de envio de e-mail | | **feito** |
 | 3 | 1 | Disparo diário por destinatário | 1, 2 | **feito (entrega depende da chave)** |
 | 4 | 1 | SLA de ticket no mesmo disparo | 3 | **feito** |
 | 5 | 1 | Verificação do domínio (Nícolas) | | aberto |
@@ -1992,7 +2022,7 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**2 abertos, 37 fechados, 1 esperando o Nícolas.** Nenhum dos abertos é item de
+**2 abertos, 38 fechados.** Nenhum dos abertos é item de
 código: dependem de decisão do Nícolas ou de acesso que só ele tem.
 
 ---
