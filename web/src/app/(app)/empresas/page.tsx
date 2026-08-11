@@ -86,7 +86,13 @@ export default function EmpresasPage() {
               className="flex items-center justify-between rounded-card border border-ink/10 bg-white p-4 shadow-card transition-colors hover:border-brand/40"
             >
               <div>
-                <p className="font-black leading-none text-ink">{empresa.nome}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-black leading-none text-ink">{empresa.nome}</p>
+                  {/* Sem este selo, "Johnson & Johnson" no cadastro passa por
+                      cliente da Doctor Quality. É cenário de venda, e quem abre
+                      a tela precisa saber disso antes de contar. */}
+                  {empresa.demonstracao && <Badge>Demonstração</Badge>}
+                </div>
                 <p className="mt-1 text-xs text-ink/60">{empresa.cnpj ? formatarCnpj(empresa.cnpj) : 'Sem CNPJ'}</p>
               </div>
               <Badge tom="destaque">{SEGMENTO_LABEL[empresa.segmento]}</Badge>

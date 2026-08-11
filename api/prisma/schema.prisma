@@ -202,6 +202,16 @@ model EmpresaCliente {
   telefone        String?
   leadOrigemId    String?     @unique
   leadOrigem      Lead?       @relation(fields: [leadOrigemId], references: [id])
+  // Cenário de demonstração, e não cliente. Existe porque a produção mistura os
+  // dois desde o começo: em 10/08/2026, das 6 empresas 2 eram encenação, e todo
+  // número do dashboard era parte real e parte teatro. Marcar em vez de apagar
+  // preserva o cenário que serve para mostrar o produto, e responde "quantos
+  // projetos reais existem" com uma consulta em vez de um arquivo de ids.
+  //
+  // Quem lê precisa filtrar: as consultas do produto usam os fragmentos de
+  // common/demonstracao.ts, num lugar só.
+  demonstracao    Boolean     @default(false)
+
   projetos        Projeto[]
   tickets         Ticket[]
   interacoes      Interacao[]
@@ -224,6 +234,9 @@ model Projeto {
   valor                Decimal?       @db.Decimal(12, 2)
   empresaId            String
   empresa              EmpresaCliente @relation(fields: [empresaId], references: [id])
+  // Cenário de demonstração, e não trabalho de cliente. Ver o comentário em
+  // EmpresaCliente.demonstracao e os fragmentos de common/demonstracao.ts.
+  demonstracao         Boolean        @default(false)
   interacoes           Interacao[]
   notificacoes         Notificacao[]
   etapas               EtapaProjeto[]
@@ -261,6 +274,13 @@ model Interacao {
   empresa         EmpresaCliente? @relation(fields: [empresaId], references: [id])
   projetoId       String?
   projeto         Projeto?        @relation(fields: [projetoId], references: [id])
+
+  // Interação tem flag PRÓPRIA, e as outras entidades filhas não têm, porque
+  // aqui a herança não vale: medido na produção em 10/08/2026, duas interações
+  // de demonstração estavam penduradas em empresas REAIS. Derivar pelo pai
+  // deixaria as duas passando como trabalho de cliente.
+  demonstracao    Boolean         @default(false)
+
   criadoEm        DateTime        @default(now())
   excluidoEm      DateTime?
   criadoPorId     String?

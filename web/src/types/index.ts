@@ -114,6 +114,9 @@ export interface EmpresaCliente {
   email: string | null;
   telefone: string | null;
   leadOrigemId: string | null;
+  // Cenário de demonstração, e não cliente. A tela precisa dizer isso na cara,
+  // senão a J&J do cadastro passa por cliente da Doctor Quality.
+  demonstracao: boolean;
   criadoEm: string;
   atualizadoEm: string;
   _count?: { projetos: number; ticketsAbertos: number };
@@ -146,6 +149,7 @@ export interface Projeto {
   valor: string | null;
   empresaId: string;
   empresa?: EmpresaCliente;
+  demonstracao: boolean;
   criadoEm: string;
   atualizadoEm: string;
   interacoes?: Interacao[];

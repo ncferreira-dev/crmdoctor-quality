@@ -5,6 +5,7 @@ import { CreateTarefaDto } from './dto/create-tarefa.dto';
 import { UpdateTarefaDto } from './dto/update-tarefa.dto';
 import { FindTarefasQueryDto } from './dto/find-tarefas-query.dto';
 import { paginar } from '../common/utils/paginar';
+import { TAREFA_REAL } from '../common/demonstracao';
 
 const INCLUDE_PADRAO = {
   responsavel: { select: { id: true, nome: true, email: true } },
@@ -17,6 +18,10 @@ export class TarefasService {
 
   findAll(query: FindTarefasQueryDto) {
     const where: Prisma.TarefaWhereInput = {
+      // Tarefa de projeto de demonstração não é trabalho de ninguém, e some da
+      // lista de "Minhas tarefas" pelo mesmo motivo que some do dashboard
+      // (item 9). Tarefa sem projeto continua aparecendo: ela é real.
+      ...TAREFA_REAL,
       responsavelId: query.responsavelId,
       projetoId: query.projetoId,
       status: query.status,

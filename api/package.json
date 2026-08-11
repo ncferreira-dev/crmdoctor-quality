@@ -20,6 +20,8 @@
     "contas:desativar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/desativar-contas.ts",
     "comentario:nomes": "nomes:aparar:producao varre TODO campo de texto de TODO model procurando valor diferente do proprio trim(), e corrige com autor no audit_log. Sem --aplicar so mostra. Uso: npm run nomes:aparar:producao -- --destino=<trecho> --como=seu@email",
     "nomes:aparar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/aparar-nomes.ts",
+    "comentario:demo": "demo:marcar:producao marca como demonstracao as linhas de docs/demo-producao-ids.json (empresas, projetos e interacoes), com autor no audit_log. Sem --aplicar so mostra. Uso: npm run demo:marcar:producao -- --destino=<trecho> --como=seu@email",
+    "demo:marcar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/marcar-demonstracao.ts",
     "backup:producao": "set -a && . ./.env.producao && set +a && node dist/prisma/exportar-backup.js",
     "comentario:email": "email:teste prova o motor de envio de ponta a ponta. Carrega .env.local, sobe só ConfigModule + EmailModule e usa o MESMO EmailService que o cron usa. Uso: npm run email:teste -- voce@exemplo.com. Enquanto o domínio não estiver verificado, o Resend só entrega para o e-mail dono da conta.",
     "email:teste": "set -a && . ./.env.local && set +a && ts-node scripts/enviar-email-teste.ts",

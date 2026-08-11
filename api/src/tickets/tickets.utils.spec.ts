@@ -163,11 +163,27 @@ describe('a contagem do card e a do dashboard falam a mesma língua', () => {
     });
   });
 
+  // O dashboard acrescenta o recorte de demonstração (item 9) por cima, então a
+  // comparação é de CONTER e não de igualdade. O que este teste protege segue o
+  // mesmo: a definição de "aberto" vem de whereEmAberto(), e não de uma cópia
+  // escrita à mão que um dia discorda da lista da empresa.
   it('dashboard.resumo usa o mesmo recorte de aberto', async () => {
     const { prisma, chamadas } = prismaEspiao();
     await new DashboardService(prisma).resumo();
 
     const recortes = chamadas.map((c) => (c as { where?: unknown }).where);
-    expect(recortes).toContainEqual(whereEmAberto());
+    expect(recortes).toContainEqual(expect.objectContaining(whereEmAberto()));
+  });
+
+  // E o recorte de demonstração precisa estar lá: sem ele o cartão volta a
+  // somar chamado de cenário com chamado de cliente.
+  it('dashboard.resumo tira o dado de demonstração da conta', async () => {
+    const { prisma, chamadas } = prismaEspiao();
+    await new DashboardService(prisma).resumo();
+
+    const recortes = chamadas.map((c) => (c as { where?: unknown }).where);
+    expect(recortes).toContainEqual(
+      expect.objectContaining({ empresa: { demonstracao: false } }),
+    );
   });
 });

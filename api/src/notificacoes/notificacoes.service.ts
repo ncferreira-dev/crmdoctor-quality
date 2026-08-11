@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { FindNotificacoesQueryDto } from './dto/find-notificacoes-query.dto';
 import { inicioDoDiaCivil } from '../common/utils/dia-civil';
+import { NOTIFICACAO_REAL, PROJETO_REAL } from '../common/demonstracao';
 import { Permissao } from '../common/constants/permissoes';
 import {
   AlertaDoResumo,
@@ -85,6 +86,11 @@ export class NotificacoesService implements OnApplicationBootstrap {
     const registros = await this.prisma.notificacaoDestinatario.findMany({
       where: {
         usuarioId,
+        // Alerta que já nasceu antes do item 9 e é de projeto de demonstração
+        // continua no banco, e some da tela por aqui. Filtrar na leitura, e não
+        // apagar, deixa o alerta voltar sozinho no dia em que o projeto deixar
+        // de ser cenário.
+        notificacao: NOTIFICACAO_REAL,
         ...(query.lida === undefined
           ? {}
           : query.lida
@@ -147,7 +153,7 @@ export class NotificacoesService implements OnApplicationBootstrap {
   // de contar notificacoes.lida, que era o número da empresa inteira.
   contarNaoLidas(usuarioId: string) {
     return this.prisma.notificacaoDestinatario.count({
-      where: { usuarioId, lidaEm: null },
+      where: { usuarioId, lidaEm: null, notificacao: NOTIFICACAO_REAL },
     });
   }
 
@@ -241,6 +247,7 @@ export class NotificacoesService implements OnApplicationBootstrap {
       where: {
         lidaEm: null,
         usuario: { ativo: true, codigoConviteHash: null },
+        notificacao: NOTIFICACAO_REAL,
       },
       select: {
         usuarioId: true,
@@ -420,6 +427,10 @@ export class NotificacoesService implements OnApplicationBootstrap {
   private async verificarPrazosProjetos(limite: Date): Promise<number> {
     const projetos = await this.prisma.projeto.findMany({
       where: {
+        // Projeto de demonstração não cobra prazo de ninguém: o contrato não
+        // existe, e o alerta chegaria como trabalho de verdade na caixa de
+        // entrada de uma pessoa de verdade (item 9).
+        ...PROJETO_REAL,
         estagio: { not: 'CONCLUIDO' },
         dataLimiteCompliance: { lte: limite },
       },
@@ -455,6 +466,7 @@ export class NotificacoesService implements OnApplicationBootstrap {
   private async verificarPrazosEtapas(limite: Date): Promise<number> {
     const etapas = await this.prisma.etapaProjeto.findMany({
       where: {
+        projeto: PROJETO_REAL,
         status: { not: 'CONCLUIDA' },
         prazo: { lte: limite },
       },

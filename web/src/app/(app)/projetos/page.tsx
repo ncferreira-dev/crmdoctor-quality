@@ -154,7 +154,12 @@ export default function ProjetosPage() {
               className="flex items-center justify-between gap-4 rounded-card border border-ink/10 bg-white p-4 shadow-card transition-colors hover:border-brand/40"
             >
               <div className="min-w-0">
-                <p className="truncate font-semibold leading-tight text-ink">{projeto.titulo}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-semibold leading-tight text-ink">{projeto.titulo}</p>
+                  {/* Projeto de demonstração fica na lista, e diz que é. Ele
+                      não entra em número nenhum do dashboard. */}
+                  {projeto.demonstracao && <Badge>Demonstração</Badge>}
+                </div>
                 <p className="mt-1 text-xs text-ink/55">
                   {projeto.empresa?.nome ?? 'Empresa'}
                 </p>

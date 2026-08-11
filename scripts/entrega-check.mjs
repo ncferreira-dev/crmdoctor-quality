@@ -282,6 +282,27 @@ registrar(
     : 'o motor existe mas ninguém o chama: o alerta continua morrendo no banco',
 );
 
+// Dado de demonstração não pode entrar em número de dashboard (item 9). A
+// checagem procura a REGRA, não o texto: o serviço do dashboard precisa
+// importar os recortes de common/demonstracao.ts, e o schema precisa ter a
+// coluna. Contar cenário de venda junto com contrato faz todo cartão da tela
+// responder uma pergunta que ninguém fez.
+const schemaPrisma = ler(join(RAIZ, 'api/prisma/schema.prisma'));
+const servicoDashboard = semComentarios(
+  ler(join(RAIZ, 'api/src/dashboard/dashboard.service.ts')),
+);
+const temColuna = /demonstracao\s+Boolean/.test(schemaPrisma);
+const dashboardFiltra =
+  /PROJETO_REAL/.test(servicoDashboard) && /TICKET_REAL/.test(servicoDashboard);
+registrar(
+  'dashboard não conta dado de demonstração',
+  temColuna && dashboardFiltra,
+  'coluna demonstracao no schema, e os recortes de common/demonstracao.ts usados no dashboard.service.ts',
+  temColuna && dashboardFiltra
+    ? 'o dashboard conta só trabalho de cliente'
+    : 'cenário de venda entra nos cartões junto com contrato de verdade',
+);
+
 // ===========================================================================
 titulo('3. Guarda de rota (Bloco 3)');
 // ===========================================================================

@@ -585,7 +585,60 @@ com quem fez, o que só é possível depois do item 6.
 
 ### 9. Dado de demonstração separado do real
 
-**Bloco:** 2 · **Depende de:** 8 · **Estado:** aberto
+**Bloco:** 2 · **Depende de:** 8 · **Estado:** **código feito em 10/08/2026,
+esperando o deploy para marcar a produção**
+
+> **Escolhida a saída do meio: marcar com um campo.** Remover apagaria um
+> cenário que serve para vender o produto, e mover para uma empresa
+> "Demonstração" mentiria sobre quem é a J&J no cadastro. O campo responde a
+> pergunta do critério com uma consulta, é aditivo e é reversível.
+>
+> **A medição achou duas coisas que o item não sabia:**
+>
+> 1. **Duas interações de demonstração estão em empresas REAIS.** Herdar a marca
+>    do pai deixaria as duas passando por trabalho de cliente. Por isso
+>    `Interacao` ganhou coluna própria, e marco, tarefa, ticket e visita não:
+>    para esses a pergunta se responde olhando o projeto ou a empresa.
+> 2. **Das 4 empresas "reais", três são entulho de deploy:** "Clinica Teste
+>    Deploy", "Clinica Agenda Teste" e "Clinica Compliance Teste". A única
+>    empresa de cliente de verdade é a **Opella**, com o projeto "Novalgina
+>    Linha 9". Isso não é demonstração e não entra neste item, mas fica
+>    registrado: das 6 empresas da produção, 1 é cliente.
+>
+> **A regra mora num lugar só**, `common/demonstracao.ts`, pelo mesmo motivo de
+> `whereEmAberto`: duas cópias da mesma regra é como o card "Tickets abertos" e
+> a lista da empresa passaram a discordar na tela.
+>
+> **O alcance é maior que o dashboard, e precisa ser.** Projeto de demonstração
+> deixou de gerar alerta de compliance no cron, e os alertas que já nasceram
+> somem do sino e do e-mail diário por filtro de leitura, não por exclusão: o
+> dia em que um deles virar cliente, os alertas voltam sozinhos. Tarefa de
+> projeto de demonstração também sai de "Minhas tarefas".
+>
+> **Medido no banco local**, marcando uma empresa e os dois projetos dela:
+>
+> | Cartão | tudo real | com a empresa marcada |
+> |---|---|---|
+> | Projetos em execução | 1 | **0** |
+> | Concluídos | 2 | **1** |
+> | Tickets abertos | 3 | **2** |
+> | Tickets em atraso | 3 | **2** |
+> | Marcos vencendo em 7 dias | 1 | **0** |
+> | Empresas na concentração | 3 | **2** |
+>
+> Os seis números mudaram, que é exatamente o tamanho da mentira que o dashboard
+> contava.
+>
+> Na tela, empresa e projeto de demonstração ganham o selo "Demonstração", e
+> continuam na lista: eles servem para mostrar o produto, só não podem ser
+> contados como cliente.
+>
+> Checagem nova no verificador (43 no total): "dashboard não conta dado de
+> demonstração", cobrando a coluna no schema e os recortes no serviço.
+>
+> **O que falta:** a migration e o código precisam estar no ar antes de marcar
+> as linhas da produção. Depois do deploy é um comando,
+> `npm run demo:marcar:producao`, e aí o item fecha.
 
 A produção mistura cenário de demonstração e dado real. Medido contra
 `docs/demo-producao-ids.json`: das 6 empresas, 2 são demonstração; dos 6
@@ -1891,7 +1944,7 @@ despercebido.
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
 | 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **feito no que foi decidido: 3 desativadas, 3 ficam por escolha** |
-| 9 | 2 | Dado de demonstração separado do real | 8 | aberto |
+| 9 | 2 | Dado de demonstração separado do real | 8 | **código feito, falta marcar a produção** |
 | 10 | 2 | Backup com rotina, cópia fora, restauração testada | 7 | aberto |
 | 11 | 2 | Higiene de ambiente e endereços | | **feito** |
 | 12 | 3 | Teste de tabela rota por permissão | | **feito (verde desde 13 e 15)** |

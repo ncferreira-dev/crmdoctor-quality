@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { whereEmAberto, whereEmAtraso } from '../tickets/tickets.utils';
+import {
+  EMPRESA_REAL,
+  ETAPA_REAL,
+  PROJETO_REAL,
+  TICKET_REAL,
+  VISITA_REAL,
+} from '../common/demonstracao';
 import { AuthUser } from '../common/types/auth-user';
 
 @Injectable()
@@ -33,23 +40,42 @@ export class DashboardService {
       cargaConsultores,
       marcosDaSemana,
     ] = await Promise.all([
+      // TODA contagem daqui filtra dado de demonstração (item 9). Sem isso o
+      // cartão soma contrato de verdade com cenário de venda, e o número não
+      // responde pergunta nenhuma.
       this.prisma.projeto.groupBy({
         by: ['estagio'],
         _count: true,
+        where: PROJETO_REAL,
         orderBy: { estagio: 'asc' },
       }),
-      this.prisma.projeto.count({ where: { estagio: 'EXECUCAO' } }),
-      this.prisma.projeto.count({ where: { estagio: 'CONCLUIDO' } }),
       this.prisma.projeto.count({
-        where: { estagio: 'CONCLUIDO', atualizadoEm: { gte: inicioDoMes } },
+        where: { ...PROJETO_REAL, estagio: 'EXECUCAO' },
+      }),
+      this.prisma.projeto.count({
+        where: { ...PROJETO_REAL, estagio: 'CONCLUIDO' },
+      }),
+      this.prisma.projeto.count({
+        where: {
+          ...PROJETO_REAL,
+          estagio: 'CONCLUIDO',
+          atualizadoEm: { gte: inicioDoMes },
+        },
       }),
       // Projeto sem prazo é furo silencioso: o cron nunca vai alertar sobre ele.
       this.prisma.projeto.count({
-        where: { dataLimiteCompliance: null, estagio: { not: 'CONCLUIDO' } },
+        where: {
+          ...PROJETO_REAL,
+          dataLimiteCompliance: null,
+          estagio: { not: 'CONCLUIDO' },
+        },
       }),
-      this.prisma.ticket.count({ where: whereEmAberto() }),
+      this.prisma.ticket.count({
+        where: { ...whereEmAberto(), ...TICKET_REAL },
+      }),
       this.prisma.visita.count({
         where: {
+          ...VISITA_REAL,
           inicio: { gte: agora, lte: em7Dias },
           status: { not: 'CANCELADA' },
         },
@@ -64,16 +90,19 @@ export class DashboardService {
             where: { usuarioId: user.sub, lidaEm: null },
           })
         : Promise.resolve(0),
-      this.prisma.ticket.count({ where: whereEmAtraso(agora) }),
+      this.prisma.ticket.count({
+        where: { ...whereEmAtraso(agora), ...TICKET_REAL },
+      }),
       this.prisma.etapaProjeto.count({
         where: {
+          ...ETAPA_REAL,
           status: { not: 'CONCLUIDA' },
           prazo: { gte: agora, lte: em7Dias },
         },
       }),
       this.prisma.projeto.aggregate({
         _sum: { valor: true },
-        where: { estagio: { not: 'CONCLUIDO' } },
+        where: { ...PROJETO_REAL, estagio: { not: 'CONCLUIDO' } },
       }),
       this.concentracaoPorEmpresa(),
       this.cargaPorConsultor(),
@@ -119,13 +148,13 @@ export class DashboardService {
       by: ['empresaId'],
       _count: true,
       _sum: { valor: true },
-      where: { estagio: { not: 'CONCLUIDO' } },
+      where: { ...PROJETO_REAL, estagio: { not: 'CONCLUIDO' } },
     });
 
     if (agrupado.length === 0) return [];
 
     const empresas = await this.prisma.empresaCliente.findMany({
-      where: { id: { in: agrupado.map((g) => g.empresaId) } },
+      where: { ...EMPRESA_REAL, id: { in: agrupado.map((g) => g.empresaId) } },
       select: { id: true, nome: true },
     });
     const nomePorId = new Map(empresas.map((e) => [e.id, e.nome]));
@@ -147,7 +176,11 @@ export class DashboardService {
     const agrupado = await this.prisma.etapaProjeto.groupBy({
       by: ['responsavelId'],
       _count: true,
-      where: { status: { not: 'CONCLUIDA' }, responsavelId: { not: null } },
+      where: {
+        ...ETAPA_REAL,
+        status: { not: 'CONCLUIDA' },
+        responsavelId: { not: null },
+      },
     });
 
     if (agrupado.length === 0) return [];
@@ -174,7 +207,11 @@ export class DashboardService {
   // O que precisa ser resolvido nesta semana — lista, não número.
   private async marcosVencendo(de: Date, ate: Date) {
     const etapas = await this.prisma.etapaProjeto.findMany({
-      where: { status: { not: 'CONCLUIDA' }, prazo: { gte: de, lte: ate } },
+      where: {
+        ...ETAPA_REAL,
+        status: { not: 'CONCLUIDA' },
+        prazo: { gte: de, lte: ate },
+      },
       include: { projeto: { select: { id: true, titulo: true } } },
       orderBy: { prazo: 'asc' },
       take: 10,
