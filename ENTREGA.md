@@ -585,8 +585,7 @@ com quem fez, o que só é possível depois do item 6.
 
 ### 9. Dado de demonstração separado do real
 
-**Bloco:** 2 · **Depende de:** 8 · **Estado:** **código feito em 10/08/2026,
-esperando o deploy para marcar a produção**
+**Bloco:** 2 · **Depende de:** 8 · **Estado:** **feito em 10/08/2026**
 
 > **Escolhida a saída do meio: marcar com um campo.** Remover apagaria um
 > cenário que serve para vender o produto, e mover para uma empresa
@@ -599,11 +598,12 @@ esperando o deploy para marcar a produção**
 >    do pai deixaria as duas passando por trabalho de cliente. Por isso
 >    `Interacao` ganhou coluna própria, e marco, tarefa, ticket e visita não:
 >    para esses a pergunta se responde olhando o projeto ou a empresa.
-> 2. **Das 4 empresas "reais", três são entulho de deploy:** "Clinica Teste
->    Deploy", "Clinica Agenda Teste" e "Clinica Compliance Teste". A única
->    empresa de cliente de verdade é a **Opella**, com o projeto "Novalgina
->    Linha 9". Isso não é demonstração e não entra neste item, mas fica
->    registrado: das 6 empresas da produção, 1 é cliente.
+> 2. **A produção tem UMA empresa de cliente.** As outras três que apareciam
+>    como "reais" na primeira contagem ("Clinica Teste Deploy", "Clinica Agenda
+>    Teste", "Clinica Compliance Teste") já estavam APAGADAS por soft delete, e
+>    só apareciam porque a varredura por SQL cru enxerga apagado. Corrigido
+>    depois de medir de novo, e vale a lição: contagem por SQL cru e contagem
+>    pelo client respondem perguntas diferentes.
 >
 > **A regra mora num lugar só**, `common/demonstracao.ts`, pelo mesmo motivo de
 > `whereEmAberto`: duas cópias da mesma regra é como o card "Tickets abertos" e
@@ -636,9 +636,24 @@ esperando o deploy para marcar a produção**
 > Checagem nova no verificador (43 no total): "dashboard não conta dado de
 > demonstração", cobrando a coluna no schema e os recortes no serviço.
 >
-> **O que falta:** a migration e o código precisam estar no ar antes de marcar
-> as linhas da produção. Depois do deploy é um comando,
-> `npm run demo:marcar:producao`, e aí o item fecha.
+> **A produção foi marcada em 10/08/2026**, depois do deploy da migration, com
+> backup antes (274 registros) e conferência independente depois:
+>
+> ```
+> CONFERIDO: 11 marcação(ões), e as contagens batem com a lista.
+>   empresas de demonstração: 2, reais: 1
+>   projetos de demonstração: 4, reais: 1
+>   linhas de auditoria: 174 -> 185
+> ```
+>
+> As 11 linhas de auditoria saíram assinadas.
+>
+> **O critério está cumprido:** a pergunta "quantos projetos reais existem" tem
+> resposta sem abrir arquivo de ids, e a resposta é **1**, o Novalgina Linha 9
+> da Opella. Os outros 4 projetos vivos são cenário.
+>
+> Esse número é o valor deste item: antes o dashboard dizia 5, e quem lesse
+> concluiria coisas sobre uso que não tinham base nenhuma.
 
 A produção mistura cenário de demonstração e dado real. Medido contra
 `docs/demo-producao-ids.json`: das 6 empresas, 2 são demonstração; dos 6
@@ -1944,7 +1959,7 @@ despercebido.
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
 | 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **feito no que foi decidido: 3 desativadas, 3 ficam por escolha** |
-| 9 | 2 | Dado de demonstração separado do real | 8 | **código feito, falta marcar a produção** |
+| 9 | 2 | Dado de demonstração separado do real | 8 | **feito** |
 | 10 | 2 | Backup com rotina, cópia fora, restauração testada | 7 | aberto |
 | 11 | 2 | Higiene de ambiente e endereços | | **feito** |
 | 12 | 3 | Teste de tabela rota por permissão | | **feito (verde desde 13 e 15)** |
@@ -1977,7 +1992,7 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**3 abertos, 36 fechados, 1 esperando o Nícolas.** Nenhum dos abertos é item de
+**2 abertos, 37 fechados, 1 esperando o Nícolas.** Nenhum dos abertos é item de
 código: dependem de decisão do Nícolas ou de acesso que só ele tem.
 
 ---
@@ -2006,4 +2021,5 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 35 | 40 | itens 26 e 27: campo fora do DTO vira 400, e CNPJ passa a ter dígito verificador, máscara e conflito tratado |
 | 10/08/2026 | 38 | 41 | itens 30, 31 e 39: marco ganha dono pela tela, bloco Equipe aparece vazio, e `include` para de devolver linha apagada (1 checagem nova) |
 | 10/08/2026 | 40 | 41 | itens 32 e 24: o front ganha executor de teste rodando em TZ=UTC, e o cálculo de dia passa a ser civil de Brasília |
+| 10/08/2026 | 42 | 43 | item 9: dado de demonstração deixa de ser contado como cliente, mais 1 checagem nova |
 | 10/08/2026 | **41** | **42** | itens 20, 22, 33 e 40: erro sabe distinguir permissão de falha, Membros para de oferecer o que dá 403, o e2e de mentira sai, e a marca de tarefa abre. Só o limit fixo do item 38 segue vermelho, de propósito |
