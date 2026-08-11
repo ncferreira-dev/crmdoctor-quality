@@ -262,4 +262,4 @@ Me diga qual dos dois e eu monto.
 | Verificação do domínio | o e-mail chegar em quem não é você | depois do item 2 |
 | Verificação do domínio | o aviso chegar na equipe | **de fora por decisão, 11/08** |
 | Cópia do backup fora do Mac | o backup existir em mais de um lugar | **de fora por decisão, 11/08** |
-| Onde a rotina de backup roda | não depender de alguém lembrar | **resolvido: o Neon já faz, por padrão** |
+| Onde a rotina de backup roda | não depender de alguém lembrar | **resolvido: o Neon já faz, janela de 6h no Free, por decisão de 11/08** |

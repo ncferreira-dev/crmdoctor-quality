@@ -830,10 +830,21 @@ ficou de fora por decisão**
 > **A rotina já existe, e não precisou ser construída.** Conferido na
 > documentação do Neon em 11/08/2026: o restore para um instante do passado vem
 > **ligado por padrão** em toda conta, com janela de 6 horas no plano Free e 1
-> dia nos planos pagos, ajustável até 7 ou 30 dias. Não há botão de ativar. Fica
-> a recomendação de subir para 7 dias se o plano permitir: num CRM de
-> compliance, dado apagado por engano costuma ser notado quando alguém procura
-> um projeto antigo, e 6 horas só salvam de erro percebido na mesma manhã.
+> dia nos planos pagos, ajustável até 7 ou 30 dias. Não há botão de ativar.
+>
+> **DECISÃO DO NÍCOLAS, 11/08/2026: fica no plano Free, com a janela de 6
+> horas.** Subir para 7 dias exigiria o plano Launch, que é compra.
+>
+> **O que essa decisão muda, somada à de não ter cópia fora do Mac:** com 6
+> horas, o restore do Neon só cobre erro percebido na mesma manhã. Qualquer
+> coisa notada no dia seguinte depende dos arquivos JSON do Desktop, que são
+> **manuais**. Ou seja, os backups em JSON deixaram de ser reserva e viraram a
+> defesa principal para o caso mais comum, que é alguém apagar algo e ninguém
+> reparar na hora.
+>
+> Isso não custa nada para melhorar: `npm run backup:producao` leva segundos, e
+> rodar antes de qualquer operação de risco (e de vez em quando) recupera boa
+> parte do que a janela curta tirou. Fica como recomendação, não como pendência.
 >
 > **DECISÃO DO NÍCOLAS, 11/08/2026: a cópia fora do Mac fica de fora.**
 >
