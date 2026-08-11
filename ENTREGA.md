@@ -359,8 +359,8 @@ apagado depois.
 
 ### 5. Verificação do domínio no provedor
 
-**Bloco:** 1 · **Depende de:** nada · **Estado:** aberto, **tarefa do Nícolas, e
-virou o gargalo do produto**
+**Bloco:** 1 · **Depende de:** nada · **Estado:** **de fora, por decisão do
+Nícolas em 11/08/2026**
 
 Não bloqueia os itens 1 a 4, que se provam com o domínio de teste. Bloqueia o
 envio para a equipe de verdade.
@@ -388,6 +388,37 @@ envio para a equipe de verdade.
 > teste ele só entrega para o dono da conta. Medido em 11/08/2026: o cron rodou,
 > 5 pessoas tinham alerta pendente, e o dia não foi carimbado, que é o desenho
 > dizendo "nenhum e-mail saiu, vou tentar de novo".
+>
+> **E o domínio não é do Nícolas.** Medido no Registro.br em 11/08/2026: o
+> `drquality.com.br` está registrado em nome do **Fabrício** desde 2017, com DNS
+> servido pela Hostinger, e a conta Hostinger do Nícolas só tem o
+> `flauzino.tech`. Ou seja, criar os registros depende de pedir ao Fabrício ou
+> de receber acesso à conta dele. Isso só apareceu ao tentar fazer, e é a razão
+> de o item ter parado.
+>
+> **DECISÃO DO NÍCOLAS, 11/08/2026: fica de fora, e não está nos planos agora.**
+>
+> O que essa decisão custa, escrito para ninguém redescobrir:
+>
+> - O aviso diário de compliance **não chega em ninguém da equipe**. Ele
+>   continua sendo montado todo dia na produção e recusado pelo provedor.
+> - O alerta continua existindo dentro do CRM, no sino e no dashboard. Quem
+>   abrir o sistema vê; quem não abrir, não fica sabendo.
+> - A cada boot da API, 5 tentativas de envio falham e ficam no log. Não é
+>   defeito: é a trava de "não carimbar o dia quando nada saiu" funcionando.
+>
+> **Como retomar, quando for a hora.** Três caminhos, em ordem de qualidade:
+>
+> 1. Pedir ao Fabrício que crie os 3 registros, ou que dê acesso à conta
+>    Hostinger dele. O aviso passa a sair de `@drquality.com.br`, que é o certo.
+> 2. Verificar o `flauzino.tech`, que é domínio do próprio Nícolas e está na
+>    conta dele. Funciona hoje e sem depender de ninguém, mas o alerta chega com
+>    remetente de domínio pessoal, o que parece e-mail avulso e cai em spam com
+>    mais facilidade.
+> 3. Continuar como está.
+>
+> O passo a passo dos 3 registros, campo por campo, está em
+> `CHAVES-PENDENTES.md` e continua válido: muda só quem executa.
 
 **Critério de pronto:** um e-mail enviado de um endereço `@drquality.com.br`
 chega sem cair em spam, e o aviso diário da produção sai com pelo menos um
@@ -2011,7 +2042,7 @@ despercebido.
 | 2 | 1 | Motor de envio de e-mail | | **feito** |
 | 3 | 1 | Disparo diário por destinatário | 1, 2 | **feito (entrega depende da chave)** |
 | 4 | 1 | SLA de ticket no mesmo disparo | 3 | **feito** |
-| 5 | 1 | Verificação do domínio (Nícolas) | | aberto |
+| 5 | 1 | Verificação do domínio | | **de fora, por decisão** |
 | 6 | 2 | Auditoria alcança User e Cargo | | **feito** |
 | 7 | 2 | Código de convite deixa de ser texto puro | 6 | **feito** |
 | 8 | 2 | Contas @teste.com saem do ar **(parada)** | 6, 7 | **feito no que foi decidido: 3 desativadas, 3 ficam por escolha** |
@@ -2048,8 +2079,23 @@ despercebido.
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
 
-**2 abertos, 38 fechados.** Nenhum dos abertos é item de
-código: dependem de decisão do Nícolas ou de acesso que só ele tem.
+**1 aberto, 38 fechados, 1 de fora por decisão.**
+
+O único aberto é o item 10, e o que falta nele não é código: é escolher onde a
+rotina de backup roda e onde mora a cópia fora do Mac. O passo a passo está em
+`CHAVES-PENDENTES.md`.
+
+**Estado da produção em 11/08/2026**, medido pelo que a aplicação enxerga (sem
+o que está apagado):
+
+| | Cliente | Demonstração |
+|---|---|---|
+| Empresas | 1 (Opella) | 2 |
+| Projetos | 1 (Novalgina Linha 9) | 4 |
+
+5 contas ativas de 8, 186 linhas de auditoria, e o verificador em 42 de 43. A
+única checagem vermelha é o limit fixo do KanbanBoard, que o item 38 registrou
+como decisão de não gastar tempo.
 
 ---
 

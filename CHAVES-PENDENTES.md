@@ -108,9 +108,16 @@ log, não o que a tela do painel exibe.
 
 ## 2. Verificação do domínio drquality.com.br no Resend
 
-**Este é o item 5 do `ENTREGA.md`, e virou o gargalo.** Sem ele, o aviso diário
-não chega em ninguém da equipe: com o domínio de teste, o Resend só entrega
-para o e-mail dono da conta.
+**PARADO POR DECISÃO DO NÍCOLAS, 11/08/2026.** Não está nos planos agora. O
+passo a passo abaixo continua válido e correto: é só retomar quando for a hora.
+
+**Descoberto ao tentar fazer:** o `drquality.com.br` **não é do Nícolas**. Está
+registrado no Registro.br em nome do **Fabrício** desde 2017, e a conta
+Hostinger do Nícolas só tem o `flauzino.tech`. Então quem executa os passos
+abaixo é o Fabrício, ou o Nícolas depois de receber acesso à conta dele.
+
+**Sem isso, o aviso diário não chega em ninguém da equipe:** com o domínio de
+teste, o Resend só entrega para o e-mail dono da conta.
 
 **Antes de tudo, uma correção.** Este arquivo mandava verificar
 `doctorquality.com.br`, e esse domínio **não existe**. Conferido em 11/08/2026:
@@ -253,5 +260,6 @@ Me diga qual dos dois e eu monto.
 |---|---|---|
 | `RESEND_API_KEY` | o sistema conseguir enviar e-mail | **esperando você** |
 | Verificação do domínio | o e-mail chegar em quem não é você | depois do item 2 |
+| Verificação do domínio | o aviso chegar na equipe | **de fora por decisão, 11/08** |
 | Cópia do backup fora do Mac | o backup existir em mais de um lugar | **esperando você** |
 | Onde a rotina de backup roda | não depender de alguém lembrar | **esperando sua escolha** |
