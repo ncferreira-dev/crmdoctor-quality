@@ -60,7 +60,10 @@ function titulo(view: View, refDate: Date): string {
     const dia = refDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
     return `Semana de ${dia.replace('.', '')}`;
   }
-  return 'Próximas visitas';
+  // "Próximos compromissos", e não "Próximas visitas": desde 12/08/2026 a
+  // Lista mostra visita, tarefa e prazo, e o título prometia menos do que a
+  // tela entrega. Mesma regra do botão da agenda no item 23 do ENTREGA.md.
+  return 'Próximos compromissos';
 }
 
 export function AgendaCalendar() {
@@ -399,17 +402,30 @@ export function AgendaCalendar() {
         <WeekView
           refDate={refDate}
           visitasPorDia={visitasPorDia}
+          prazosPorDia={prazosPorDiaMapa}
+          tarefasPorDia={tarefasPorDia}
           onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
+          onSelecionarTarefa={setTarefaAberta}
           onSelecionarDia={abrirNovo}
         />
       ) : view === 'dia' ? (
         <DayView
           refDate={refDate}
           visitasPorDia={visitasPorDia}
+          prazosPorDia={prazosPorDiaMapa}
+          tarefasPorDia={tarefasPorDia}
           onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
+          onSelecionarTarefa={setTarefaAberta}
         />
       ) : (
-        <ListView visitas={visitasFiltradas} onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })} />
+        <ListView
+          refDate={refDate}
+          visitasPorDia={visitasPorDia}
+          prazosPorDia={prazosPorDiaMapa}
+          tarefasPorDia={tarefasPorDia}
+          onSelecionarVisita={(v) => setModal({ aberto: true, visita: v })}
+          onSelecionarTarefa={setTarefaAberta}
+        />
       )}
 
       <VisitaFormModal

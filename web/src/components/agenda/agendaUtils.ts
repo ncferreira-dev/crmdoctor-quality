@@ -55,6 +55,43 @@ export function diasDaSemana(refDate: Date): Date[] {
   });
 }
 
+// Quanto a visão de Lista enxerga à frente. Uma constante só, porque a janela
+// aparece em dois lugares: o pedido das visitas ao backend e o recorte de
+// tarefa e prazo, que já vêm carregados sem limite de data. Dois números
+// separados fariam a lista mostrar uma tarefa de dezembro e nenhuma visita ao
+// lado dela.
+const DIAS_DA_LISTA = 90;
+
+// A janela da Lista em chave de dia (YYYY-MM-DD), para comparar com as chaves
+// dos mapas por dia sem passar por fuso: comparar string nesse formato dá a
+// mesma ordem que comparar data.
+export function janelaDaLista(refDate: Date): { de: string; ate: string } {
+  const fim = new Date(refDate);
+  fim.setDate(fim.getDate() + DIAS_DA_LISTA);
+  return { de: chaveDia(refDate), ate: chaveDia(fim) };
+}
+
+// Os dias que têm alguma coisa, em ordem, dentro da janela.
+//
+// Existe porque a Lista passou a juntar três fontes (visita, tarefa e prazo) e
+// cada uma chega num mapa próprio. Sem a janela, tarefa e prazo entrariam
+// inteiros: eles são carregados uma vez, sem recorte de data, e a lista
+// mostraria entrega do ano passado junto com a visita da semana que vem.
+export function diasComCompromisso(
+  mapas: Map<string, unknown[]>[],
+  janela: { de: string; ate: string },
+): string[] {
+  const dias = new Set<string>();
+  for (const mapa of mapas) {
+    for (const [chave, itens] of mapa) {
+      if (itens.length === 0) continue;
+      if (chave < janela.de || chave > janela.ate) continue;
+      dias.add(chave);
+    }
+  }
+  return [...dias].sort();
+}
+
 // Intervalo [de, ate] em ISO que cobre a visão atual — usado pra buscar as
 // visitas do backend (GET /visitas?de=&ate=).
 export function intervaloDaVisao(
@@ -76,10 +113,9 @@ export function intervaloDaVisao(
     inicio = new Date(refDate);
     fim = new Date(refDate);
   } else {
-    // Lista: do início do dia de hoje até 90 dias à frente.
     inicio = new Date(refDate);
     fim = new Date(refDate);
-    fim.setDate(fim.getDate() + 90);
+    fim.setDate(fim.getDate() + DIAS_DA_LISTA);
   }
 
   inicio.setHours(0, 0, 0, 0);

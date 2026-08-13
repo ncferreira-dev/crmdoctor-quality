@@ -1,9 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { Projeto, Tarefa, Visita } from '../../types';
 import { chaveDia, dataPorExtenso, diasDaGradeDoMes, DIAS_SEMANA_CURTO } from './agendaUtils';
 import { VisitaChip } from './VisitaChip';
+import { TarefaChip } from './TarefaChip';
+import { PrazoChip } from './PrazoChip';
 
 interface MonthViewProps {
   refDate: Date;
@@ -94,17 +95,7 @@ export function MonthView({
               {tarefas.length > 0 && (
                 <div className="relative flex flex-col gap-0.5 pt-0.5">
                   {tarefas.slice(0, 2).map((tarefa) => (
-                    <button
-                      key={tarefa.id}
-                      type="button"
-                      onClick={() => onSelecionarTarefa(tarefa)}
-                      title={`${tarefa.titulo}${tarefa.responsavel ? ` · ${tarefa.responsavel.nome}` : ''}`}
-                      // 36px de alvo no celular, como o chip de visita: eram
-                      // 17px, e este é um botão que só existe no toque.
-                      className="flex min-h-9 items-center truncate rounded-sm border-l-2 border-ink/30 bg-surface px-1 py-0.5 text-left text-[10px] leading-tight text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink focus-visible:bg-ink/10 sm:min-h-0"
-                    >
-                      {tarefa.titulo}
-                    </button>
+                    <TarefaChip key={tarefa.id} tarefa={tarefa} onClick={onSelecionarTarefa} />
                   ))}
                   {/* O "+N" também abre: era o único jeito de saber que existia
                       mais alguma coisa naquele dia, e não dizia o que era. */}
@@ -120,23 +111,10 @@ export function MonthView({
                 </div>
               )}
 
-              {/* Prazo de projeto. Desenho deliberadamente diferente do bloco de
-                  visita: sem hora, sem preenchimento, só uma faixa com barra à
-                  esquerda. Visita é compromisso de alguém; prazo é uma data que
-                  chega sozinha, e confundir os dois numa agenda de compliance
-                  faria a pessoa achar que tem visita marcada onde não tem. */}
               {prazos.length > 0 && (
                 <div className="relative mt-auto flex flex-col gap-0.5 pt-1">
                   {prazos.map((projeto) => (
-                    <Link
-                      key={projeto.id}
-                      href={`/projetos/${projeto.id}`}
-                      title={`Prazo de compliance: ${projeto.titulo}`}
-                      className="flex min-h-9 items-center gap-1 truncate border-l-2 border-accent bg-accent/5 py-0.5 pl-1 pr-1 text-[10px] text-accent transition-colors hover:bg-accent/10 sm:min-h-0"
-                    >
-                      <span className="font-black uppercase tracking-wide">Prazo</span>
-                      <span className="truncate">{projeto.titulo}</span>
-                    </Link>
+                    <PrazoChip key={projeto.id} projeto={projeto} />
                   ))}
                 </div>
               )}
