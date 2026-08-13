@@ -1,5 +1,39 @@
 # Checkup geral do CRM Doctor Quality
 
+> ## Este documento é o retrato de 09/08/2026, e o veredito dele já não vale
+>
+> **Atualizado em 12/08/2026.** O que segue abaixo é a auditoria que ORIGINOU o
+> programa de entrega, com as medições de antes do conserto. Foi ela que virou
+> a fila do `ENTREGA.md`. Ficou aqui inteiro de propósito: apagar o retrato de
+> antes apaga a prova de que os defeitos existiram e de que foram medidos, não
+> supostos.
+>
+> **O que mudou desde então, medido:** dos 43 itens da fila, 42 estão fechados e
+> 1 ficou de fora por decisão registrada. O verificador (`npm run entrega:check`)
+> saiu de **8 de 32** neste dia para **46 de 46** em 12/08/2026, sem nenhuma
+> checagem vermelha. Os testes automáticos saíram de 78 para **226 na API** e
+> **38 no front**, que nem sequer tinha executor de teste quando isto foi
+> escrito.
+>
+> **O "não coloque um cliente pagante usando isto" da seção 1 foi respondido
+> item por item:** o alerta virou aviso de uma pessoa, com leitura individual e
+> prazo vencido dentro da janela (item 1); nasceu o motor de e-mail, provado com
+> mensagem recebida (item 2), e o disparo diário por destinatário (itens 3 e 4);
+> as três contas `@teste.com` sem dono foram desativadas, e as outras três, que
+> são de pessoas de verdade, ficaram por decisão registrada (item 8); o backup
+> voltou a funcionar contra a produção e ganhou rotina no Neon (item 10); e a
+> tela que travava no celular foi corrigida (item 16).
+>
+> **O que continua valendo desta auditoria, por decisão e não por esquecimento:**
+> o aviso diário não chega em ninguém da equipe, porque a verificação do domínio
+> (item 5) depende de acesso que não é do Nícolas, e a decisão foi não fazer
+> agora. O alerta continua existindo dentro do CRM, no sino e no dashboard: quem
+> abre o sistema vê. O custo está escrito no item 5 do `ENTREGA.md`.
+>
+> Para o estado de hoje, leia o **Painel de estado** no fim do `ENTREGA.md`.
+> Para qualquer afirmação sobre o sistema atual, rode o verificador: ele mede,
+> este texto lembra.
+
 Feito em 09/08/2026, à noite. Nada foi consertado, nada foi commitado, nenhuma
 migration rodou. O único arquivo escrito é este.
 

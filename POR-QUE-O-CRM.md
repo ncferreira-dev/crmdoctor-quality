@@ -229,6 +229,23 @@ atraso". O número está certo e não significa nada.
 **Ressalva honesta:** não há nenhum chamado real em produção. A dor é
 verossímil, o uso ainda não existe.
 
+**Atualização de 12/08/2026 (itens 41 e 42 do ENTREGA.md).** Duas coisas
+mudaram desde este texto.
+
+A primeira: **chamado ganhou tela própria**, em `/chamados`, com as visões Em
+aberto, Em atraso, Resolvidos e Todos. Até aqui a função existia inteira no
+servidor e não tinha porta: para ver um chamado era preciso saber de qual
+empresa ele era, entrar nela e rolar até o fim. Isso muda o parágrafo acima
+sobre o uso não existir: enquanto não havia onde olhar a fila, não havia como o
+uso começar.
+
+A segunda: **o número que este texto cita estava errado.** "O dashboard hoje
+anuncia 3 em atraso, o número está certo e não significa nada" era gentil demais
+com o sistema. O cartão contava também chamado já **resolvido** que nunca tinha
+recebido o carimbo de primeira resposta, então ele nem certo estava, e discordava
+em silêncio do aviso diário, que fazia a conta do jeito certo. Corrigido no item
+42, com a definição de atraso passando a morar num lugar só.
+
 ### 6. Agenda e visitas
 
 **A dor sem o sistema.** As visitas vivem no Google Agenda de cada consultor.
@@ -598,7 +615,7 @@ Três observações que essa lista curta obriga a fazer:
 | Perfil | Trocar a própria senha não pode depender de outra pessoa |
 | Cargos e permissões | É o que faz o valor do contrato ficar restrito de verdade |
 | Valor de contrato restrito | Pedido explícito do CEO, e feito no lugar certo |
-| Tickets e SLA | Mantenho, mas em observação: sem um chamado real até o fim do mês, vira candidato a esconder |
+| Tickets e SLA | Mantenho. Em 12/08/2026 ganhou tela própria e saiu da observação: a função não tinha porta, e função sem porta não tem como ser usada |
 
 ### CORTAR OU ESCONDER AGORA
 

@@ -561,6 +561,62 @@ registrar(
     : 'bloco sempre visível',
 );
 
+// Chamado tinha API inteira (prazo por prioridade, SLA no aviso diário, cartão
+// no dashboard) e nenhuma tela própria: a única forma de ver um era entrar na
+// empresa certa e rolar até o fim. Quem atende trabalha por prazo, não por
+// empresa. As duas metades são medidas juntas, porque a tela sem entrada no
+// menu é uma tela que ninguém acha.
+const telaDeChamados = existsSync(
+  join(RAIZ, 'web/src/app/(app)/chamados/page.tsx'),
+);
+const chamadosNoMenu = /href:\s*'\/chamados'/.test(sidebar);
+registrar(
+  'chamado tem tela própria, e ela está no menu',
+  telaDeChamados && chamadosNoMenu,
+  'a rota /chamados no front e o item correspondente no Sidebar',
+  telaDeChamados && chamadosNoMenu
+    ? 'tela e item de menu no lugar'
+    : telaDeChamados
+      ? 'a tela existe e não está no menu: só chega quem digitar o endereço'
+      : 'não existe tela de chamados fora do bloco dentro da empresa',
+);
+
+// A agenda mostrava tarefa só na visão de Mês. Trocar para Semana, Dia ou
+// Lista fazia a maior parte do trabalho da equipe sumir da tela, e a mesma
+// agenda respondia coisas diferentes conforme o botão. Mede-se pelo uso do
+// chip: as quatro visões precisam desenhar tarefa.
+const VISOES_DA_AGENDA = ['MonthView', 'WeekView', 'DayView', 'ListView'];
+const visoesSemTarefa = VISOES_DA_AGENDA.filter(
+  (visao) =>
+    !/TarefaChip/.test(ler(join(RAIZ, `web/src/components/agenda/${visao}.tsx`))),
+);
+registrar(
+  'toda visão da agenda mostra tarefa',
+  visoesSemTarefa.length === 0,
+  'TarefaChip nas quatro visões da agenda (Mês, Semana, Dia e Lista)',
+  visoesSemTarefa.length === 0
+    ? 'as quatro desenham tarefa'
+    : `${visoesSemTarefa.length} visão(ões) sem tarefa: ${visoesSemTarefa.join(', ')}`,
+);
+
+// "Chamado em atraso" precisa significar a mesma coisa nos três lugares que
+// perguntam: o cartão do dashboard, o aviso diário e a tela de Chamados. Antes
+// de 12/08/2026 o "em aberto" era composto por fora, e só o aviso diário
+// lembrava de compor: o cartão contava chamado resolvido como atrasado.
+const ticketsUtils = ler(join(RAIZ, 'api/src/tickets/tickets.utils.ts'));
+const atrasoCarregaAberto =
+  /export function whereEmAtraso[\s\S]*?\.\.\.whereEmAberto\(\)/.test(
+    semComentarios(ticketsUtils),
+  );
+registrar(
+  'atraso de chamado é definido num lugar só',
+  atrasoCarregaAberto,
+  'whereEmAtraso espalhando whereEmAberto() dentro de si, em api/src/tickets/tickets.utils.ts',
+  atrasoCarregaAberto
+    ? 'a regra completa mora na função'
+    : 'o "em aberto" ficou para quem chama compor, e quem esquecer conta chamado fechado como atrasado',
+);
+
 // ===========================================================================
 titulo('6. Segredo e ambiente (Bloco 2)');
 // ===========================================================================
@@ -708,22 +764,29 @@ if (falhas.length) {
 // ---------------------------------------------------------------------------
 //
 // O que entra aqui é o que NÃO dá para provar por máquina neste repositório.
-// Preferimos esta lista longa e honesta a uma checagem que finge cobrir.
+// Preferimos esta lista curta e honesta a uma checagem que finge cobrir.
+//
+// A lista foi PODADA em 12/08/2026, e a poda é parte do trabalho. Ela ainda
+// pedia sete conferências de defeito já corrigido, com o texto no presente
+// ("hoje os botões têm 28px", "hoje o botão diz Evento"), e uma delas
+// contradizia frontalmente uma checagem automática logo acima, que já provava
+// que `api/.env` está em 600. Lista que pede o que já foi feito ensina a
+// ignorar a lista, e aí ela para de proteger o que sobrou.
+//
+// Regra para acrescentar item aqui: se dá para medir por máquina, vira
+// checagem. Se depende de olhar, de acesso externo ou de decisão de pessoa,
+// vira linha desta lista, escrita como o que conferir, não como o que está
+// errado.
 
 console.log(`\n${AMARELO}${NEGRITO}Conferência humana${FIM}`);
 console.log('-'.repeat(18));
 const humanas = [
-  ['Gaveta do celular', 'Abra o CRM em 390px, toque no menu e depois toque fora. A gaveta deve escurecer o fundo ao abrir e sumir por completo ao fechar. Se a tela parecer não responder ao toque, o defeito voltou.'],
-  ['Alvo de toque', 'Na Agenda em 390px, os botões Mês, Semana, Dia e Lista devem ter pelo menos 36px de altura. Hoje têm 28px, e os blocos de visita têm 19px.'],
-  ['Membros e 403', 'Logado como CEO, na tela de Membros, a linha de alguém do mesmo nível não deve oferecer Editar, Resetar senha nem Desativar. Hoje oferece, e os três devolvem erro.'],
-  ['Mensagem de erro', 'Logado como Analista, abra /membros pelo endereço. Deve dizer que o cargo não tem acesso, e não "isso costuma ser passageiro, tente de novo" com o nome de uma permissão na tela.'],
-  ['Botão da agenda', 'O botão do topo da Agenda e o título do formulário que ele abre precisam dizer a mesma coisa. Hoje o botão diz Evento e o formulário diz Nova visita.'],
-  ['E-mail chegando', 'Depois do Bloco 1, dispare o aviso e confirme que o e-mail chegou na caixa de entrada de verdade, não só que a API respondeu 200.'],
-  ['Contas de teste', 'Na tela de Membros da PRODUÇÃO, nenhuma conta @teste.com pode aparecer como ativa.'],
-  ['Backup restaurado', 'Restaure o backup mais recente num banco descartável e compare a contagem das tabelas com a produção. Backup nunca restaurado não é backup.'],
-  ['Cópia fora da máquina', 'Confirme que existe uma cópia do backup fora deste Mac. Hoje o arquivo é único e mora no Desktop.'],
-  ['Permissão do .env', 'api/.env precisa estar em 600 como o .env.producao. Hoje está 644, e tem senha do banco e o segredo do JWT dentro.'],
-  ['Dado de demonstração', 'Decida o que fazer com o cenário de demonstração que está na produção. Enquanto ele existir, todo número do dashboard é parte real e parte encenação.'],
+  ['Gaveta do celular', 'Abra o CRM em 390px, toque no menu e depois toque fora. A gaveta deve escurecer o fundo ao abrir e sumir por completo ao fechar. Se a tela parecer não responder ao toque, o defeito de 04/08 voltou (AnimatePresence que não desmonta o nó).'],
+  ['Alvo de toque', 'Em 390px, nenhum botão de uso diário pode ficar abaixo de 36px de altura: as visões da Agenda, os chips de visita e tarefa, e os seletores compactos de status. É medição de olho, e por isso mora aqui.'],
+  ['E-mail chegando na equipe', 'Continua NÃO chegando, por decisão do item 5: o domínio drquality.com.br é do Fabrício e a verificação no Resend depende dele. O alerta segue vivo no sino e no dashboard. Reveja quando quiser retomar; o passo a passo está em CHAVES-PENDENTES.md.'],
+  ['E-mail provisório de 3 pessoas', 'Giovanna, Erica e Aline estão na produção com endereço @teste.com, que não existe: de 5 contas ativas, 3 não conseguem receber aviso nenhum. Fica por decisão do item 8, e o conserto não é desativar, é trocar o e-mail. Com os endereços reais em mãos: npm run email:trocar:producao'],
+  ['Cópia do backup fora deste Mac', 'De fora por decisão (item 10). O que fica descoberto é só a combinação de perder o Neon e o Mac ao mesmo tempo. Se um dia isso deixar de ser aceitável, é uma cópia em nuvem qualquer.'],
+  ['Dado de demonstração na produção', 'O cenário está MARCADO e separado do real desde o item 9, e o dashboard só conta cliente. O que ainda pede olho humano é a decisão de mantê-lo: enquanto ele existir, quem abrir a lista de empresas vê encenação junto com cliente.'],
 ];
 for (const [nome, oQue] of humanas) {
   console.log(`  ${AMARELO}?${FIM} ${NEGRITO}${nome}${FIM}`);

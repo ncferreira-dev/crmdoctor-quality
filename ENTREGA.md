@@ -643,6 +643,26 @@ Segue aberto: faltam 3 contas que são de pessoas de verdade**
 > os endereços reais em mãos isso é um comando, e fecha junto com o item 29, que
 > é sobre os mesmos nomes ("Giovanna " e "Erica " ainda têm espaço sobrando).
 >
+> **12/08/2026: o comando existe.** `npm run email:trocar:producao`
+> (`prisma/trocar-email.ts`). Ele segue as mesmas travas do
+> `desativar-contas.ts` e ganha uma quinta: confere colisão de e-mail contra o
+> banco inteiro **antes** de escrever qualquer linha, porque a coluna é única e
+> falhar no meio da lista deixaria a produção com metade das trocas feitas.
+>
+> Provado contra o banco local em 12/08/2026, nas cinco travas e no caminho de
+> escrita: sem `--destino`, com destino errado, apontado para conta real,
+> e-mail novo sem arroba, e-mail novo já ocupado, ensaio, e uma troca de
+> verdade. A troca gravou `UPDATE` no `audit_logs` com autor e com os dois
+> valores (`desativada@teste.com` para `carla.antiga@exemplo.com`), as
+> contagens bateram, e o banco local foi devolvido ao estado anterior.
+>
+> **Não rodou em produção**, e não vai rodar sem os três endereços reais, que
+> dependem da conversa com o Fabrício. Primeira execução de script novo em
+> produção é parada obrigatória do `CLAUDE.md`.
+>
+> O que mudou aqui, então, é o tamanho do que falta: antes era "alguém precisa
+> escrever isso"; agora é "alguém precisa saber os e-mails".
+>
 > O critério original do item ("nenhuma conta `@teste.com` aparece como ativa")
 > segue **não cumprido**, e por escolha, não por esquecimento.
 >
@@ -2060,6 +2080,137 @@ despercebido.
 > **O que ficou de fora, e fica registrado:** só a visão de Mês mostra tarefa.
 > Semana, Dia e Lista não mostram nenhuma, e isso já era assim antes deste
 > pedido. Não entra aqui porque é outro trabalho, com outra decisão de desenho.
+> **Fechado pelo item 43, em 12/08/2026.**
+
+---
+
+# BLOCO 7: o que ainda tinha cara de inacabado
+
+Aberto em 12/08/2026, a pedido do Nícolas no chat: "termine 100% o CRM". O
+programa tinha fechado com 39 itens e o verificador em 42 de 43, e mesmo assim
+sobravam três coisas que qualquer pessoa de fora perceberia na primeira meia
+hora de uso. As três estavam registradas no próprio repositório como pendência
+conhecida, e nenhuma tinha dono.
+
+### 41. Chamado ganha tela própria
+
+**Bloco:** 7 · **Depende de:** nada · **Estado:** **feito em 12/08/2026**
+
+> **O buraco.** O módulo de chamados estava inteiro: prazo de resposta por
+> prioridade, selo de atraso calculado na API, SLA vencido dentro do aviso
+> diário do Bloco 1, cartão no dashboard e sete rotas com permissão própria. A
+> única forma de ver um chamado era entrar na empresa certa e rolar até o bloco
+> lá embaixo. Quem atende não trabalha por empresa, trabalha por prazo: a
+> pergunta das oito da manhã é "o que estourou e o que estoura hoje", e ela não
+> tinha tela. Num CRM que escolheu pós-venda primeiro, essa era a tela que
+> faltava.
+>
+> **O que nasceu.** `/chamados`, no menu atrás de `TICKETS_READ`, com quatro
+> visões (Em aberto, Em atraso, Resolvidos, Todos), filtro por empresa e busca
+> por texto. A lista é agrupada por SLA, e não por status, porque status é o que
+> a equipe escreveu e SLA é o que o cliente está sentindo: um "Em andamento" há
+> três dias sem resposta e um "Aberto" de agora há pouco cobram coisas opostas.
+> Cada grupo traz uma linha dizendo o que ele significa.
+>
+> **Nada foi copiado.** A linha do chamado, o formulário e as ações viraram
+> `components/tickets/` e `hooks/useChamados.ts`, usados pelas duas telas. O
+> bloco dentro da empresa passou a ser só o recorte e a moldura: 300 linhas
+> viraram 88.
+>
+> **Três defeitos apareceram no caminho, e os três foram consertados:**
+>
+> | O que estava errado | Como se via |
+> |---|---|
+> | `GET /tickets` não filtrava empresa excluída | chamado de cliente apagado apareceria na lista, com o nome de quem não existe mais |
+> | `responder` e `status` devolviam o chamado sem a empresa | a linha perdia o nome do cliente no clique e só voltava com F5 |
+> | o bloco da empresa lia só a primeira página | empresa com 21 chamados perdia o vigésimo primeiro, sem aviso na tela |
+>
+> **Medido no navegador, com a API local:** abrir chamado pela tela nova (caiu
+> em "Aguardando primeira resposta", com prazo calculado e "Registrado por"),
+> registrar resposta (mudou de grupo na hora e manteve o cliente), mudar status
+> para Resolvido (mudou de grupo e o contador do topo caiu de 4 para 3), buscar
+> por nome de empresa, e a validação dos dois campos obrigatórios. Em 390px o
+> seletor de status saía pela direita do card, cortado, e o grupo de ações
+> passou a quebrar linha.
+>
+> **Vocabulário.** A tela, o menu, o cartão do dashboard e o bloco da empresa
+> dizem todos "chamado". Antes o cartão dizia "Tickets abertos" e apontava para
+> `/empresas`, ou seja, contava chamado e entregava numa lista de clientes.
+>
+> `npm run entrega:check`: 43 para 44, com a checagem nova cobrando tela mais
+> item de menu (tela sem entrada no menu é tela que ninguém acha).
+
+### 42. "Em atraso" passa a significar a mesma coisa em toda tela
+
+**Bloco:** 7 · **Depende de:** 41 · **Estado:** **feito em 12/08/2026** ·
+**defeito achado durante o item 41**
+
+> Achado na primeira vez que a tela nova abriu: a visão "Em atraso" listava um
+> chamado **Resolvido**, e a mesma linha trazia o botão "Registrar resposta".
+>
+> **A causa.** `whereEmAtraso()` olhava só a primeira resposta e o prazo. Um
+> chamado fechado sem carimbo de resposta ficava marcado como atrasado para
+> sempre. O "em aberto" era composto por fora, e dos três lugares que perguntam
+> só um lembrava de compor:
+>
+> | Quem pergunta | Compunha `whereEmAberto()`? | O que via |
+> |---|---|---|
+> | Aviso diário | sim | o número certo |
+> | Cartão do dashboard | não | chamado fechado contado como atrasado |
+> | Tela de Chamados | não | chamado fechado dentro de "Em atraso" |
+>
+> **A correção.** A regra completa passou a morar dentro de `whereEmAtraso`, e
+> o selo da linha (`comCamposCalculados`) ganhou o status na conta. O tipo passou
+> a **exigir** `status`, para a conta não voltar a ser feita pela metade: quem
+> chama sempre tem a linha inteira do banco na mão.
+>
+> **Medido na base local, e só o que foi medido:** antes, a visão "Em atraso"
+> devolvia **3 chamados, e um deles estava Resolvido**, com o botão "Registrar
+> resposta" na linha. O cartão do dashboard usa exatamente o mesmo filtro, então
+> contava os mesmos 3; o aviso diário, que compunha o "em aberto" por fora,
+> contava 2. Depois da correção a visão devolve 2, o cartão mostra 2, e o botão
+> sumiu da linha do chamado fechado.
+>
+> Quatro testes novos, um deles nomeando a regressão. Checagem nova no
+> verificador cobrando que a definição fique num lugar só.
+
+### 43. Tarefa aparece nas quatro visões da agenda
+
+**Bloco:** 7 · **Depende de:** nada · **Estado:** **feito em 12/08/2026**
+
+> Era o "o que ficou de fora" do item 40. Só a visão de Mês mostrava tarefa e
+> prazo. Trocar para Semana, Dia ou Lista fazia a maior parte do trabalho da
+> equipe sumir da tela, e a mesma agenda respondia coisas diferentes conforme o
+> botão: na Semana um dia com três entregas aparecia escrito **"Livre"**.
+>
+> Nasceram `TarefaChip` e `PrazoChip`, com variante compacta (mês e semana) e
+> detalhada (dia e lista). O Mês passou a usar os dois em vez do markup solto
+> que tinha dentro: quatro cópias da mesma marca envelheceriam em ritmos
+> diferentes.
+>
+> **O que mudou de verdade em cada visão:**
+>
+> - **Semana:** tarefa entra na coluna do dia, prazo fica colado no rodapé, e
+>   "Livre" só aparece quando não há nada de nada.
+> - **Dia:** tarefa e prazo entram depois das visitas, e não no meio delas.
+>   Visita tem hora e fica em ordem cronológica; tarefa e prazo têm só o dia, e
+>   enfiá-los na fila inventaria um horário que ninguém marcou. O vazio virou
+>   "Nada marcado para este dia", que era "Nenhuma visita neste dia".
+> - **Lista:** junta as três fontes por dia. O título virou **"Próximos
+>   compromissos"**, porque "Próximas visitas" prometia menos do que a tela
+>   entrega (mesma regra do item 23).
+>
+> **Uma armadilha, e a saída.** Tarefa e prazo são carregados uma vez, sem
+> recorte de data; só a visita é pedida por intervalo. Sem janela, a Lista
+> mostraria entrega do ano passado ao lado da visita da semana que vem. Nasceu
+> `diasComCompromisso`, que une os dias das três fontes dentro da janela de 90
+> dias, e a constante da janela passou a ser uma só, para o pedido ao servidor e
+> o recorte no navegador não divergirem.
+>
+> **Medido:** 9 testes novos em `agendaUtils.spec.ts` (janela, união, corte dos
+> dois lados, dia vazio, e a chave de dia no fuso local), e as quatro visões
+> conferidas no navegador com a base local. Checagem nova no verificador
+> cobrando `TarefaChip` nas quatro.
 
 ---
 
@@ -2104,11 +2255,20 @@ despercebido.
 | 35 | 6 | Esconder três blocos do dashboard | 1, 2, 3, 4 | **feito** |
 | 36 | 6 | Esconder Competências do menu | 1, 2, 3, 4 | **feito** |
 | 37 | 6 | Carga por responsável: decidir | 30, 35 | **decidido: fica** |
-| 38 | 6 | Limit fixo do KanbanBoard: registrado | | **feito** |
+| 38 | 6 | Limit fixo do KanbanBoard | | **feito em 12/08/2026** |
 | 39 | 2 | Include com soft delete devolvia linha apagada | | **feito** |
 | 40 | 4 | Marca de tarefa na agenda abre para leitura | | **feito** |
+| 41 | 7 | Chamado ganha tela própria | | **feito** |
+| 42 | 7 | "Em atraso" significa o mesmo em toda tela | 41 | **feito** |
+| 43 | 7 | Tarefa nas quatro visões da agenda | | **feito** |
 
-**39 fechados, 1 de fora por decisão, 0 abertos. O programa de entrega acabou.**
+**42 fechados, 1 de fora por decisão, 0 abertos, e o verificador em 46 de 46.**
+
+O item 38 estava registrado como decisão de não gastar tempo, e virou trabalho
+de dois minutos: o board passou a percorrer a paginação pelo `getTodos`, em vez
+de pedir 100 e usar o que viesse. Um board que mostra só a primeira página mente
+sem avisar, porque não tem rodapé, contagem nem página seguinte onde a pessoa
+perceba.
 
 Duas decisões do Nícolas ficaram registradas com o custo escrito, e as duas são
 reversíveis em qualquer dia: a verificação do domínio (item 5), que segura o
@@ -2123,9 +2283,12 @@ o que está apagado):
 | Empresas | 1 (Opella) | 2 |
 | Projetos | 1 (Novalgina Linha 9) | 4 |
 
-5 contas ativas de 8, 186 linhas de auditoria, e o verificador em 42 de 43. A
-única checagem vermelha é o limit fixo do KanbanBoard, que o item 38 registrou
-como decisão de não gastar tempo.
+5 contas ativas de 8 e 186 linhas de auditoria.
+
+**O verificador está em 46 de 46 desde 12/08/2026**, sem nenhuma checagem
+vermelha pela primeira vez desde que ele existe. As três que entraram no Bloco 7
+cobram tela de chamado com item de menu, tarefa nas quatro visões da agenda, e a
+definição de atraso num lugar só.
 
 ---
 
@@ -2155,3 +2318,4 @@ Uma linha por sessão. O número só sobe com medição, nunca com afirmação.
 | 10/08/2026 | 40 | 41 | itens 32 e 24: o front ganha executor de teste rodando em TZ=UTC, e o cálculo de dia passa a ser civil de Brasília |
 | 10/08/2026 | 42 | 43 | item 9: dado de demonstração deixa de ser contado como cliente, mais 1 checagem nova |
 | 10/08/2026 | **41** | **42** | itens 20, 22, 33 e 40: erro sabe distinguir permissão de falha, Membros para de oferecer o que dá 403, o e2e de mentira sai, e a marca de tarefa abre. Só o limit fixo do item 38 segue vermelho, de propósito |
+| 12/08/2026 | **46** | **46** | a sessão começou em 42 de 43. Itens 38, 41, 42 e 43: o board pagina, chamado ganha tela, "em atraso" para de significar duas coisas e a agenda mostra tarefa nas quatro visões. Mais 3 checagens novas, e nenhuma vermelha pela primeira vez |
