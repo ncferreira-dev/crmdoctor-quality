@@ -47,6 +47,7 @@ describe('SLA de tickets', () => {
         abertoEm,
         prioridade: 1,
         primeiraRespostaEm: null,
+        status: 'ABERTO',
       });
       expect(r.emAtraso).toBe(true);
     });
@@ -57,6 +58,7 @@ describe('SLA de tickets', () => {
         abertoEm,
         prioridade: 1,
         primeiraRespostaEm: new Date(),
+        status: 'EM_ANDAMENTO',
       });
       expect(r.emAtraso).toBe(false);
     });
@@ -67,6 +69,21 @@ describe('SLA de tickets', () => {
         abertoEm,
         prioridade: 1,
         primeiraRespostaEm: null,
+        status: 'ABERTO',
+      });
+      expect(r.emAtraso).toBe(false);
+    });
+
+    // Regressão de 12/08/2026: a tela mostrava "Resolvido" e "Em atraso" na
+    // mesma linha. Chamado fechado sem carimbo de resposta ficava marcado como
+    // atrasado para sempre, e não há resposta a dar num chamado que acabou.
+    it('NÃO em atraso quando já foi resolvido, mesmo sem primeira resposta', () => {
+      const abertoEm = new Date(Date.now() - 100 * HORA);
+      const r = comCamposCalculados({
+        abertoEm,
+        prioridade: 1,
+        primeiraRespostaEm: null,
+        status: 'RESOLVIDO',
       });
       expect(r.emAtraso).toBe(false);
     });
@@ -80,6 +97,13 @@ describe('SLA de tickets', () => {
       if (Array.isArray(w.OR)) {
         expect(w.OR).toHaveLength(3); // uma cláusula por prioridade (1, 2, 3)
       }
+    });
+
+    // O filtro e o selo da linha precisam dizer a mesma coisa. Enquanto o
+    // filtro não carregava o "em aberto" dentro, a visão "Em atraso" da tela de
+    // Chamados listava chamado resolvido, e o cartão do dashboard contava ele.
+    it('carrega o "em aberto" dentro de si, e não no lado de quem chama', () => {
+      expect(whereEmAtraso()).toMatchObject(whereEmAberto());
     });
   });
 });

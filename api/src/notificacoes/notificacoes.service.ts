@@ -18,11 +18,7 @@ import {
   separarEmSecoes,
   totalDeAlertas,
 } from './resumo-diario';
-import {
-  calcularPrazoLimite,
-  whereEmAberto,
-  whereEmAtraso,
-} from '../tickets/tickets.utils';
+import { calcularPrazoLimite, whereEmAtraso } from '../tickets/tickets.utils';
 
 // O que uma pessoa tem para receber hoje: os alertas de prazo dela e os
 // chamados fora do SLA que são dela. As duas listas vivem juntas porque o
@@ -343,11 +339,11 @@ export class NotificacoesService implements OnApplicationBootstrap {
   ) {
     const agora = new Date();
     const atrasados = await this.prisma.ticket.findMany({
-      where: {
-        ...whereEmAberto(),
-        ...whereEmAtraso(agora),
-        excluidoEm: null,
-      },
+      // `whereEmAtraso` já traz o "em aberto" dentro dele desde 12/08/2026.
+      // Aqui havia os dois compostos à mão, e era o único lugar do sistema que
+      // acertava: o cartão do dashboard compunha só um e contava chamado
+      // fechado como atrasado.
+      where: { ...whereEmAtraso(agora), excluidoEm: null },
       select: {
         titulo: true,
         prioridade: true,
