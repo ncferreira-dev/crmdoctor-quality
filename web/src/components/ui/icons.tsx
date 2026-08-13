@@ -113,6 +113,15 @@ export function IconeTarefas({ className = 'h-full w-full' }: IconProps) {
   );
 }
 
+export function IconeChamados({ className = 'h-full w-full' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9 9 0 0 1-3.9-.9L3 21l1.9-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z" />
+      <path d="M9 10h6M9 13.5h4" />
+    </svg>
+  );
+}
+
 export function IconeMembros({ className = 'h-full w-full' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

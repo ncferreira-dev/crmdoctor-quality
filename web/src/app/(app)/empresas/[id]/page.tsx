@@ -134,7 +134,7 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
           )}
         </div>
         <div className="rounded-card border border-ink/10 bg-white p-4 shadow-card">
-          <p className="text-xs font-light uppercase tracking-wide text-ink/60">Tickets abertos</p>
+          <p className="text-xs font-light uppercase tracking-wide text-ink/60">Chamados abertos</p>
           <p className="dado mt-2 text-3xl font-semibold leading-none text-ink">
             {empresa._count?.ticketsAbertos ?? 0}
           </p>
@@ -189,7 +189,7 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {/* Tickets */}
+      {/* Chamados */}
       <TicketsSection empresaId={id} onMudou={carregarEmpresa} />
 
       {/* Histórico do relacionamento. Fica abaixo dos tickets de propósito: o

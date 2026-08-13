@@ -12,6 +12,7 @@ import {
   ChevronRight,
   IconeAgenda,
   IconeCargos,
+  IconeChamados,
   IconeDashboard,
   IconeEmpresas,
   IconeMembros,
@@ -37,6 +38,11 @@ const NAV: ItemNav[] = [
   { href: '/empresas', label: 'Empresas', icone: <IconeEmpresas /> },
   { href: '/projetos', label: 'Projetos', icone: <IconeProjetos /> },
   { href: '/agenda', label: 'Agenda', icone: <IconeAgenda /> },
+  // Chamados entrou no menu em 12/08/2026. O módulo existia inteiro (prazo de
+  // resposta por prioridade, SLA vencido no aviso diário, card no dashboard) e
+  // a única forma de ver um era entrar na empresa certa e rolar até o fim. Quem
+  // atende trabalha por prazo, não por empresa.
+  { href: '/chamados', label: 'Chamados', icone: <IconeChamados />, permissao: 'TICKETS_READ' },
   { href: '/tarefas', label: 'Minhas tarefas', icone: <IconeTarefas />, permissao: 'TAREFAS_READ' },
   { href: '/membros', label: 'Membros', icone: <IconeMembros />, separar: true, permissao: 'USUARIOS_READ' },
   // Competências saiu do menu em 10/08/2026 (item 36 do ENTREGA.md), e não do
@@ -83,6 +89,7 @@ function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
     CARGOS_MANAGE: usePermissao('CARGOS_MANAGE'),
     USUARIOS_READ: usePermissao('USUARIOS_READ'),
     TAREFAS_READ: usePermissao('TAREFAS_READ'),
+    TICKETS_READ: usePermissao('TICKETS_READ'),
   };
   const itensVisiveis = NAV.filter((item) => !item.permissao || concedida[item.permissao]);
 

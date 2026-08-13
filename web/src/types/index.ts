@@ -172,6 +172,15 @@ export interface Interacao {
   registradoPor: { id: string; nome: string } | null;
 }
 
+// O que vem dentro do chamado: id e nome, e nada além. A tela de Chamados só
+// precisa dizer de quem é a linha e para onde ela leva; carregar a
+// EmpresaCliente inteira traria segmento, contato, telefone e e-mail para
+// dentro de cada item de uma lista que não mostra nada disso.
+export interface EmpresaDoTicket {
+  id: string;
+  nome: string;
+}
+
 export interface Ticket {
   id: string;
   titulo: string;
@@ -179,7 +188,7 @@ export interface Ticket {
   status: StatusTicket;
   prioridade: number;
   empresaId: string;
-  empresa?: EmpresaCliente;
+  empresa?: EmpresaDoTicket;
   abertoEm: string;
   primeiraRespostaEm: string | null;
   criadoEm: string;

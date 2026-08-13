@@ -180,10 +180,14 @@ export default function DashboardPage() {
           nota="Não geram alerta"
           alerta={num(resumo.projetosSemPrazo) > 0}
         />
+        {/* Leva à tela de Chamados, e não a /empresas. O card contava chamados
+            e entregava numa lista de clientes, onde a pessoa tinha que
+            adivinhar em qual empresa estavam os chamados que o número
+            prometeu. */}
         <KpiCard
-          label="Tickets abertos"
+          label="Chamados abertos"
           valor={num(resumo.ticketsAbertos)}
-          href="/empresas"
+          href="/chamados"
           nota={num(resumo.ticketsEmAtraso) > 0 ? `${num(resumo.ticketsEmAtraso)} em atraso` : 'Em dia'}
           alerta={num(resumo.ticketsEmAtraso) > 0}
         />

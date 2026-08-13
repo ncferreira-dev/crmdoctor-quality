@@ -10,17 +10,41 @@ import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { UpdateStatusTicketDto } from './dto/update-status-ticket.dto';
 import { FindTicketsQueryDto } from './dto/find-tickets-query.dto';
 import { paginar } from '../common/utils/paginar';
-import { comCamposCalculados, whereEmAtraso } from './tickets.utils';
+import {
+  comCamposCalculados,
+  whereEmAberto,
+  whereEmAtraso,
+} from './tickets.utils';
 
 @Injectable()
 export class TicketsService {
   constructor(private prisma: PrismaService) {}
 
+  // Só o suficiente para a lista dizer de quem é o chamado. A empresa inteira
+  // traria segmento, contato, telefone e e-mail para dentro de toda linha de
+  // uma tela que não mostra nada disso.
+  private static readonly EMPRESA_NA_LISTA = {
+    select: { id: true, nome: true },
+  } as const;
+
   async findAll(query: FindTicketsQueryDto) {
+    // Os filtros entram por AND, e não espalhados no mesmo objeto, porque
+    // `status` e `whereEmAberto()` escrevem a MESMA chave: espalhados, o último
+    // apagava o primeiro em silêncio e a resposta ignorava um filtro que a
+    // pessoa tinha escolhido na tela.
     const where: Prisma.TicketWhereInput = {
-      status: query.status,
       empresaId: query.empresaId,
-      ...(query.emAtraso && whereEmAtraso()),
+      // A extensão do Prisma injeta `excluidoEm: null` no where DE CIMA, que
+      // aqui é o do ticket. A empresa entra por relação e fica de fora desse
+      // filtro, então o chamado de uma empresa excluída continuaria aparecendo
+      // na tela de Chamados, com o nome de um cliente que não existe mais. É a
+      // mesma classe do item 39 do ENTREGA.md, agora pelo lado do `where`.
+      empresa: { excluidoEm: null },
+      AND: [
+        ...(query.status ? [{ status: query.status }] : []),
+        ...(query.emAberto ? [whereEmAberto()] : []),
+        ...(query.emAtraso ? [whereEmAtraso()] : []),
+      ],
     };
 
     const resultado = await paginar({
@@ -29,7 +53,11 @@ export class TicketsService {
       buscar: ({ skip, take }) =>
         this.prisma.ticket.findMany({
           where,
-          orderBy: { criadoEm: 'desc' },
+          // Prioridade antes de data: numa tela que atende chamado, o alto de
+          // ontem importa mais que o baixo de hoje. O desempate por data mantém
+          // a ordem previsível dentro de cada prioridade.
+          orderBy: [{ prioridade: 'asc' }, { abertoEm: 'desc' }],
+          include: { empresa: TicketsService.EMPRESA_NA_LISTA },
           skip,
           take,
         }),
@@ -80,7 +108,7 @@ export class TicketsService {
   private async buscarOuFalhar(id: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
-      include: { empresa: true },
+      include: { empresa: TicketsService.EMPRESA_NA_LISTA },
     });
     if (!ticket) {
       throw new NotFoundException('Ticket não encontrado');
@@ -88,12 +116,20 @@ export class TicketsService {
     return ticket;
   }
 
+  // Toda rota que devolve um ticket devolve a empresa junto, e não só a lista.
+  //
+  // A tela de Chamados mostra o nome do cliente em cada linha e troca o item
+  // pela resposta da API depois de registrar resposta ou mudar status. Com uma
+  // rota devolvendo empresa e outra não, a linha perdia o nome do cliente no
+  // clique e só voltava com F5. Forma única de resposta é mais barato que
+  // lembrar, em cada tela, qual rota vem enxuta.
   async create(dto: CreateTicketDto) {
     const ticket = await this.prisma.ticket.create({
       data: {
         ...dto,
         abertoEm: dto.abertoEm ? new Date(dto.abertoEm) : new Date(),
       },
+      include: { empresa: TicketsService.EMPRESA_NA_LISTA },
     });
     return comCamposCalculados(ticket);
   }
@@ -106,6 +142,7 @@ export class TicketsService {
         ...dto,
         abertoEm: dto.abertoEm ? new Date(dto.abertoEm) : undefined,
       },
+      include: { empresa: TicketsService.EMPRESA_NA_LISTA },
     });
     return comCamposCalculados(ticket);
   }
@@ -123,6 +160,7 @@ export class TicketsService {
         status: dto.status,
         resolvidoEm: dto.status === 'RESOLVIDO' ? new Date() : null,
       },
+      include: { empresa: TicketsService.EMPRESA_NA_LISTA },
     });
     return comCamposCalculados(ticket);
   }
@@ -137,6 +175,7 @@ export class TicketsService {
     const atualizado = await this.prisma.ticket.update({
       where: { id },
       data: { primeiraRespostaEm: new Date() },
+      include: { empresa: TicketsService.EMPRESA_NA_LISTA },
     });
     return comCamposCalculados(atualizado);
   }
