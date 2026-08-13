@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { usePermissao } from '../../hooks/useSessao';
-import { EstagioLead, Lead, ResultadoPaginado } from '../../types';
+import { EstagioLead, Lead } from '../../types';
 import { KanbanColumn } from './KanbanColumn';
 import { LeadFormModal } from './LeadFormModal';
 import { Button } from '../ui/Button';
@@ -16,11 +16,6 @@ const ESTAGIOS: { valor: EstagioLead; titulo: string }[] = [
   { valor: 'GANHO', titulo: 'Ganho' },
   { valor: 'PERDIDO', titulo: 'Perdido' },
 ];
-
-// Teto do endpoint paginado (ver PaginacaoDto no backend). Um board de leads
-// ativos de uma empresa de médio porte cabe aqui; se passar de 100 o board
-// mostra só os 100 mais recentes — precisa virar endpoint dedicado depois.
-const LIMITE_BOARD = 100;
 
 export function KanbanBoard() {
   const [leads, setLeads] = useState<Lead[] | null>(null);
@@ -35,10 +30,15 @@ export function KanbanBoard() {
     estagio?: EstagioLead;
   }>({ aberto: false, lead: null });
 
+  // Percorre a paginação até o fim, em vez de pedir 100 e usar o que vier.
+  // Um board que mostra só a primeira página mente sem avisar: a coluna diz
+  // "Proposta 12" quando existem 30, e ninguém tem como perceber, porque não há
+  // rodapé, contagem nem página seguinte na tela. Quem faz o corte agora é o
+  // `getTodos`, que avisa no console quando precisa cortar.
   function carregar() {
     api
-      .get<ResultadoPaginado<Lead>>(`/leads?limit=${LIMITE_BOARD}`)
-      .then((resultado) => setLeads(resultado.data))
+      .getTodos<Lead>('/leads')
+      .then(setLeads)
       .catch((error: Error) => setErro(error.message));
   }
 
