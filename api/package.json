@@ -20,6 +20,8 @@
     "contas:desativar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/desativar-contas.ts",
     "comentario:nomes": "nomes:aparar:producao varre TODO campo de texto de TODO model procurando valor diferente do proprio trim(), e corrige com autor no audit_log. Sem --aplicar so mostra. Uso: npm run nomes:aparar:producao -- --destino=<trecho> --como=seu@email",
     "nomes:aparar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/aparar-nomes.ts",
+    "comentario:email-trocar": "email:trocar:producao troca o e-mail provisorio @teste.com de conta que e de pessoa de verdade, com autor no audit_log. E o conserto que o item 8 do ENTREGA.md deixou escrito: 3 das 5 contas ativas nao recebem aviso nenhum porque @teste.com nao existe. Confere colisao de e-mail ANTES de escrever qualquer linha. Sem --aplicar so ensaia. Uso: npm run email:trocar:producao -- --destino=<trecho> --como=seu@email analista2@teste.com=giovanna@drquality.com.br",
+    "email:trocar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/trocar-email.ts",
     "comentario:demo": "demo:marcar:producao marca como demonstracao as linhas de docs/demo-producao-ids.json (empresas, projetos e interacoes), com autor no audit_log. Sem --aplicar so mostra. Uso: npm run demo:marcar:producao -- --destino=<trecho> --como=seu@email",
     "demo:marcar:producao": "set -a && . ./.env.producao && set +a && ts-node prisma/marcar-demonstracao.ts",
     "backup:producao": "set -a && . ./.env.producao && set +a && node dist/prisma/exportar-backup.js",
