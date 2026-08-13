@@ -53,3 +53,25 @@ O passo a passo está no `ENTREGA.md`, no item 3 da Parte 4 do
 `CHECKUP-GERAL.md`. Em resumo: o front sai sozinho no `git push` para a `main`,
 e a API precisa do botão **Implantar** no EasyPanel, que é onde as migrations
 rodam.
+
+### A janela entre os dois, e por que ela morde
+
+**As duas metades do sistema não sobem juntas, e essa é a armadilha de operação
+mais fácil de esquecer.** O `git push` acaba, a Vercel builda em ~30 segundos e
+a produção passa a rodar o front NOVO contra a API VELHA, até alguém clicar em
+Implantar. Escrito em 12/08/2026, quando a tela de Chamados subiu.
+
+Na maior parte das mudanças isso não dá em nada. Dá em problema quando o front
+novo passa a mandar um parâmetro que a API velha não conhece: o `ValidationPipe`
+roda com `forbidNonWhitelisted` desde o item 26, então campo fora do DTO vira
+**400**, e não um campo ignorado em silêncio. A tela inteira mostra erro, mesmo
+com front e API cada um funcionando perfeitamente sozinho.
+
+**Regra prática:** mudou DTO, parâmetro de busca ou rota da API, implante a API
+**antes ou logo depois** do push, e não no dia seguinte. A ordem ideal é API
+primeiro, porque API nova servindo front velho é compatível (o parâmetro novo
+simplesmente não é pedido), e o contrário não é.
+
+**Como conferir em 5 segundos, sem entrar em painel:** abra o CRM em produção e
+vá em Chamados. Se a lista aparecer, a API está nova. Se aparecer a caixa de
+erro, a API ainda é a velha e falta Implantar.
