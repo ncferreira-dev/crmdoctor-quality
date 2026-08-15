@@ -6,3 +6,4 @@
 
 # Config local do Claude Code (launch.json de dev, agentes) — não é do projeto.
 .claude/
+*.rtf
